@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>משחק חידות ידע</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div id="setup-screen" class="container">
+        <header class="stats">
+            <p>בנק שאלות: 9</p>
+            <p>שאלות בפועל: 8</p>
+        </header>
+
+        <main class="setup-grid">
+            <div class="setup-box rules-box">
+                <h2>משחק החיות - הנחיות:</h2>
+                <ul>
+                    <li>* כל קבוצה עונה על שאלה בתורה.</li>
+                    <li>* בתשובה נכונה מגרילים ניקוד חיובי</li>
+                    <li>* בתשובה חלקית מגרילים ניקוד שלילי</li>
+                    <li>* במקום הגרלה שלילית ניתן להעביר שאלה</li>
+                    <li>* בסיום תהייה שאלה זהה שוברת שוויון לכולם</li>
+                    <li>* רק ראש הקבוצה רשאי לענות את התשובה בשם קבוצתו</li>
+                </ul>
+            </div>
+
+            <div class="setup-box">
+                <h2>בחר מספר קבוצות</h2>
+                <ul id="group-list" class="selection-list">
+                    <li>2</li>
+                    <li>3</li>
+                    <li class="selected">4</li>
+                    <li>5</li>
+                </ul>
+            </div>
+
+            <div class="setup-box">
+                <h2>בחר משחק</h2>
+                <ul id="game-list" class="selection-list">
+                    <li class="selected">הגנת סייבר</li>
+                    <li>גלגולו של לוג</li>
+                    <li>הכל על מחשבים</li>
+                    <li>הכל על כסף</li>
+                    <li>סייבר דאטא</li>
+                </ul>
+            </div>
+        </main>
+
+        <footer class="options-container">
+            <div class="checkbox-group">
+                <input type="checkbox" id="shuffle-questions" checked>
+                <label for="shuffle-questions">ערבוב שאלות</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="continue-last-point">
+                <label for="continue-last-point">המשך מנקודה אחרונה</label>
+            </div>
+        </footer>
+        
+        <button id="start-btn">התחל</button>
+    </div>
+
+    <div id="pre-question-screen" class="hidden">
+        <div class="pre-question-content">
+            <h1 id="pre-question-game-title">משחק: הגנת סייבר</h1>
+            <h2 id="pre-question-number">שאלה 1 מתוך 8</h2>
+            <p id="pre-question-time">מספר שניות למתן תשובה: 30</p>
+            <div class="pre-question-buttons">
+                <button id="bet-question-btn">שאלת ההימור</button>
+                <button id="next-question-btn">השאלה הבאה</button>
+            </div>
+        </div>
+        <div class="game-footer">
+             <div id="score-controls-preq" class="score-controls">
+                <button class="score-btn add-point-btn">+</button>
+                <button class="score-btn subtract-point-btn">-</button>
+            </div>
+            <div class="teams-container">
+                <!-- Teams will be generated here by JS -->
+            </div>
+        </div>
+    </div>
+
+
+    <div id="game-screen" class="hidden">
+        <div class="game-header">
+            <div id="timer-container">
+                <svg class="timer-svg" viewBox="0 0 100 100">
+                    <path d="M50 10 a 40 40 0 0 1 0 80 a 40 40 0 0 1 0 -80 M40 5 L60 5 L58 10 L42 10 Z M20 15 L25 20 M75 20 L80 15" stroke="#38761d" stroke-width="5" fill="none" />
+                    <circle cx="50" cy="50" r="35" fill="#f3e5ab" />
+                </svg>
+                <span id="timer-value">30</span>
+            </div>
+            <div id="question-container">
+                <p>מהי מתקפת פישינג?</p>
+            </div>
+        </div>
+
+        <div id="game-controls">
+            <button id="stop-game-btn">עצור</button>
+            <div id="answer-controls" class="hidden">
+                <button id="incorrect-answer-btn" class="answer-btn"></button>
+                <button id="correct-answer-btn" class="answer-btn"></button>
+            </div>
+        </div>
+
+        <div class="game-footer">
+            <div id="score-controls-game" class="score-controls">
+                <button class="score-btn add-point-btn">+</button>
+                <button class="score-btn subtract-point-btn">-</button>
+            </div>
+            <div class="teams-container">
+                <!-- Teams will be generated here by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="index.js" type="module"></script>
+</body>
+</html>
