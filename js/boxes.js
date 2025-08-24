@@ -5,8 +5,14 @@ const returnBtn = document.getElementById('return-from-boxes-btn');
 const boxesMessage = document.getElementById('boxes-message');
 const treasureChests = document.querySelectorAll('.treasure-chest');
 
+// --- State ---
 let onBoxesCompleteCallback = null;
+let onBoxesContinueCallback = null;
 let chestSelected = false;
+
+const OPEN_CHEST_SRC = 'https://www.pngmart.com/files/7/Treasure-Chest-PNG-Transparent.png';
+const CLOSED_CHEST_SRC = 'https://www.pngmart.com/files/7/Treasure-Chest-PNG-Transparent-Picture.png';
+
 
 /**
  * Shuffles an array in place (Fisher-Yates algorithm).
@@ -25,15 +31,19 @@ function shuffleArray(array) {
 function resetBoxesScreen() {
     chestSelected = false;
     boxesMessage.textContent = 'יש לבחור תיבה';
-    treasureChests.forEach(chest => {
+    returnBtn.classList.remove('visible'); // Hide the button when resetting
+    treasureChests.forEach((chest) => {
         chest.classList.remove('selected', 'disabled');
         chest.removeAttribute('data-score'); // Clear previous score
-        const scoreDisplay = chest.querySelector('.score-reveal');
-        if (scoreDisplay) {
-            scoreDisplay.remove();
-        }
+        
+        chest.querySelector('.score-reveal-above')?.remove();
+        
+        const img = chest.querySelector('img');
+        img.src = CLOSED_CHEST_SRC;
+        img.style.transform = 'scale(1)';
+        img.style.display = 'block';
+
         chest.querySelector('span').style.display = 'block';
-        chest.querySelector('img').style.display = 'block';
     });
 }
 
@@ -48,30 +58,41 @@ function handleChestClick(event) {
     const selectedChest = event.currentTarget;
     const score = parseInt(selectedChest.dataset.score, 10);
     
+    // Change image to open chest
+    const selectedImg = selectedChest.querySelector('img');
+    selectedImg.src = OPEN_CHEST_SRC;
+    selectedImg.style.transform = 'scale(1.1)';
+
     // Mark the selected chest and disable others
     selectedChest.classList.add('selected');
     treasureChests.forEach(chest => {
+        // Hide chest number
+        chest.querySelector('span').style.display = 'none';
+
+        // Reveal the score above the chest
+        const scoreDiv = document.createElement('div');
+        scoreDiv.className = 'score-reveal-above';
+        scoreDiv.textContent = chest.dataset.score;
+        chest.appendChild(scoreDiv);
+
         if (chest !== selectedChest) {
             chest.classList.add('disabled');
+        } else {
+            scoreDiv.classList.add('selected-score');
         }
     });
 
-    // Reveal the score
     boxesMessage.textContent = `זכית ב-${score} נקודות!`;
-    const scoreReveal = document.createElement('div');
-    scoreReveal.className = 'score-reveal';
-    scoreReveal.textContent = score;
-    selectedChest.querySelector('img').style.display = 'none';
-    selectedChest.querySelector('span').style.display = 'none';
-    selectedChest.appendChild(scoreReveal);
+    
+    // Call the score award callback immediately after revealing scores.
+    if (onBoxesCompleteCallback) {
+        onBoxesCompleteCallback(score);
+    }
 
-
-    // Wait a moment, then call the callback to proceed
+    // Show the return button after a short delay for better visual flow
     setTimeout(() => {
-        if (onBoxesCompleteCallback) {
-            onBoxesCompleteCallback(score);
-        }
-    }, 2500); // 2.5 seconds delay
+        returnBtn.classList.add('visible');
+    }, 500);
 }
 
 /**
@@ -84,7 +105,8 @@ export function showBoxesScreen() {
     const scores = [10, 20, 30, 40, 50];
     shuffleArray(scores);
     treasureChests.forEach((chest, index) => {
-        chest.dataset.score = scores[index];
+        // Only assign score, don't show it yet
+        chest.dataset.score = scores[index % scores.length];
     });
 
     document.getElementById('game-screen').classList.add('hidden');
@@ -93,19 +115,21 @@ export function showBoxesScreen() {
 
 /**
  * Initializes listeners for the boxes screen.
- * @param {function} onComplete - Callback function that receives the awarded score.
+ * @param {function} onComplete - Callback function that receives the awarded score to update the UI.
+ * @param {function} onContinue - Callback function to continue to the next turn.
  */
-export function initializeBoxesScreen(onComplete) {
+export function initializeBoxesScreen(onComplete, onContinue) {
     onBoxesCompleteCallback = onComplete;
+    onBoxesContinueCallback = onContinue;
 
     treasureChests.forEach(chest => {
         chest.addEventListener('click', handleChestClick);
     });
 
     returnBtn.addEventListener('click', () => {
-        // Forfeits the points and moves to the next turn if no chest was selected
-        if (!chestSelected && onBoxesCompleteCallback) {
-            onBoxesCompleteCallback(0); 
+        // This button is now the only way to proceed from this screen.
+        if (onBoxesContinueCallback) {
+            onBoxesContinueCallback();
         }
     });
 }

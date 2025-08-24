@@ -1,4 +1,7 @@
 
+
+
+import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
 import { initializePreQuestionScreen } from './js/preq.js';
@@ -32,22 +35,30 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /**
-     * Callback for when the user selects a victory box (or returns).
+     * Callback for when the box selection animation completes.
+     * This function ONLY adjusts the score on the screen.
      * @param {number} points - The points awarded from the box.
      */
-    const onBoxesComplete = (points) => {
+    const onBoxesScoreAwarded = (points) => {
         if (points > 0) {
             adjustScore(points);
         }
+    };
+
+    /**
+     * Callback for when the user clicks "Return" on the boxes screen to continue.
+     */
+    const onBoxesContinue = () => {
         // Whether they got points or not, switch to the next team.
         document.getElementById('boxes-screen').classList.add('hidden');
         switchToNextTeam();
     };
 
     // Initialize the listeners for all screens and components.
+    initializeStartScreen();
     initializeSetupScreen(onGameStart);
     initializePreQuestionScreen(onNextQuestion);
     initializeQuestionScreen(onQuestionComplete);
-    initializeBoxesScreen(onBoxesComplete);
+    initializeBoxesScreen(onBoxesScoreAwarded, onBoxesContinue);
     initializeScoreControls();
 });
