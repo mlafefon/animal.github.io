@@ -1,9 +1,8 @@
-
-import { initializeSetupScreen } from './js/setup.js';
-import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
-import { initializePreQuestionScreen } from './js/preq.js';
-import { initializeQuestionScreen, showQuestionScreen } from './js/question.js';
-import { initializeBoxesScreen } from './js/boxes.js';
+import { initializeSetupScreen } from './setup.js';
+import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './game.js';
+import { initializePreQuestionScreen } from './preq.js';
+import { initializeQuestionScreen, showQuestionScreen } from './question.js';
+import { initializeBoxesScreen } from './boxes.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
