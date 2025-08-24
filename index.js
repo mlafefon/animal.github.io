@@ -1,12 +1,14 @@
 
 
 
+
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
 import { initializePreQuestionScreen } from './js/preq.js';
 import { initializeQuestionScreen, showQuestionScreen } from './js/question.js';
 import { initializeBoxesScreen } from './js/boxes.js';
+import { initializeEditGameScreen, showEditScreen } from './js/edit_game.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -54,11 +56,20 @@ document.addEventListener('DOMContentLoaded', () => {
         switchToNextTeam();
     };
 
+    /**
+     * Callback to navigate from the start screen to the edit screen.
+     */
+    const onGoToSettings = () => {
+        document.getElementById('start-screen').classList.add('hidden');
+        showEditScreen();
+    };
+
     // Initialize the listeners for all screens and components.
-    initializeStartScreen();
+    initializeStartScreen(onGoToSettings);
     initializeSetupScreen(onGameStart);
     initializePreQuestionScreen(onNextQuestion);
     initializeQuestionScreen(onQuestionComplete);
     initializeBoxesScreen(onBoxesScoreAwarded, onBoxesContinue);
     initializeScoreControls();
+    initializeEditGameScreen();
 });

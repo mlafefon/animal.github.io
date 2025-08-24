@@ -1,4 +1,5 @@
 
+
 const startScreen = document.getElementById('start-screen');
 const setupScreen = document.getElementById('setup-screen');
 const goToSetupBtn = document.getElementById('go-to-setup-btn');
@@ -10,8 +11,9 @@ const START_IMAGE_URL = 'https://cdn.pixabay.com/photo/2015/12/18/13/46/tiger-10
 
 /**
  * Initializes the start screen, handling the transition to the setup screen.
+ * @param {function} onGoToSettings - Callback to execute when the settings button is clicked.
  */
-export function initializeStartScreen() {
+export function initializeStartScreen(onGoToSettings) {
     if (!startScreen || !setupScreen || !goToSetupBtn || !settingsBtn) {
         console.error('Start screen elements not found!');
         return;
@@ -28,6 +30,9 @@ export function initializeStartScreen() {
     });
 
     settingsBtn.addEventListener('click', () => {
-        alert('הגדרות יהיו זמינות בקרוב!');
+        // Instead of an alert, we now call the callback to navigate to the edit screen.
+        if (onGoToSettings) {
+            onGoToSettings();
+        }
     });
 }

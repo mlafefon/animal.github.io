@@ -4,6 +4,7 @@ import { showBoxesScreen } from './boxes.js';
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
 const timerValue = document.getElementById('timer-value');
+const timerProgressRing = document.getElementById('timer-progress-ring');
 const stopGameBtn = document.getElementById('stop-game-btn');
 const answerControls = document.getElementById('answer-controls');
 const correctAnswerBtn = document.getElementById('correct-answer-btn');
@@ -54,9 +55,26 @@ export function showQuestionScreen(startTime = 30) {
     let timeLeft = startTime;
     timerValue.textContent = timeLeft;
 
+    // --- Timer Animation Logic ---
+    const radius = timerProgressRing.r.baseVal.value;
+    const circumference = radius * 2 * Math.PI;
+    timerProgressRing.style.strokeDasharray = `${circumference} ${circumference}`;
+
+    const updateRing = (current, total) => {
+        const progress = current / total;
+        // Prevent negative offsets
+        const safeProgress = Math.max(0, progress); 
+        const offset = circumference - safeProgress * circumference;
+        timerProgressRing.style.strokeDashoffset = offset;
+    };
+
+    updateRing(timeLeft, startTime); // Set initial state (full)
+
     timerInterval = setInterval(() => {
         timeLeft--;
         timerValue.textContent = timeLeft;
+        updateRing(timeLeft, startTime); // Update animation every second
+
         if (timeLeft <= 0) {
             handleIncorrectAnswer(); // Time's up, treated as incorrect
         }

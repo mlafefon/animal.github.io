@@ -1,3 +1,4 @@
+
 import { showPreQuestionScreen } from './preq.js';
 
 // --- Elements ---
@@ -20,7 +21,6 @@ let activeTeamIndex = 0;
 let currentQuestionNumber = 1;
 let gameName = '';
 let totalQuestions = 0;
-const START_TIME = 30;
 
 // --- Private Functions ---
 
@@ -67,7 +67,7 @@ export function getCurrentQuestion() {
     if (loadedQuestions.length > 0) {
         return loadedQuestions[(currentQuestionNumber - 1) % loadedQuestions.length];
     }
-    return { q: 'טוען שאלה...', a: '' }; // Fallback
+    return { q: 'טוען שאלה...', a: '', timer: 30 }; // Fallback
 }
 
 export function adjustScore(amount) {
@@ -100,11 +100,16 @@ export function switchToNextTeam() {
         activeTeamIndex = (activeTeamIndex + 1) % teamCount;
 
         updateActiveTeam();
+        
+        const nextQuestion = getCurrentQuestion();
+        // Use the timer from the question, with a fallback of 30 seconds.
+        const questionTime = nextQuestion.timer || 30;
+
         showPreQuestionScreen({
             gameName,
             currentQuestionNumber,
             totalQuestions: totalQuestions,
-            startTime: START_TIME,
+            startTime: questionTime,
         });
     }
 }
@@ -146,11 +151,16 @@ export async function startGame(options) {
 
     generateTeams(options.numberOfGroups);
     updateActiveTeam();
+
+    const firstQuestion = getCurrentQuestion();
+    // Use the timer from the question, with a fallback of 30 seconds.
+    const questionTime = firstQuestion.timer || 30;
+
     showPreQuestionScreen({
         gameName,
         currentQuestionNumber,
         totalQuestions: totalQuestions,
-        startTime: START_TIME,
+        startTime: questionTime,
     });
 }
 
