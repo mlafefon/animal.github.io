@@ -1,3 +1,6 @@
+import { getCurrentQuestion } from './game.js';
+import { showBoxesScreen } from './boxes.js';
+
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
 const timerValue = document.getElementById('timer-value');
@@ -5,6 +8,11 @@ const stopGameBtn = document.getElementById('stop-game-btn');
 const answerControls = document.getElementById('answer-controls');
 const correctAnswerBtn = document.getElementById('correct-answer-btn');
 const incorrectAnswerBtn = document.getElementById('incorrect-answer-btn');
+const questionText = document.getElementById('question-text');
+const answerContainer = document.getElementById('answer-container');
+const answerText = document.getElementById('answer-text');
+const victoryBoxBtn = document.getElementById('victory-box-btn');
+
 
 // --- State ---
 let timerInterval = null;
@@ -17,13 +25,12 @@ function stopTimer() {
 }
 
 /**
- * Handles the completion of a question, either by answering or timeout.
- * @param {boolean} wasCorrect - True if the answer was correct, false otherwise.
+ * Handles an incorrect answer or timeout.
  */
-function handleAnswer(wasCorrect) {
+function handleIncorrectAnswer() {
     stopTimer();
     if (onQuestionCompleteCallback) {
-        onQuestionCompleteCallback(wasCorrect);
+        onQuestionCompleteCallback();
     }
 }
 
@@ -34,9 +41,14 @@ function handleAnswer(wasCorrect) {
  * @param {number} startTime - The number of seconds for the timer.
  */
 export function showQuestionScreen(startTime = 30) {
+    const currentQuestion = getCurrentQuestion();
+    questionText.textContent = currentQuestion.q;
+
     gameScreen.classList.remove('hidden');
     stopGameBtn.classList.remove('hidden');
     answerControls.classList.add('hidden');
+    answerContainer.classList.add('hidden');
+    victoryBoxBtn.classList.add('hidden');
     
     stopTimer();
     let timeLeft = startTime;
@@ -46,15 +58,14 @@ export function showQuestionScreen(startTime = 30) {
         timeLeft--;
         timerValue.textContent = timeLeft;
         if (timeLeft <= 0) {
-            handleAnswer(false); // Time's up, treated as incorrect
+            handleIncorrectAnswer(); // Time's up, treated as incorrect
         }
     }, 1000);
 }
 
 /**
  * Initializes listeners for the question screen controls.
- * @param {function} onComplete - Callback for when the question is answered or time runs out. 
- *                                It receives a boolean indicating if the answer was correct.
+ * @param {function} onComplete - Callback for when the question is answered incorrectly or time runs out. 
  */
 export function initializeQuestionScreen(onComplete) {
     onQuestionCompleteCallback = onComplete;
@@ -65,6 +76,18 @@ export function initializeQuestionScreen(onComplete) {
         answerControls.classList.remove('hidden');
     });
 
-    correctAnswerBtn.addEventListener('click', () => handleAnswer(true));
-    incorrectAnswerBtn.addEventListener('click', () => handleAnswer(false));
+    correctAnswerBtn.addEventListener('click', () => {
+        const currentQuestion = getCurrentQuestion();
+        answerText.textContent = currentQuestion.a;
+        answerContainer.classList.remove('hidden');
+
+        answerControls.classList.add('hidden');
+        victoryBoxBtn.classList.remove('hidden');
+    });
+
+    incorrectAnswerBtn.addEventListener('click', () => handleIncorrectAnswer());
+
+    victoryBoxBtn.addEventListener('click', () => {
+        showBoxesScreen();
+    });
 }

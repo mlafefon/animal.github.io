@@ -93,17 +93,23 @@
                 </svg>
                 <span id="timer-value">30</span>
             </div>
-            <div id="question-container">
-                <p>מהי מתקפת פישינג?</p>
+            <div id="q-a-wrapper">
+                <div id="question-container">
+                    <p id="question-text">מהי מתקפת פישינג?</p>
+                </div>
+                <div id="answer-container" class="hidden">
+                    <p id="answer-text"></p>
+                </div>
             </div>
         </div>
 
         <div id="game-controls">
             <button id="stop-game-btn">עצור</button>
             <div id="answer-controls" class="hidden">
-                <button id="incorrect-answer-btn" class="answer-btn"></button>
                 <button id="correct-answer-btn" class="answer-btn"></button>
+                <button id="incorrect-answer-btn" class="answer-btn"></button>
             </div>
+            <button id="victory-box-btn" class="hidden">תיבת נצחון</button>
         </div>
 
         <div class="game-footer">
@@ -111,6 +117,33 @@
                 <button class="score-btn add-point-btn">+</button>
                 <button class="score-btn subtract-point-btn">-</button>
             </div>
+            <div class="teams-container">
+                <!-- Teams will be generated here by JS -->
+            </div>
+        </div>
+    </div>
+
+    <div id="boxes-screen" class="hidden">
+        <div class="boxes-content">
+            <h1>תיבת ניצחון (10-50)</h1>
+            <div id="chests-container">
+                <div class="treasure-chest" data-chest="1">
+                    <img src="https://www.pngmart.com/files/7/Treasure-Chest-PNG-Transparent-Picture.png" alt="Treasure Chest 1">
+                    <span>1</span>
+                </div>
+                <div class="treasure-chest" data-chest="2">
+                    <img src="https://www.pngmart.com/files/7/Treasure-Chest-PNG-Transparent-Picture.png" alt="Treasure Chest 2">
+                    <span>2</span>
+                </div>
+                <div class="treasure-chest" data-chest="3">
+                    <img src="https://www.pngmart.com/files/7/Treasure-Chest-PNG-Transparent-Picture.png" alt="Treasure Chest 3">
+                    <span>3</span>
+                </div>
+            </div>
+            <button id="return-from-boxes-btn">חזרה</button>
+            <p id="boxes-message">יש לבחור תיבה</p>
+        </div>
+        <div class="game-footer">
             <div class="teams-container">
                 <!-- Teams will be generated here by JS -->
             </div>

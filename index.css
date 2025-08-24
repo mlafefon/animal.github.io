@@ -247,18 +247,43 @@ body {
     z-index: 1;
 }
 
-#question-container {
+#q-a-wrapper {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#question-container {
     border: 2px solid #ccc;
     background-color: rgba(255, 255, 255, 0.7);
     padding: 20px;
     border-radius: 8px;
-    height: 30vh;
+    min-height: 30vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-#question-container p {
+#question-text {
     font-size: 2.5rem;
-    color: #333;
+    color: #000;
+    margin-bottom: 0;
+    text-align: center;
+}
+
+#answer-container {
+    padding: 20px;
+    border: 2px solid #00008b;
+    background-color: rgba(224, 255, 255, 0.8);
+    border-radius: 8px;
+}
+
+#answer-text {
+    font-size: 2.5rem;
+    color: blue;
+    text-align: center;
+    font-weight: bold;
 }
 
 #game-controls {
@@ -315,6 +340,22 @@ body {
 
 #stop-game-btn:hover {
     background-color: #0056b3;
+}
+
+#victory-box-btn {
+    padding: 15px 40px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: black;
+    background-color: lightgreen;
+    border: 2px solid black;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#victory-box-btn:hover {
+    background-color: #7CFC00;
 }
 
 .game-footer {
@@ -401,4 +442,114 @@ body {
     font-size: 2rem;
     font-weight: bold;
     color: #0000cd;
+}
+
+/* --- Boxes Screen --- */
+#boxes-screen {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.boxes-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 40px;
+    background-color: #f9e6e8; /* Light pink from image */
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAB9SURBVHja7N0xCsAwCEPR9u5/tB+4+5KbaJscr8yDEaEgaOVNNRz9ehzHVQCB/wF/Aa8BjwGPAY8Bj13wFS3Lslzu6XQ6z4u6XwZwnEcYl2XZvN/vXbYt+w5wY2K5XC41UalUKlCW5UfM8ryP53n2yWCYJgZgZozx+Xx+Adcy/AIMAAN7sRPVqY/pAAAAAElFTkSuQmCC');
+}
+
+.boxes-content h1 {
+    font-size: 3rem;
+    color: #4CAF50; /* Green color from image */
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+#chests-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 80px;
+}
+
+.treasure-chest {
+    border: 3px solid white;
+    padding: 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    background-color: rgba(255, 255, 255, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.treasure-chest:hover {
+    transform: scale(1.1);
+    border-color: #FFD700; /* Gold */
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+}
+
+.treasure-chest.selected {
+    border-color: #4CAF50;
+    transform: scale(1.15);
+    cursor: default;
+}
+
+.treasure-chest.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.treasure-chest img {
+    width: 200px;
+    height: auto;
+}
+
+.treasure-chest span {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #000;
+}
+
+.treasure-chest .score-reveal {
+    font-size: 4rem;
+    font-weight: bold;
+    color: #FFD700; /* Gold */
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 200px; 
+    height: 166px; 
+}
+
+
+#return-from-boxes-btn {
+    padding: 12px 30px;
+    font-size: 1.2rem;
+    background-color: #f0f0f0;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#return-from-boxes-btn:hover {
+    background-color: #e0e0e0;
+}
+
+#boxes-message {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #00008B; /* Dark blue from image */
+    min-height: 2.2rem; /* Reserve space */
 }

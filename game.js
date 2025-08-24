@@ -15,6 +15,17 @@ const TEAMS_DATA = [
     { name: 'Frog', icon: 'https://cdn-icons-png.flaticon.com/512/3069/3069229.png' }
 ];
 
+const QUESTIONS = [
+    { q: 'איך אוכל לזהות שהאתר שאליו אני גולש הוא מאובטח', a: 'האתר אמור להתחיל ב https או שיש לו סימן של מנעול' },
+    { q: 'מהי מתקפת פישינג?', a: 'ניסיון לגנוב מידע רגיש (כמו שמות משתמש וסיסמאות) על ידי התחזות לישות מהימנה.' },
+    { q: 'מה תפקידה של חומת אש (Firewall)?', a: 'לפקח על תעבורת הרשת הנכנסת והיוצאת ולחסום תעבורה חשודה על בסיס כללי אבטחה.' },
+    { q: 'מהי הנדסה חברתית?', a: 'מניפולציה פסיכולוגית של אנשים כדי שיבצעו פעולות או ימסרו מידע סודי.' },
+    { q: 'מהו וירוס כופר (Ransomware)?', a: 'תוכנה זדונית המצפינה את קבצי הקורבן ודורשת תשלום כופר עבור שחרורם.' },
+    { q: 'מהי אימות דו-שלבי (2FA)?', a: 'שיטת אבטחה הדורשת שתי דרכי זיהוי שונות כדי לגשת לחשבון.' },
+    { q: 'מדוע חשוב לעדכן תוכנות באופן קבוע?', a: 'עדכונים כוללים לעיתים קרובות תיקוני אבטחה החוסמים פרצות שהתגלו.' },
+    { q: 'מהו "ענן" במחשוב?', a: 'רשת של שרתים מרוחקים המאפשרת לאחסן, לנהל ולעבד נתונים דרך האינטרנט.' }
+];
+
 let activeTeamIndex = 0;
 let currentQuestionNumber = 1;
 let gameName = '';
@@ -60,6 +71,11 @@ function updateActiveTeam() {
 }
 
 // --- Public (Exported) Functions ---
+
+export function getCurrentQuestion() {
+    // We use currentQuestionNumber which starts at 1. The array is 0-indexed.
+    return QUESTIONS[(currentQuestionNumber - 1) % QUESTIONS.length];
+}
 
 export function adjustScore(amount) {
     teamsContainers.forEach(container => {
