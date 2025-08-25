@@ -1,4 +1,3 @@
-
 import { showPreQuestionScreen } from './preq.js';
 
 // --- Elements ---
@@ -10,10 +9,11 @@ const setupScreen = document.getElementById('setup-screen');
 
 // --- Data & State ---
 const TEAMS_DATA = [
-    { name: 'Eagle', icon: 'https://cdn-icons-png.flaticon.com/512/3037/3037237.png' },
-    { name: 'Fox', icon: 'https://cdn-icons-png.flaticon.com/512/1059/1059021.png' },
-    { name: 'Elephant', icon: 'https://cdn-icons-png.flaticon.com/512/3037/3037229.png' },
-    { name: 'Frog', icon: 'https://cdn-icons-png.flaticon.com/512/3069/3069229.png' }
+    { name: 'ינשוף', icon: 'images/yanshuf.png' },
+    { name: 'שועל', icon: 'https://cdn-icons-png.flaticon.com/512/2823/2823035.png' },
+    { name: 'פיל', icon: 'images/pil.png' },
+    { name: 'צפרדע', icon: 'https://cdn-icons-png.flaticon.com/512/1076/1076931.png' },
+    { name: 'אריה', icon: 'https://cdn-icons-png.flaticon.com/512/3069/3069225.png' }
 ];
 
 let loadedQuestions = [];
