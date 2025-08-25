@@ -9,7 +9,7 @@ const setupScreen = document.getElementById('setup-screen');
 
 // --- Data & State ---
 const TEAMS_DATA = [
-    { name: 'ינשוף', icon: 'images/yanshuf.png' },
+    { name: 'ינשוף', icon: '/images/yanshuf.png' },
     { name: 'שועל', icon: 'https://cdn-icons-png.flaticon.com/512/2823/2823035.png' },
     { name: 'פיל', icon: 'images/pil.png' },
     { name: 'צפרדע', icon: 'https://cdn-icons-png.flaticon.com/512/1076/1076931.png' },
