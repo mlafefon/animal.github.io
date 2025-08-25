@@ -95,10 +95,10 @@
         <div class="game-header">
             <div id="timer-container">
                 <svg class="timer-svg" viewBox="0 0 100 100">
-                    <path d="M50 10 a 40 40 0 0 1 0 80 a 40 40 0 0 1 0 -80 M40 5 L60 5 L58 10 L42 10 Z M20 15 L25 20 M75 20 L80 15" stroke="#38761d" stroke-width="5" fill="none" />
-                    <circle class="timer-bg-circle" cx="50" cy="50" r="35" />
-                    <circle id="timer-track-ring" cx="50" cy="50" r="42" fill="transparent" stroke-width="6"></circle>
-                    <circle id="timer-progress-ring" cx="50" cy="50" r="42" fill="transparent" stroke-width="6"></circle>
+                    <!-- Background track -->
+                    <circle class="timer-bg-track" cx="50" cy="50" r="42" />
+                    <!-- Progress ring -->
+                    <circle id="timer-progress-ring" cx="50" cy="50" r="42" />
                 </svg>
                 <span id="timer-value">30</span>
             </div>

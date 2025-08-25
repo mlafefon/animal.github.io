@@ -362,6 +362,10 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     justify-content: center;
     align-items: center;
+    background-color: rgba(0, 0, 0, 0.25);
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
 #timer-container .timer-svg {
@@ -370,37 +374,52 @@ h1, h2, h3, h4, h5, h6 {
     left: 0;
     width: 100%;
     height: 100%;
+    transform: rotate(-90deg); /* Rotate so 0 is at the top */
 }
 
-#timer-container .timer-svg path {
-    stroke: #ffeb3b;
-    stroke-width: 5;
-    fill: none;
-}
-#timer-container .timer-svg .timer-bg-circle {
-    fill: rgba(0, 0, 0, 0.3);
-}
-
-#timer-track-ring {
-    stroke: #DC143C; /* Crimson, to show the "drained" part */
-    transform: rotate(-90deg);
-    transform-origin: 50% 50%;
+.timer-bg-track {
+    fill: transparent;
+    stroke: rgba(255, 255, 255, 0.1);
+    stroke-width: 12;
 }
 
 #timer-progress-ring {
-    stroke: #ffeb3b; /* Match theme yellow for remaining time */
+    fill: transparent;
+    stroke: #ffeb3b; /* Bright yellow */
+    stroke-width: 12;
     stroke-linecap: round;
-    transform: rotate(-90deg);
-    transform-origin: 50% 50%;
-    transition: stroke-dashoffset 1s linear;
+    transition: stroke-dashoffset 1s linear, stroke 0.5s ease-in-out;
+    filter: drop-shadow(0 0 5px #ffeb3b);
 }
 
 #timer-value {
-    font-size: 3rem;
-    font-weight: bold;
+    font-size: 3.5rem;
+    font-weight: 700;
     color: #f0f8ff;
     z-index: 1;
+    text-shadow: 0 0 8px rgba(0,0,0,0.6);
 }
+
+@keyframes pulse-warning {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(0, 0, 0, 0.5), 0 0 10px rgba(220, 20, 60, 0.5);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(220, 20, 60, 0.7), inset 0 0 20px rgba(220, 20, 60, 0.5), 0 0 25px rgba(220, 20, 60, 0.8);
+    }
+}
+
+#timer-container.low-time {
+    animation: pulse-warning 1.2s infinite ease-in-out;
+}
+
+#timer-container.low-time #timer-progress-ring {
+    stroke: #DC143C; /* Crimson red */
+    filter: drop-shadow(0 0 8px #DC143C);
+}
+
 
 #q-a-wrapper {
     flex: 1;

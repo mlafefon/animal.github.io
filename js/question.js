@@ -3,6 +3,7 @@ import { showBoxesScreen } from './boxes.js';
 
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
+const timerContainer = document.getElementById('timer-container');
 const timerValue = document.getElementById('timer-value');
 const timerProgressRing = document.getElementById('timer-progress-ring');
 const stopGameBtn = document.getElementById('stop-game-btn');
@@ -33,6 +34,7 @@ function stopTimer() {
  */
 function handleTurnEnd() {
     stopTimer();
+    timerContainer.classList.remove('low-time'); // Clean up animation class
     if (onQuestionCompleteCallback) {
         onQuestionCompleteCallback();
     }
@@ -55,6 +57,7 @@ export function showQuestionScreen(startTime = 30) {
     answerContainer.classList.add('hidden');
     victoryBoxBtn.classList.add('hidden');
     
+    timerContainer.classList.remove('low-time'); // Reset on new question
     stopTimer();
     let timeLeft = startTime;
     timerValue.textContent = timeLeft;
@@ -79,6 +82,11 @@ export function showQuestionScreen(startTime = 30) {
         timerValue.textContent = timeLeft;
         updateRing(timeLeft, startTime); // Update animation every second
 
+        // Add low-time warning visual cue
+        if (timeLeft <= 5 && !timerContainer.classList.contains('low-time')) {
+            timerContainer.classList.add('low-time');
+        }
+
         if (timeLeft <= 0) {
             handleTurnEnd(); // Time's up, ends the turn directly.
         }
@@ -94,6 +102,7 @@ export function initializeQuestionScreen(onComplete) {
     
     stopGameBtn.addEventListener('click', () => {
         stopTimer();
+        timerContainer.classList.remove('low-time'); // Clean up animation class
         stopGameBtn.classList.add('hidden');
         answerControls.classList.remove('hidden');
     });

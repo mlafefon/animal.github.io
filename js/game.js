@@ -10,10 +10,10 @@ const setupScreen = document.getElementById('setup-screen');
 // --- Data & State ---
 const TEAMS_DATA = [
     { name: 'ינשוף', icon: 'images/yanshuf.png' },
-    { name: 'שועל', icon: 'https://cdn-icons-png.flaticon.com/512/2823/2823035.png' },
+    { name: 'שועל', icon: 'images/fox.png' },
     { name: 'פיל', icon: 'images/pil.png' },
-    { name: 'צפרדע', icon: 'https://cdn-icons-png.flaticon.com/512/1076/1076931.png' },
-    { name: 'אריה', icon: 'https://cdn-icons-png.flaticon.com/512/3069/3069225.png' }
+    { name: 'צפרדע', icon: 'images/frog.png' },
+    { name: 'אריה', icon: 'images/lion.png' }
 ];
 
 let loadedQuestions = [];
