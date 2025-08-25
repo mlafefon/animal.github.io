@@ -42,9 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {number} points - The points awarded from the box.
      */
     const onBoxesScoreAwarded = (points) => {
-        if (points > 0) {
-            adjustScore(points);
-        }
+        // Now handles both positive (victory) and negative (failure) scores.
+        adjustScore(points);
     };
 
     /**

@@ -4,6 +4,7 @@ const chestsContainer = document.getElementById('chests-container');
 const returnBtn = document.getElementById('return-from-boxes-btn');
 const boxesMessage = document.getElementById('boxes-message');
 const treasureChests = document.querySelectorAll('.treasure-chest');
+const boxesTitle = document.getElementById('boxes-title');
 
 // --- State ---
 let onBoxesCompleteCallback = null;
@@ -72,7 +73,8 @@ function handleChestClick(event) {
         // Reveal the score above the chest
         const scoreDiv = document.createElement('div');
         scoreDiv.className = 'score-reveal-above';
-        scoreDiv.textContent = chest.dataset.score;
+        // Use Left-to-Right Mark (LRM) character to ensure minus sign is on the left in RTL.
+        scoreDiv.textContent = `\u200e${chest.dataset.score}`;
         chest.appendChild(scoreDiv);
 
         if (chest !== selectedChest) {
@@ -82,7 +84,8 @@ function handleChestClick(event) {
         }
     });
 
-    boxesMessage.textContent = `זכית ב-${score} נקודות!`;
+    // Use LRM character for the message as well.
+    boxesMessage.textContent = `הניקוד שהתקבל: \u200e${score} נקודות`;
     
     // Call the score award callback immediately after revealing scores.
     if (onBoxesCompleteCallback) {
@@ -97,12 +100,23 @@ function handleChestClick(event) {
 
 /**
  * Shows the boxes screen, assigns pre-determined random scores, and hides the game screen.
+ * @param {object} options - Configuration for the boxes screen.
+ * @param {string} [options.mode='victory'] - The mode, either 'victory' or 'failure'.
  */
-export function showBoxesScreen() {
+export function showBoxesScreen(options = {}) {
+    const { mode = 'victory' } = options;
     resetBoxesScreen();
     
-    // Define possible scores, shuffle them, and assign to chests
-    const scores = [10, 20, 30, 40, 50];
+    let scores;
+
+    if (mode === 'failure') {
+        boxesTitle.textContent = 'תיבת כישלון (0 עד 25-)';
+        scores = [0, -5, -10, -15, -20, -25];
+    } else { // Default to victory
+        boxesTitle.textContent = 'תיבת נצחון (10-50)';
+        scores = [10, 20, 30, 40, 50];
+    }
+    
     shuffleArray(scores);
     treasureChests.forEach((chest, index) => {
         // Only assign score, don't show it yet

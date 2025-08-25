@@ -147,7 +147,21 @@ export async function startGame(options) {
         }
     }
 
+    // Slice the array to the calculated number of questions.
+    // This happens AFTER shuffling to ensure a random subset is chosen.
+    const { actualQuestions } = options;
+    if (actualQuestions > 0 && actualQuestions <= loadedQuestions.length) {
+        loadedQuestions = loadedQuestions.slice(0, actualQuestions);
+    }
+
     totalQuestions = loadedQuestions.length;
+
+    // Check if there are any questions left to play.
+    if (totalQuestions === 0) {
+        alert('לא נותרו שאלות למשחק במספר הקבוצות שנבחר. אנא בחר פחות קבוצות או משחק עם יותר שאלות.');
+        setupScreen.classList.remove('hidden');
+        return;
+    }
 
     generateTeams(options.numberOfGroups);
     updateActiveTeam();

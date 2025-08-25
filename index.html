@@ -20,11 +20,6 @@
     </div>
 
     <div id="setup-screen" class="container hidden">
-        <header class="stats">
-            <p>בנק שאלות: 15</p>
-            <p>שאלות בפועל: 15</p>
-        </header>
-
         <main class="setup-grid">
             <div class="setup-box rules-box">
                 <h2>משחק החיות - הנחיות:</h2>
@@ -36,6 +31,10 @@
                     <li>* בסיום תהייה שאלה זהה שוברת שוויון לכולם</li>
                     <li>* רק ראש הקבוצה רשאי לענות את התשובה בשם קבוצתו</li>
                 </ul>
+                 <div class="stats">
+                    <p id="question-bank-stat">בנק שאלות: 15</p>
+                    <p id="actual-questions-stat">שאלות בפועל: 15</p>
+                </div>
             </div>
 
             <div class="setup-box">
@@ -119,6 +118,10 @@
                 <button id="correct-answer-btn" class="answer-btn"></button>
                 <button id="incorrect-answer-btn" class="answer-btn"></button>
             </div>
+            <div id="failure-controls" class="hidden">
+                <button id="failure-box-btn">תיבת כישלון</button>
+                <button id="pass-question-btn">העבר שאלה</button>
+            </div>
             <button id="victory-box-btn" class="hidden">תיבת נצחון</button>
         </div>
 
@@ -135,7 +138,7 @@
 
     <div id="boxes-screen" class="hidden">
         <div class="boxes-content">
-            <h1>תיבת ניצחון (10-50)</h1>
+            <h1 id="boxes-title">תיבת ניצחון (10-50)</h1>
             <div id="chests-container">
                 <div class="treasure-chest" data-chest="1">
                     <img src="" alt="Treasure Chest 1">

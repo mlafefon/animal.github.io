@@ -1,3 +1,4 @@
+
 const groupList = document.getElementById('group-list');
 const gameList = document.getElementById('game-list');
 const startButton = document.getElementById('start-btn');
@@ -11,6 +12,42 @@ const DATA_FILES = [
     'all_about_money.json',
     'cyber_data.json'
 ];
+
+let gameDataCache = {};
+
+
+/**
+ * Updates the UI with the number of questions in the bank and the calculated
+ * number of questions that will actually be used in the game.
+ */
+function updateQuestionStats() {
+    const selectedGameLi = gameList.querySelector('.selected');
+    const selectedGroupLi = groupList.querySelector('.selected');
+    const questionBankStat = document.getElementById('question-bank-stat');
+    const actualQuestionsStat = document.getElementById('actual-questions-stat');
+
+    if (!selectedGameLi || !selectedGroupLi || !questionBankStat || !actualQuestionsStat) {
+        return;
+    }
+
+    const fileName = selectedGameLi.dataset.fileName;
+    const questions = gameDataCache[fileName];
+    
+    if (!questions) {
+        questionBankStat.textContent = 'בנק שאלות: טוען...';
+        actualQuestionsStat.textContent = 'שאלות בפועל: טוען...';
+        return;
+    };
+
+    const questionBankCount = questions.length;
+    const numberOfGroups = parseInt(selectedGroupLi.textContent, 10);
+
+    // Calculation: find the largest multiple of numberOfGroups that is <= questionBankCount
+    const actualQuestionsCount = Math.floor(questionBankCount / numberOfGroups) * numberOfGroups;
+
+    questionBankStat.textContent = `בנק שאלות: ${questionBankCount}`;
+    actualQuestionsStat.textContent = `שאלות בפועל: ${actualQuestionsCount}`;
+}
 
 
 /**
@@ -26,7 +63,7 @@ function handleSelection(list, event) {
 }
 
 /**
- * Fetches game names from the data files and populates the selection list.
+ * Fetches game names from the data files, caches their questions, and populates the selection list.
  */
 async function populateGameList() {
     gameList.innerHTML = ''; // Clear any existing items
@@ -36,6 +73,7 @@ async function populateGameList() {
             const response = await fetch(`./data/${fileName}`);
             if (!response.ok) return null;
             const data = await response.json();
+            gameDataCache[fileName] = data.questions; // Cache the questions
             return { name: data.game_name, file: fileName };
         } catch (error) {
             console.error(`Failed to load game data from ${fileName}:`, error);
@@ -43,7 +81,7 @@ async function populateGameList() {
         }
     });
     
-    const games = (await Promise.all(fetchPromises)).filter(Boolean); // Filter out any failed fetches
+    const games = (await Promise.all(fetchPromises)).filter(Boolean);
 
     games.forEach((game, index) => {
         const li = document.createElement('li');
@@ -54,6 +92,9 @@ async function populateGameList() {
         }
         gameList.appendChild(li);
     });
+
+    // Initial update after loading and populating
+    updateQuestionStats();
 }
 
 
@@ -62,11 +103,17 @@ async function populateGameList() {
  * @param {function} onStart - The callback function to execute when the start button is clicked.
  */
 export function initializeSetupScreen(onStart) {
-    // Populate the game list dynamically when the app loads
+    // Populate the game list and trigger the first stat update
     populateGameList();
 
-    groupList.addEventListener('click', (e) => handleSelection(groupList, e));
-    gameList.addEventListener('click', (e) => handleSelection(gameList, e));
+    groupList.addEventListener('click', (e) => {
+        handleSelection(groupList, e);
+        updateQuestionStats();
+    });
+    gameList.addEventListener('click', (e) => {
+        handleSelection(gameList, e);
+        updateQuestionStats();
+    });
 
     startButton.addEventListener('click', () => {
         setupScreen.classList.add('hidden');
@@ -75,12 +122,14 @@ export function initializeSetupScreen(onStart) {
         const numberOfGroups = selectedGroup ? parseInt(selectedGroup.textContent, 10) : 4;
         
         const selectedGame = gameList.querySelector('.selected');
-        // We now pass the filename instead of the display name
         const gameFileName = selectedGame ? selectedGame.dataset.fileName : DATA_FILES[0];
 
         const shuffleQuestions = document.getElementById('shuffle-questions').checked;
 
-        // Call the provided callback with the selected options
-        onStart({ numberOfGroups, gameFileName, shuffleQuestions });
+        // Get the calculated number of questions from the UI to pass to the game logic
+        const actualQuestionsText = document.getElementById('actual-questions-stat').textContent;
+        const actualQuestions = parseInt(actualQuestionsText.split(':')[1].trim(), 10) || 0;
+
+        onStart({ numberOfGroups, gameFileName, shuffleQuestions, actualQuestions });
     });
 }

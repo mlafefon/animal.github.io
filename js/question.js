@@ -13,6 +13,9 @@ const questionText = document.getElementById('question-text');
 const answerContainer = document.getElementById('answer-container');
 const answerText = document.getElementById('answer-text');
 const victoryBoxBtn = document.getElementById('victory-box-btn');
+const failureControls = document.getElementById('failure-controls');
+const failureBoxBtn = document.getElementById('failure-box-btn');
+const passQuestionBtn = document.getElementById('pass-question-btn');
 
 
 // --- State ---
@@ -26,9 +29,9 @@ function stopTimer() {
 }
 
 /**
- * Handles an incorrect answer or timeout.
+ * Handles an incorrect answer or timeout by ending the current team's turn.
  */
-function handleIncorrectAnswer() {
+function handleTurnEnd() {
     stopTimer();
     if (onQuestionCompleteCallback) {
         onQuestionCompleteCallback();
@@ -48,6 +51,7 @@ export function showQuestionScreen(startTime = 30) {
     gameScreen.classList.remove('hidden');
     stopGameBtn.classList.remove('hidden');
     answerControls.classList.add('hidden');
+    failureControls.classList.add('hidden');
     answerContainer.classList.add('hidden');
     victoryBoxBtn.classList.add('hidden');
     
@@ -76,7 +80,7 @@ export function showQuestionScreen(startTime = 30) {
         updateRing(timeLeft, startTime); // Update animation every second
 
         if (timeLeft <= 0) {
-            handleIncorrectAnswer(); // Time's up, treated as incorrect
+            handleTurnEnd(); // Time's up, ends the turn directly.
         }
     }, 1000);
 }
@@ -103,9 +107,21 @@ export function initializeQuestionScreen(onComplete) {
         victoryBoxBtn.classList.remove('hidden');
     });
 
-    incorrectAnswerBtn.addEventListener('click', () => handleIncorrectAnswer());
+    incorrectAnswerBtn.addEventListener('click', () => {
+        answerControls.classList.add('hidden');
+        failureControls.classList.remove('hidden');
+    });
+
+    failureBoxBtn.addEventListener('click', () => {
+        showBoxesScreen({ mode: 'failure' });
+    });
+
+    passQuestionBtn.addEventListener('click', () => {
+        failureControls.classList.add('hidden');
+        handleTurnEnd();
+    });
 
     victoryBoxBtn.addEventListener('click', () => {
-        showBoxesScreen();
+        showBoxesScreen({ mode: 'victory' }); // Explicitly set mode
     });
 }
