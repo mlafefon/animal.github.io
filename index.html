@@ -15,7 +15,7 @@
         <div class="start-content">
             <h1>משחק החיות</h1>
             <img id="start-screen-image" alt="חיות משחקות">
-            <button id="go-to-setup-btn">התחל</button>
+            <button id="go-to-setup-btn" class="btn btn-primary btn-large">התחל</button>
         </div>
     </div>
 
@@ -66,7 +66,7 @@
             </div>
         </footer>
         
-        <button id="start-btn">התחל</button>
+        <button id="start-btn" class="btn btn-primary">התחל</button>
     </div>
 
     <div id="pre-question-screen" class="hidden">
@@ -75,17 +75,8 @@
             <h2 id="pre-question-number">שאלה 1 מתוך 8</h2>
             <p id="pre-question-time">מספר שניות למתן תשובה: 30</p>
             <div class="pre-question-buttons">
-                <button id="bet-question-btn">שאלת ההימור</button>
-                <button id="next-question-btn">השאלה הבאה</button>
-            </div>
-        </div>
-        <div class="game-footer">
-             <div id="score-controls-preq" class="score-controls">
-                <button class="score-btn add-point-btn">+</button>
-                <button class="score-btn subtract-point-btn">-</button>
-            </div>
-            <div class="teams-container">
-                <!-- Teams will be generated here by JS -->
+                <button id="bet-question-btn" class="btn btn-secondary">שאלת ההימור</button>
+                <button id="next-question-btn" class="btn btn-primary">השאלה הבאה</button>
             </div>
         </div>
     </div>
@@ -113,26 +104,16 @@
         </div>
 
         <div id="game-controls">
-            <button id="stop-game-btn">עצור</button>
+            <button id="stop-game-btn" class="btn btn-secondary btn-medium">עצור</button>
             <div id="answer-controls" class="hidden">
                 <button id="correct-answer-btn" class="answer-btn"></button>
                 <button id="incorrect-answer-btn" class="answer-btn"></button>
             </div>
             <div id="failure-controls" class="hidden">
-                <button id="failure-box-btn">תיבת כישלון</button>
-                <button id="pass-question-btn">העבר שאלה</button>
+                <button id="failure-box-btn" class="btn btn-danger btn-medium">תיבת כישלון</button>
+                <button id="pass-question-btn" class="btn btn-secondary btn-medium">העבר שאלה</button>
             </div>
-            <button id="victory-box-btn" class="hidden">תיבת נצחון</button>
-        </div>
-
-        <div class="game-footer">
-            <div id="score-controls-game" class="score-controls">
-                <button class="score-btn add-point-btn">+</button>
-                <button class="score-btn subtract-point-btn">-</button>
-            </div>
-            <div class="teams-container">
-                <!-- Teams will be generated here by JS -->
-            </div>
+            <button id="victory-box-btn" class="btn btn-primary btn-medium hidden">תיבת נצחון</button>
         </div>
     </div>
 
@@ -153,20 +134,15 @@
                     <span>3</span>
                 </div>
             </div>
-            <button id="return-from-boxes-btn">חזרה</button>
+            <button id="return-from-boxes-btn" class="btn btn-primary">חזרה</button>
             <p id="boxes-message">יש לבחור תיבה</p>
-        </div>
-        <div class="game-footer">
-            <div class="teams-container">
-                <!-- Teams will be generated here by JS -->
-            </div>
         </div>
     </div>
 
     <div id="edit-game-screen" class="container hidden">
         <div class="edit-header">
             <h1>עריכת משחקים</h1>
-            <button id="return-to-start-btn" class="secondary-btn">חזור</button>
+            <button id="return-to-start-btn" class="btn btn-secondary">חזור</button>
         </div>
 
         <div class="edit-controls">
@@ -176,7 +152,7 @@
                     <option value="">-- בחר משחק --</option>
                 </select>
             </div>
-            <button id="create-new-game-btn" class="primary-btn">צור משחק חדש</button>
+            <button id="create-new-game-btn" class="btn btn-primary">צור משחק חדש</button>
         </div>
 
         <form id="game-editor-form" class="hidden">
@@ -191,8 +167,8 @@
             </div>
 
             <div class="form-actions">
-                <button type="button" id="add-question-btn" class="secondary-btn">הוסף שאלה</button>
-                <button type="button" id="save-game-btn" class="primary-btn">שמור שינויים</button>
+                <button type="button" id="add-question-btn" class="btn btn-secondary btn-medium">הוסף שאלה</button>
+                <button type="button" id="save-game-btn" class="btn btn-primary btn-medium">שמור שינויים</button>
             </div>
         </form>
 
@@ -208,10 +184,32 @@
                     <input type="text" id="new-game-filename" placeholder="לדוגמה: space_game.json">
                 </div>
                 <div class="modal-actions">
-                    <button id="confirm-new-game-btn" class="primary-btn">צור</button>
-                    <button id="cancel-new-game-btn" class="secondary-btn">בטל</button>
+                    <button id="confirm-new-game-btn" class="btn btn-primary btn-small">צור</button>
+                    <button id="cancel-new-game-btn" class="btn btn-secondary btn-small">בטל</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Pass Question Modal -->
+    <div id="pass-question-modal-overlay" class="hidden">
+        <div id="pass-question-modal">
+            <h2>בחר קבוצה להעביר אליה את השאלה</h2>
+            <div id="pass-question-teams-container">
+                <!-- Team icons will be injected here by JS -->
+            </div>
+            <button id="cancel-pass-question-btn" class="btn btn-secondary btn-small">בטל</button>
+        </div>
+    </div>
+
+    <!-- Persistent Game Footer -->
+    <div id="main-game-footer" class="game-footer">
+        <div class="score-controls">
+            <button class="score-btn add-point-btn">+</button>
+            <button class="score-btn subtract-point-btn">-</button>
+        </div>
+        <div id="main-teams-container" class="teams-container">
+            <!-- Teams will be generated here by JS -->
         </div>
     </div>
 

@@ -1,4 +1,4 @@
-import { getCurrentQuestion } from './game.js';
+import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTeam } from './game.js';
 import { showBoxesScreen } from './boxes.js';
 
 // --- Elements ---
@@ -17,6 +17,9 @@ const victoryBoxBtn = document.getElementById('victory-box-btn');
 const failureControls = document.getElementById('failure-controls');
 const failureBoxBtn = document.getElementById('failure-box-btn');
 const passQuestionBtn = document.getElementById('pass-question-btn');
+const passQuestionModalOverlay = document.getElementById('pass-question-modal-overlay');
+const passQuestionTeamsContainer = document.getElementById('pass-question-teams-container');
+const cancelPassQuestionBtn = document.getElementById('cancel-pass-question-btn');
 
 
 // --- State ---
@@ -56,6 +59,7 @@ export function showQuestionScreen(startTime = 30) {
     failureControls.classList.add('hidden');
     answerContainer.classList.add('hidden');
     victoryBoxBtn.classList.add('hidden');
+    passQuestionModalOverlay.classList.add('hidden');
     
     timerContainer.classList.remove('low-time'); // Reset on new question
     stopTimer();
@@ -119,6 +123,13 @@ export function initializeQuestionScreen(onComplete) {
     incorrectAnswerBtn.addEventListener('click', () => {
         answerControls.classList.add('hidden');
         failureControls.classList.remove('hidden');
+
+        // If the question was passed to this team, they can't pass it again.
+        if (getIsQuestionPassed()) {
+            passQuestionBtn.classList.add('hidden');
+        } else {
+            passQuestionBtn.classList.remove('hidden');
+        }
     });
 
     failureBoxBtn.addEventListener('click', () => {
@@ -126,8 +137,45 @@ export function initializeQuestionScreen(onComplete) {
     });
 
     passQuestionBtn.addEventListener('click', () => {
-        failureControls.classList.add('hidden');
-        handleTurnEnd();
+        stopTimer();
+        timerContainer.classList.remove('low-time');
+
+        const { teams, activeTeamIndex } = getTeamsInfo();
+        passQuestionTeamsContainer.innerHTML = ''; // Clear previous teams
+
+        teams.forEach(team => {
+            if (team.index !== activeTeamIndex) {
+                const teamElement = document.createElement('div');
+                teamElement.className = 'team-member-modal-select';
+                teamElement.dataset.index = team.index;
+                teamElement.innerHTML = `
+                    <div class="team-icon">
+                        <img src="${team.icon}" alt="${team.name}">
+                    </div>
+                    <span>${team.name}</span>
+                `;
+                passQuestionTeamsContainer.appendChild(teamElement);
+            }
+        });
+
+        passQuestionModalOverlay.classList.remove('hidden');
+    });
+
+    cancelPassQuestionBtn.addEventListener('click', () => {
+        passQuestionModalOverlay.classList.add('hidden');
+    });
+
+    passQuestionTeamsContainer.addEventListener('click', (event) => {
+        const selectedTeamEl = event.target.closest('.team-member-modal-select');
+        if (selectedTeamEl) {
+            const targetIndex = parseInt(selectedTeamEl.dataset.index, 10);
+            
+            passQuestionToTeam(targetIndex);
+
+            passQuestionModalOverlay.classList.add('hidden');
+            failureControls.classList.add('hidden');
+            answerControls.classList.remove('hidden');
+        }
     });
 
     victoryBoxBtn.addEventListener('click', () => {

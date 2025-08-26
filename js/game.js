@@ -1,21 +1,24 @@
+
 import { showPreQuestionScreen } from './preq.js';
 
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
-const teamsContainers = document.querySelectorAll('.teams-container');
+const mainTeamsContainer = document.getElementById('main-teams-container');
+const mainGameFooter = document.getElementById('main-game-footer');
 const addPointBtns = document.querySelectorAll('.add-point-btn');
 const subtractPointBtns = document.querySelectorAll('.subtract-point-btn');
 const setupScreen = document.getElementById('setup-screen');
 
 // --- Data & State ---
 const TEAMS_DATA = [
-    { name: 'ינשוף', icon: 'images/yanshuf.png' },
-    { name: 'שועל', icon: 'images/fox.png' },
-    { name: 'פיל', icon: 'images/pil.png' },
-    { name: 'צפרדע', icon: 'images/frog.png' },
-    { name: 'אריה', icon: 'images/lion.png' }
+    { name: 'ינשופים', icon: 'images/yanshuf.png' },
+    { name: 'שועלים', icon: 'images/fox.png' },
+    { name: 'פילים', icon: 'images/pil.png' },
+    { name: 'צפרדעים', icon: 'images/frog.png' },
+    { name: 'אריות', icon: 'images/lion.png' }
 ];
 
+let isQuestionPassed = false;
 let loadedQuestions = [];
 let activeTeamIndex = 0;
 let currentQuestionNumber = 1;
@@ -25,42 +28,86 @@ let totalQuestions = 0;
 // --- Private Functions ---
 
 function generateTeams(count) {
-    teamsContainers.forEach(container => {
-        container.innerHTML = '';
-        for (let i = 0; i < count; i++) {
-            const team = TEAMS_DATA[i % TEAMS_DATA.length];
-            const teamElement = document.createElement('div');
-            teamElement.className = 'team-member';
-            teamElement.dataset.index = i;
+    mainTeamsContainer.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+        const team = TEAMS_DATA[i % TEAMS_DATA.length];
+        const teamElement = document.createElement('div');
+        teamElement.className = 'team-member';
+        teamElement.dataset.index = i;
 
-            const iconContainer = document.createElement('div');
-            iconContainer.className = 'team-icon';
-            const icon = document.createElement('img');
-            icon.src = team.icon;
-            icon.alt = team.name;
-            iconContainer.appendChild(icon);
+        const iconContainer = document.createElement('div');
+        iconContainer.className = 'team-icon';
+        const icon = document.createElement('img');
+        icon.src = team.icon;
+        icon.alt = team.name;
+        iconContainer.appendChild(icon);
 
-            const score = document.createElement('p');
-            score.className = 'team-score';
-            score.textContent = '0';
+        const score = document.createElement('p');
+        score.className = 'team-score';
+        score.textContent = '0';
 
-            teamElement.appendChild(iconContainer);
-            teamElement.appendChild(score);
-            container.appendChild(teamElement);
-        }
-    });
+        teamElement.appendChild(iconContainer);
+        teamElement.appendChild(score);
+        mainTeamsContainer.appendChild(teamElement);
+    }
 }
 
 function updateActiveTeam() {
-    teamsContainers.forEach(container => {
-        const teams = container.querySelectorAll('.team-member');
-        teams.forEach((team, index) => {
-            team.classList.toggle('active', index === activeTeamIndex);
-        });
+    const teams = mainTeamsContainer.querySelectorAll('.team-member');
+    teams.forEach((team, index) => {
+        team.classList.toggle('active', index === activeTeamIndex);
     });
 }
 
 // --- Public (Exported) Functions ---
+
+/**
+ * Gets the current state of the question pass flag.
+ * @returns {boolean}
+ */
+export function getIsQuestionPassed() {
+    return isQuestionPassed;
+}
+
+/**
+ * Gets information about the teams currently in the game.
+ * @returns {{teams: Array<{index: number, name: string, icon: string}>, activeTeamIndex: number}}
+ */
+export function getTeamsInfo() {
+    const teamCount = mainTeamsContainer.children.length;
+    const teams = [];
+
+    for (let i = 0; i < teamCount; i++) {
+        // Reconstruct the team info directly from the master TEAMS_DATA array
+        const teamData = TEAMS_DATA[i % TEAMS_DATA.length];
+        teams.push({
+            index: i,
+            name: teamData.name,
+            icon: teamData.icon
+        });
+    }
+
+    return {
+        teams,
+        activeTeamIndex
+    };
+}
+
+
+/**
+ * Switches to a specific team when a question is passed.
+ * @param {number} targetIndex - The index of the team to pass the question to.
+ */
+export function passQuestionToTeam(targetIndex) {
+    isQuestionPassed = true; // Mark that the question has been passed
+    const teamCount = mainTeamsContainer.children.length;
+    if (teamCount > 0 && targetIndex >= 0 && targetIndex < teamCount) {
+        activeTeamIndex = targetIndex;
+        updateActiveTeam();
+    } else {
+        console.error(`Invalid targetIndex ${targetIndex} for passing question.`);
+    }
+}
 
 export function getCurrentQuestion() {
     // We use currentQuestionNumber which starts at 1. The array is 0-indexed.
@@ -71,18 +118,17 @@ export function getCurrentQuestion() {
 }
 
 export function adjustScore(amount) {
-    teamsContainers.forEach(container => {
-        const activeTeam = container.querySelector('.team-member.active');
-        if (activeTeam) {
-            const scoreElement = activeTeam.querySelector('.team-score');
-            let currentScore = parseInt(scoreElement.textContent, 10);
-            scoreElement.textContent = currentScore + amount;
-        }
-    });
+    const activeTeam = mainTeamsContainer.querySelector('.team-member.active');
+    if (activeTeam) {
+        const scoreElement = activeTeam.querySelector('.team-score');
+        let currentScore = parseInt(scoreElement.textContent, 10);
+        scoreElement.textContent = currentScore + amount;
+    }
 }
 
 export function switchToNextTeam() {
-    const teamCount = teamsContainers[0].children.length;
+    isQuestionPassed = false; // Reset the flag for the new turn
+    const teamCount = mainTeamsContainer.children.length;
     if (teamCount > 0) {
         // A turn is complete, so we advance to the next question for the next team.
         currentQuestionNumber++;
@@ -93,11 +139,17 @@ export function switchToNextTeam() {
             document.getElementById('pre-question-screen').classList.add('hidden');
             gameScreen.classList.add('hidden');
             setupScreen.classList.remove('hidden');
+
+            // Hide the persistent footer
+            document.body.classList.remove('game-active');
+            mainGameFooter.classList.remove('visible');
             return;
         }
         
-        // Cycle to the next team.
-        activeTeamIndex = (activeTeamIndex + 1) % teamCount;
+        // The active team is now determined by the question number, not the previous team.
+        // This ensures the rotation is correct even if a question was passed.
+        // Question numbers start at 1, so we subtract 1 for a 0-based index.
+        activeTeamIndex = (currentQuestionNumber - 1) % teamCount;
 
         updateActiveTeam();
         
@@ -117,6 +169,7 @@ export function switchToNextTeam() {
 export async function startGame(options) {
     activeTeamIndex = 0;
     currentQuestionNumber = 1;
+    isQuestionPassed = false; // Ensure it's reset at the start of a new game
     
     const fileName = options.gameFileName;
     if (!fileName) {
@@ -165,6 +218,10 @@ export async function startGame(options) {
 
     generateTeams(options.numberOfGroups);
     updateActiveTeam();
+    
+    // Show the persistent footer
+    document.body.classList.add('game-active');
+    mainGameFooter.classList.add('visible');
 
     const firstQuestion = getCurrentQuestion();
     // Use the timer from the question, with a fallback of 30 seconds.
