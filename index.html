@@ -115,6 +115,10 @@
             </div>
             <button id="victory-box-btn" class="btn btn-primary btn-medium hidden">תיבת נצחון</button>
         </div>
+        
+        <button id="undo-answer-choice-btn" class="hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"></path></svg>
+        </button>
     </div>
 
     <div id="boxes-screen" class="hidden">
@@ -138,6 +142,40 @@
             <p id="boxes-message">יש לבחור תיבה</p>
         </div>
     </div>
+
+    <div id="betting-screen" class="container hidden">
+        <div class="betting-content">
+            <h1>שאלת ההימור הסופית</h1>
+            <p>כל קבוצה מהמרת על הנקודות שצברה. במענה נכון, סכום ההימור יתווסף לניקוד. בטעות, הסכום יופחת.</p>
+            <div id="betting-teams-container">
+                <!-- Betting team cards will be injected here by JS -->
+            </div>
+            <button id="show-final-question-btn" class="btn btn-primary btn-large hidden">שאלת הסיכום</button>
+        </div>
+    </div>
+
+    <div id="final-question-screen" class="container hidden">
+        <div class="final-question-content">
+            <h1>שאלת הסיכום</h1>
+            <div id="final-q-a-wrapper">
+                <div id="final-question-container">
+                    <p id="final-question-text"></p>
+                </div>
+                <div id="final-answer-container" class="hidden">
+                    <p id="final-answer-text"></p>
+                </div>
+            </div>
+            <button id="show-final-answer-btn" class="btn btn-secondary">הצג תשובה</button>
+            <div id="final-scoring-container" class="hidden">
+                <h2>מי ענה נכון?</h2>
+                <div id="final-scoring-teams">
+                    <!-- Final scoring controls for each team will be injected here -->
+                </div>
+            </div>
+             <button id="end-game-btn" class="btn btn-primary btn-large hidden">סיים משחק וחזור למסך הראשי</button>
+        </div>
+    </div>
+
 
     <div id="edit-game-screen" class="container hidden">
         <div class="edit-header">
@@ -215,6 +253,5 @@
 
 
     <script src="index.js" type="module"></script>
-    <script src="./js/edit_game.js" type="module"></script>
 </body>
 </html>

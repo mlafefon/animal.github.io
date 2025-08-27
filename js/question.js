@@ -1,3 +1,4 @@
+
 import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTeam } from './game.js';
 import { showBoxesScreen } from './boxes.js';
 
@@ -20,6 +21,7 @@ const passQuestionBtn = document.getElementById('pass-question-btn');
 const passQuestionModalOverlay = document.getElementById('pass-question-modal-overlay');
 const passQuestionTeamsContainer = document.getElementById('pass-question-teams-container');
 const cancelPassQuestionBtn = document.getElementById('cancel-pass-question-btn');
+const undoAnswerChoiceBtn = document.getElementById('undo-answer-choice-btn');
 
 
 // --- State ---
@@ -60,6 +62,7 @@ export function showQuestionScreen(startTime = 30) {
     answerContainer.classList.add('hidden');
     victoryBoxBtn.classList.add('hidden');
     passQuestionModalOverlay.classList.add('hidden');
+    undoAnswerChoiceBtn.classList.add('hidden');
     
     timerContainer.classList.remove('low-time'); // Reset on new question
     stopTimer();
@@ -118,11 +121,13 @@ export function initializeQuestionScreen(onComplete) {
 
         answerControls.classList.add('hidden');
         victoryBoxBtn.classList.remove('hidden');
+        undoAnswerChoiceBtn.classList.remove('hidden');
     });
 
     incorrectAnswerBtn.addEventListener('click', () => {
         answerControls.classList.add('hidden');
         failureControls.classList.remove('hidden');
+        undoAnswerChoiceBtn.classList.remove('hidden');
 
         // If the question was passed to this team, they can't pass it again.
         if (getIsQuestionPassed()) {
@@ -130,6 +135,17 @@ export function initializeQuestionScreen(onComplete) {
         } else {
             passQuestionBtn.classList.remove('hidden');
         }
+    });
+
+    undoAnswerChoiceBtn.addEventListener('click', () => {
+        // Hide post-decision controls
+        victoryBoxBtn.classList.add('hidden');
+        failureControls.classList.add('hidden');
+        undoAnswerChoiceBtn.classList.add('hidden');
+        answerContainer.classList.add('hidden'); // Also hide the answer if it was shown
+
+        // Re-show the decision controls
+        answerControls.classList.remove('hidden');
     });
 
     failureBoxBtn.addEventListener('click', () => {

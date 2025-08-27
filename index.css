@@ -1,4 +1,5 @@
 
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -19,7 +20,9 @@ body {
 
 body.game-active #pre-question-screen,
 body.game-active #game-screen,
-body.game-active #boxes-screen {
+body.game-active #boxes-screen,
+body.game-active #betting-screen,
+body.game-active #final-question-screen {
     padding-bottom: 270px; /* 250px for footer + 20px margin */
 }
 
@@ -330,6 +333,7 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     flex-direction: column;
     padding: 20px;
+    position: relative; /* Needed for absolute positioning of undo button */
 }
 
 .game-header {
@@ -447,6 +451,7 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: center;
     align-items: center;
     min-height: 80px; /* Reserve space to prevent layout shift */
+    gap: 20px;
 }
 
 #answer-controls {
@@ -507,6 +512,37 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     gap: 30px;
 }
+
+#undo-answer-choice-btn {
+    position: absolute;
+    left: 40px;
+    bottom: 280px; /* Above the 250px footer + some margin */
+    width: 60px;
+    height: 60px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 2px solid #ffeb3b;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    color: #ffeb3b;
+    transition: background-color 0.2s, transform 0.2s;
+    z-index: 110;
+    padding: 0;
+}
+
+#undo-answer-choice-btn:hover {
+    background-color: rgba(0, 0, 0, 0.5);
+    transform: scale(1.1);
+}
+
+#undo-answer-choice-btn svg {
+    width: 30px;
+    height: 30px;
+}
+
+
 
 /* --- Shared Game Footer --- */
 #main-game-footer {
@@ -601,11 +637,23 @@ h1, h2, h3, h4, h5, h6 {
     object-fit: cover;
 }
 
+.team-name {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #f0f8ff;
+}
+
 .team-score {
     font-size: 2rem;
     font-weight: bold;
     color: #f0f8ff;
     direction: ltr;
+}
+
+.team-score .bet-display {
+    color: #ff5252; /* Bright red for visibility */
+    font-weight: normal;
+    font-size: 1.5rem;
 }
 
 /* --- Boxes Screen --- */
@@ -645,7 +693,10 @@ h1, h2, h3, h4, h5, h6 {
     padding: 20px;
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                opacity 0.3s ease, 
+                filter 0.3s ease, 
+                border-color 0.2s ease;
     background-color: rgba(0, 0, 0, 0.3);
     display: flex;
     flex-direction: column;
@@ -661,14 +712,16 @@ h1, h2, h3, h4, h5, h6 {
 
 .treasure-chest.selected {
     border-color: #ffeb3b;
-    transform: scale(1.15);
     cursor: default;
+    animation: pop-selected 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 .treasure-chest.disabled {
     opacity: 0.6;
     cursor: not-allowed;
     pointer-events: none;
+    transform: scale(0.9);
+    filter: blur(1px);
 }
 
 .treasure-chest img {
@@ -744,6 +797,257 @@ h1, h2, h3, h4, h5, h6 {
     color: #f0f8ff;
     min-height: 2.2rem; /* Reserve space */
 }
+
+/* Animation for the selected chest */
+@keyframes pop-selected {
+    0% {
+        transform: scale(1.0);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1.15);
+    }
+}
+
+/* --- Betting Screen --- */
+#betting-screen {
+    width: 100vw;
+    height: 100vh;
+}
+.betting-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+}
+.betting-content h1 {
+    font-size: 3rem;
+    color: #ffeb3b;
+}
+.betting-content p {
+    font-size: 1.2rem;
+    max-width: 600px;
+    line-height: 1.6;
+}
+#betting-teams-container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 30px;
+    flex-wrap: wrap;
+    margin: 30px 0;
+}
+.betting-team-card {
+    background-color: rgba(0, 0, 0, 0.25);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 220px;
+}
+.betting-team-card .team-icon {
+    width: 100px;
+    height: 100px;
+}
+.betting-team-card .team-score {
+    font-size: 1.5rem;
+    color: #f0f8ff;
+}
+.bet-control {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.bet-stepper-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid #ffeb3b;
+    background-color: transparent;
+    color: #ffeb3b;
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 3px; /* For visual centering */
+}
+.bet-stepper-btn:hover {
+    background-color: #ffeb3b;
+    color: #3f51b5;
+}
+.bet-amount {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #ffeb3b;
+    width: 80px;
+    text-align: center;
+    direction: ltr;
+}
+
+/* --- Final Question Screen --- */
+#final-question-screen {
+    width: 100vw;
+    height: 100vh;
+}
+.final-question-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 25px;
+}
+.final-question-content h1 {
+    font-size: 3rem;
+    color: #ffeb3b;
+}
+#final-q-a-wrapper {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+#final-question-container, #final-answer-container {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 30px;
+    border-radius: 8px;
+    min-height: 20vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#final-question-text, #final-answer-text {
+    font-size: 2rem;
+    color: #f0f8ff;
+}
+#final-answer-container {
+    border-color: #ffeb3b;
+}
+#final-answer-text {
+    color: #ffeb3b;
+    font-weight: bold;
+}
+#final-scoring-container {
+    margin-top: 20px;
+}
+#final-scoring-teams {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+.final-scoring-card {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    min-width: 180px;
+}
+.final-scoring-card .team-name {
+    font-size: 1.1rem;
+}
+.final-scoring-controls button {
+    margin: 0 5px;
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+.final-scoring-correct {
+    background-color: #2ecc71;
+    color: white;
+}
+.final-scoring-incorrect {
+    background-color: #e74c3c;
+    color: white;
+}
+.final-scoring-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* --- Winner Announcement --- */
+.winner-announcement {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    text-align: center;
+    animation: fadeInScaleUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+.winner-announcement h1 {
+    font-size: 4rem;
+    color: #ffeb3b;
+    text-shadow: 0 0 15px #ffeb3b, 0 0 25px rgba(0,0,0,0.7);
+}
+.winners-container {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.winner-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.winner-card .team-icon {
+    width: 150px;
+    height: 150px;
+    border: 8px solid #ffeb3b;
+    box-shadow: 0 0 25px #ffeb3b;
+}
+.winner-card .team-name {
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+.winner-card .team-score {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #ffeb3b;
+    direction: ltr;
+}
+
+@keyframes fadeInScaleUp {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.team-member.winner .team-icon {
+    border-color: #ffeb3b;
+    box-shadow: 0 0 25px #ffeb3b, 0 0 40px white;
+    animation: winnerPulse 1.5s infinite;
+}
+
+@keyframes winnerPulse {
+    0% { transform: scale(1.1); box-shadow: 0 0 25px #ffeb3b, 0 0 40px white; }
+    50% { transform: scale(1.2); box-shadow: 0 0 35px #ffeb3b, 0 0 50px white; }
+    100% { transform: scale(1.1); box-shadow: 0 0 25px #ffeb3b, 0 0 40px white; }
+}
+
 
 /* --- Edit Game Screen --- */
 #edit-game-screen {

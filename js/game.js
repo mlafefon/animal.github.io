@@ -5,8 +5,6 @@ import { showPreQuestionScreen } from './preq.js';
 const gameScreen = document.getElementById('game-screen');
 const mainTeamsContainer = document.getElementById('main-teams-container');
 const mainGameFooter = document.getElementById('main-game-footer');
-const addPointBtns = document.querySelectorAll('.add-point-btn');
-const subtractPointBtns = document.querySelectorAll('.subtract-point-btn');
 const setupScreen = document.getElementById('setup-screen');
 
 // --- Data & State ---
@@ -20,6 +18,7 @@ const TEAMS_DATA = [
 
 let isQuestionPassed = false;
 let loadedQuestions = [];
+let finalQuestionData = null;
 let activeTeamIndex = 0;
 let currentQuestionNumber = 1;
 let gameName = '';
@@ -42,11 +41,16 @@ function generateTeams(count) {
         icon.alt = team.name;
         iconContainer.appendChild(icon);
 
+        const name = document.createElement('p');
+        name.className = 'team-name';
+        name.textContent = team.name;
+
         const score = document.createElement('p');
         score.className = 'team-score';
         score.textContent = '0';
 
         teamElement.appendChild(iconContainer);
+        teamElement.appendChild(name);
         teamElement.appendChild(score);
         mainTeamsContainer.appendChild(teamElement);
     }
@@ -58,6 +62,12 @@ function updateActiveTeam() {
         team.classList.toggle('active', index === activeTeamIndex);
     });
 }
+
+function prepareForFinalRound() {
+    gameScreen.classList.add('hidden');
+    showPreQuestionScreen({ isFinalRound: true });
+}
+
 
 // --- Public (Exported) Functions ---
 
@@ -117,10 +127,40 @@ export function getCurrentQuestion() {
     return { q: 'טוען שאלה...', a: '', timer: 30 }; // Fallback
 }
 
+export function getFinalQuestionData() {
+    return finalQuestionData;
+}
+
+export function getTeamsWithScores() {
+    const teams = mainTeamsContainer.querySelectorAll('.team-member');
+    const teamData = [];
+    teams.forEach((team) => {
+        const index = parseInt(team.dataset.index, 10);
+        const teamInfo = TEAMS_DATA[index % TEAMS_DATA.length];
+        const score = parseInt(team.querySelector('.team-score').textContent, 10);
+        teamData.push({
+            index,
+            name: teamInfo.name,
+            icon: teamInfo.icon,
+            score
+        });
+    });
+    return teamData;
+}
+
 export function adjustScore(amount) {
     const activeTeam = mainTeamsContainer.querySelector('.team-member.active');
     if (activeTeam) {
         const scoreElement = activeTeam.querySelector('.team-score');
+        let currentScore = parseInt(scoreElement.textContent, 10);
+        scoreElement.textContent = currentScore + amount;
+    }
+}
+
+export function adjustScoreForTeam(teamIndex, amount) {
+    const team = mainTeamsContainer.querySelector(`.team-member[data-index="${teamIndex}"]`);
+    if (team) {
+        const scoreElement = team.querySelector('.team-score');
         let currentScore = parseInt(scoreElement.textContent, 10);
         scoreElement.textContent = currentScore + amount;
     }
@@ -133,16 +173,9 @@ export function switchToNextTeam() {
         // A turn is complete, so we advance to the next question for the next team.
         currentQuestionNumber++;
 
-        // If the new question number exceeds the total, the game is over.
+        // If the new question number exceeds the total, start the final round.
         if (currentQuestionNumber > totalQuestions) {
-            alert('המשחק נגמר!');
-            document.getElementById('pre-question-screen').classList.add('hidden');
-            gameScreen.classList.add('hidden');
-            setupScreen.classList.remove('hidden');
-
-            // Hide the persistent footer
-            document.body.classList.remove('game-active');
-            mainGameFooter.classList.remove('visible');
+            prepareForFinalRound();
             return;
         }
         
@@ -184,6 +217,7 @@ export async function startGame(options) {
         }
         const gameData = await response.json();
         loadedQuestions = gameData.questions;
+        finalQuestionData = gameData.final_question;
         gameName = gameData.game_name; // The gameName from the file is the source of truth
     } catch (error) {
         console.error("שגיאה בטעינת קובץ השאלות:", error);
@@ -223,6 +257,12 @@ export async function startGame(options) {
     document.body.classList.add('game-active');
     mainGameFooter.classList.add('visible');
 
+    // Make sure the manual score controls are visible at the start of a new game
+    const scoreControls = document.querySelector('.score-controls');
+    if (scoreControls) {
+        scoreControls.classList.remove('hidden');
+    }
+
     const firstQuestion = getCurrentQuestion();
     // Use the timer from the question, with a fallback of 30 seconds.
     const questionTime = firstQuestion.timer || 30;
@@ -236,6 +276,17 @@ export async function startGame(options) {
 }
 
 export function initializeScoreControls() {
-    addPointBtns.forEach(btn => btn.addEventListener('click', () => adjustScore(1)));
-    subtractPointBtns.forEach(btn => btn.addEventListener('click', () => adjustScore(-1)));
+    const scoreControls = document.querySelector('.score-controls');
+    if (!scoreControls) return;
+
+    scoreControls.addEventListener('click', (e) => {
+        const button = e.target.closest('.score-btn');
+        if (!button) return;
+
+        if (button.classList.contains('add-point-btn')) {
+            adjustScore(1);
+        } else if (button.classList.contains('subtract-point-btn')) {
+            adjustScore(-1);
+        }
+    });
 }

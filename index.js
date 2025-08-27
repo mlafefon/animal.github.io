@@ -1,7 +1,5 @@
 
 
-
-
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
@@ -9,6 +7,7 @@ import { initializePreQuestionScreen } from './js/preq.js';
 import { initializeQuestionScreen, showQuestionScreen } from './js/question.js';
 import { initializeBoxesScreen } from './js/boxes.js';
 import { initializeEditGameScreen, showEditScreen } from './js/edit_game.js';
+import { initializeFinalRound, showBettingScreen } from './js/final.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -63,12 +62,20 @@ document.addEventListener('DOMContentLoaded', () => {
         showEditScreen();
     };
 
+    /**
+     * Callback to show the final betting screen.
+     */
+    const onStartBetting = () => {
+        showBettingScreen();
+    };
+
     // Initialize the listeners for all screens and components.
     initializeStartScreen(onGoToSettings);
     initializeSetupScreen(onGameStart);
-    initializePreQuestionScreen(onNextQuestion);
+    initializePreQuestionScreen(onNextQuestion, onStartBetting);
     initializeQuestionScreen(onQuestionComplete);
     initializeBoxesScreen(onBoxesScoreAwarded, onBoxesContinue);
     initializeScoreControls();
     initializeEditGameScreen();
+    initializeFinalRound();
 });
