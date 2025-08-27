@@ -75,20 +75,16 @@ function removeShrink(container, textElement) {
 }
 
 /**
- * Checks if the layout is cramped, meaning the victory button is overlapping with the footer.
+ * Checks if the layout is cramped, meaning a given button is overlapping with the footer.
+ * @param {HTMLElement} buttonElement - The button to check for overlap.
  * @returns {boolean} True if the layout is cramped, false otherwise.
  */
-function isLayoutCramped() {
-    // Ensure both elements are visible for an accurate measurement
-    if (victoryBoxBtn.classList.contains('hidden') || !mainGameFooter.classList.contains('visible')) {
+function isLayoutCramped(buttonElement) {
+    if (!buttonElement || buttonElement.classList.contains('hidden') || !mainGameFooter.classList.contains('visible')) {
         return false;
     }
-
-    const buttonRect = victoryBoxBtn.getBoundingClientRect();
+    const buttonRect = buttonElement.getBoundingClientRect();
     const footerRect = mainGameFooter.getBoundingClientRect();
-
-    // If the bottom of the button is below the top of the footer, it's cramped.
-    // Add a small buffer (e.g., 10px) for better UX.
     return buttonRect.bottom > footerRect.top - 10;
 }
 
@@ -139,6 +135,9 @@ export function showQuestionScreen(startTime = 30) {
     passQuestionModalOverlay.classList.add('hidden');
     undoAnswerChoiceBtn.classList.add('hidden');
     
+    // Reset failure box button text for the new question
+    failureBoxBtn.textContent = 'תיבת כישלון';
+
     timerContainer.classList.remove('low-time'); // Reset on new question
     stopTimer();
     let timeLeft = startTime;
@@ -203,7 +202,7 @@ export function initializeQuestionScreen(onComplete) {
         answerContainer.dataset.originalText = currentQuestion.a;
 
         // Check layout and apply shrink only if needed
-        if (isLayoutCramped()) {
+        if (isLayoutCramped(victoryBoxBtn)) {
             gameScreen.dataset.isCramped = 'true';
             // Initial state for small screens: question is shrunk, answer is not.
             applyShrink(questionContainer, questionText);
@@ -249,13 +248,19 @@ export function initializeQuestionScreen(onComplete) {
             answerContainer.classList.remove('shrunk');
             delete answerContainer.dataset.originalText;
         }
+        
+        // Reset the failure box button's text, just in case
+        failureBoxBtn.textContent = 'תיבת כישלון';
+
 
         // Re-show the decision controls
         answerControls.classList.remove('hidden');
     });
 
     // --- Symmetrical Hover Logic (Conditional) ---
-    const inAnswerState = () => !victoryBoxBtn.classList.contains('hidden');
+    const inAnswerState = () => !victoryBoxBtn.classList.contains('hidden') || (
+        !failureControls.classList.contains('hidden') && !answerContainer.classList.contains('hidden')
+    );
     const isShrinkActive = () => inAnswerState() && gameScreen.dataset.isCramped === 'true';
 
     const setDefaultState = () => {
@@ -283,7 +288,36 @@ export function initializeQuestionScreen(onComplete) {
 
 
     failureBoxBtn.addEventListener('click', () => {
-        showBoxesScreen({ mode: 'failure' });
+        const isAnswerVisible = !answerContainer.classList.contains('hidden');
+
+        if (!isAnswerVisible) {
+            // First click: Reveal answer, hide pass button
+            const currentQuestion = getCurrentQuestion();
+            answerText.textContent = currentQuestion.a;
+            answerContainer.classList.remove('hidden');
+            passQuestionBtn.classList.add('hidden');
+
+            // Store original text for hover/shrink logic
+            questionContainer.dataset.originalText = currentQuestion.q;
+            answerContainer.dataset.originalText = currentQuestion.a;
+
+            // Check for cramped layout and apply shrink if necessary
+            if (isLayoutCramped(failureBoxBtn)) {
+                gameScreen.dataset.isCramped = 'true';
+                applyShrink(questionContainer, questionText);
+                removeShrink(answerContainer, answerText);
+            } else {
+                delete gameScreen.dataset.isCramped;
+                removeShrink(questionContainer, questionText);
+                removeShrink(answerContainer, answerText);
+            }
+            
+            // Update button text to guide user for the next action
+            failureBoxBtn.textContent = 'המשך לתיבה';
+        } else {
+            // Second click: Proceed to the boxes screen
+            showBoxesScreen({ mode: 'failure' });
+        }
     });
 
     passQuestionBtn.addEventListener('click', () => {

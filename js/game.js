@@ -1,4 +1,3 @@
-
 import { showPreQuestionScreen } from './preq.js';
 
 // --- Elements ---
@@ -23,8 +22,35 @@ let activeTeamIndex = 0;
 let currentQuestionNumber = 1;
 let gameName = '';
 let totalQuestions = 0;
+let currentGameOptions = {}; // To store options for saving state
 
 // --- Private Functions ---
+
+/**
+ * Saves the current game state to localStorage.
+ */
+function saveGameState() {
+    // Don't save if the game hasn't started or has no questions
+    if (!loadedQuestions || loadedQuestions.length === 0) return;
+
+    const gameState = {
+        activeTeamIndex,
+        currentQuestionNumber,
+        loadedQuestions,
+        finalQuestionData,
+        gameName,
+        totalQuestions,
+        teams: getTeamsWithScores(), // Captures current scores
+        options: currentGameOptions,
+    };
+
+    try {
+        localStorage.setItem('animalGameState', JSON.stringify(gameState));
+    } catch (error) {
+        console.error("Failed to save game state:", error);
+    }
+}
+
 
 function generateTeams(count) {
     mainTeamsContainer.innerHTML = '';
@@ -72,6 +98,14 @@ function prepareForFinalRound() {
 // --- Public (Exported) Functions ---
 
 /**
+ * Clears any saved game state from localStorage.
+ */
+export function clearGameState() {
+    localStorage.removeItem('animalGameState');
+}
+
+
+/**
  * Gets the current state of the question pass flag.
  * @returns {boolean}
  */
@@ -114,6 +148,7 @@ export function passQuestionToTeam(targetIndex) {
     if (teamCount > 0 && targetIndex >= 0 && targetIndex < teamCount) {
         activeTeamIndex = targetIndex;
         updateActiveTeam();
+        saveGameState(); // Save state after team change
     } else {
         console.error(`Invalid targetIndex ${targetIndex} for passing question.`);
     }
@@ -154,6 +189,7 @@ export function adjustScore(amount) {
         const scoreElement = activeTeam.querySelector('.team-score');
         let currentScore = parseInt(scoreElement.textContent, 10);
         scoreElement.textContent = currentScore + amount;
+        saveGameState(); // Save state after score change
     }
 }
 
@@ -163,6 +199,7 @@ export function adjustScoreForTeam(teamIndex, amount) {
         const scoreElement = team.querySelector('.team-score');
         let currentScore = parseInt(scoreElement.textContent, 10);
         scoreElement.textContent = currentScore + amount;
+        saveGameState(); // Save state after score change
     }
 }
 
@@ -185,6 +222,7 @@ export function switchToNextTeam() {
         activeTeamIndex = (currentQuestionNumber - 1) % teamCount;
 
         updateActiveTeam();
+        saveGameState(); // Save state after advancing turn
         
         const nextQuestion = getCurrentQuestion();
         // Use the timer from the question, with a fallback of 30 seconds.
@@ -200,9 +238,57 @@ export function switchToNextTeam() {
 }
 
 export async function startGame(options) {
+    const continueLastPoint = options.continueLastPoint;
+    const savedStateJSON = localStorage.getItem('animalGameState');
+
+    // --- LOAD SAVED GAME ---
+    if (continueLastPoint && savedStateJSON) {
+        const savedState = JSON.parse(savedStateJSON);
+
+        // Restore state variables
+        activeTeamIndex = savedState.activeTeamIndex;
+        currentQuestionNumber = savedState.currentQuestionNumber;
+        loadedQuestions = savedState.loadedQuestions;
+        finalQuestionData = savedState.finalQuestionData;
+        gameName = savedState.gameName;
+        totalQuestions = savedState.totalQuestions;
+        currentGameOptions = savedState.options;
+        isQuestionPassed = false; // Always reset this flag on load
+
+        // Restore UI
+        generateTeams(savedState.teams.length);
+        savedState.teams.forEach(team => {
+            // Directly set the score text content to avoid re-triggering save
+            const scoreElement = mainTeamsContainer.querySelector(`.team-member[data-index="${team.index}"] .team-score`);
+            if (scoreElement) scoreElement.textContent = team.score;
+        });
+        updateActiveTeam();
+        
+        document.body.classList.add('game-active');
+        mainGameFooter.classList.add('visible');
+        
+        const scoreControls = document.querySelector('.score-controls');
+        if (scoreControls) scoreControls.classList.remove('hidden');
+
+        // Go to pre-question screen for the saved question
+        const currentQuestion = getCurrentQuestion();
+        const questionTime = currentQuestion.timer || 30;
+
+        showPreQuestionScreen({
+            gameName,
+            currentQuestionNumber,
+            totalQuestions,
+            startTime: questionTime,
+        });
+        return; // Exit function after loading
+    }
+    
+    // --- START NEW GAME ---
+    clearGameState(); // Clear any old state if not continuing
     activeTeamIndex = 0;
     currentQuestionNumber = 1;
-    isQuestionPassed = false; // Ensure it's reset at the start of a new game
+    isQuestionPassed = false;
+    currentGameOptions = options; // Store options for the new game
     
     const fileName = options.gameFileName;
     if (!fileName) {
@@ -262,6 +348,8 @@ export async function startGame(options) {
     if (scoreControls) {
         scoreControls.classList.remove('hidden');
     }
+
+    saveGameState(); // Initial save for the new game
 
     const firstQuestion = getCurrentQuestion();
     // Use the timer from the question, with a fallback of 30 seconds.

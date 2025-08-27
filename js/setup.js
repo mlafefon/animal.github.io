@@ -1,4 +1,3 @@
-
 const groupList = document.getElementById('group-list');
 const gameList = document.getElementById('game-list');
 const startButton = document.getElementById('start-btn');
@@ -103,6 +102,77 @@ async function populateGameList() {
  * @param {function} onStart - The callback function to execute when the start button is clicked.
  */
 export function initializeSetupScreen(onStart) {
+    const continueCheckbox = document.getElementById('continue-last-point');
+    const continueLabel = document.querySelector('label[for="continue-last-point"]');
+    let savedState = null; // Store the parsed state to reuse it
+
+    /**
+     * Toggles the enabled/disabled state of the main setup controls.
+     * @param {boolean} disabled - True to disable, false to enable.
+     */
+    function toggleSetupControls(disabled) {
+        groupList.style.pointerEvents = disabled ? 'none' : 'auto';
+        groupList.style.opacity = disabled ? 0.6 : 1;
+        gameList.style.pointerEvents = disabled ? 'none' : 'auto';
+        gameList.style.opacity = disabled ? 0.6 : 1;
+        document.getElementById('shuffle-questions').disabled = disabled;
+    }
+
+    /**
+     * Selects the group and game list items based on the loaded saved game state.
+     */
+    function applySavedStateSelections() {
+        if (!savedState) return;
+
+        // Select Number of Groups
+        const numberOfGroups = savedState.teams.length;
+        [...groupList.children].forEach(li => {
+            li.classList.toggle('selected', parseInt(li.textContent, 10) === numberOfGroups);
+        });
+
+        // Select Game
+        const gameFileName = savedState.options.gameFileName;
+        [...gameList.children].forEach(li => {
+            li.classList.toggle('selected', li.dataset.fileName === gameFileName);
+        });
+        
+        updateQuestionStats();
+    }
+
+
+    // Check for saved state on initialization
+    const savedStateJSON = localStorage.getItem('animalGameState');
+    if (savedStateJSON) {
+        try {
+            savedState = JSON.parse(savedStateJSON);
+            continueCheckbox.disabled = false;
+            continueLabel.textContent = `המשך "${savedState.gameName}"`;
+        } catch (e) {
+            // Handle corrupted saved data
+            continueCheckbox.disabled = true;
+            continueCheckbox.checked = false;
+            continueLabel.textContent = 'המשך מנקודה אחרונה';
+            localStorage.removeItem('animalGameState');
+            savedState = null; // Clear corrupted state
+        }
+    } else {
+        continueCheckbox.disabled = true;
+        continueCheckbox.checked = false;
+        continueLabel.textContent = 'המשך מנקודה אחרונה';
+    }
+    
+    // Set initial state of controls based on checkbox
+    toggleSetupControls(continueCheckbox.checked);
+
+    // Add listener to toggle controls when checkbox changes
+    continueCheckbox.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        toggleSetupControls(isChecked);
+        if (isChecked) {
+            applySavedStateSelections();
+        }
+    });
+
     // Populate the game list and trigger the first stat update
     populateGameList();
 
@@ -125,11 +195,12 @@ export function initializeSetupScreen(onStart) {
         const gameFileName = selectedGame ? selectedGame.dataset.fileName : DATA_FILES[0];
 
         const shuffleQuestions = document.getElementById('shuffle-questions').checked;
+        const continueLastPoint = continueCheckbox.checked;
 
         // Get the calculated number of questions from the UI to pass to the game logic
         const actualQuestionsText = document.getElementById('actual-questions-stat').textContent;
         const actualQuestions = parseInt(actualQuestionsText.split(':')[1].trim(), 10) || 0;
 
-        onStart({ numberOfGroups, gameFileName, shuffleQuestions, actualQuestions });
+        onStart({ numberOfGroups, gameFileName, shuffleQuestions, actualQuestions, continueLastPoint });
     });
 }

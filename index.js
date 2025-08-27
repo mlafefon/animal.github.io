@@ -10,6 +10,52 @@ import { initializeEditGameScreen, showEditScreen } from './js/edit_game.js';
 import { initializeFinalRound, showBettingScreen } from './js/final.js';
 
 
+/**
+ * Initializes controls related to fullscreen mode.
+ */
+function initializeFullscreenControls() {
+    const fullscreenToggleBtn = document.getElementById('fullscreen-toggle-btn');
+    if (!fullscreenToggleBtn) return;
+
+    const enterIcon = document.getElementById('fullscreen-enter-icon');
+    const exitIcon = document.getElementById('fullscreen-exit-icon');
+
+    // --- Toggle Fullscreen ---
+    fullscreenToggleBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) { /* Safari */
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { /* IE11 */
+                elem.msRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) { /* Safari */
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) { /* IE11 */
+                document.msExitFullscreen();
+            }
+        }
+    });
+
+    // --- Listen for Fullscreen Changes to Update Icon ---
+    const updateIcon = () => {
+        const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        enterIcon.classList.toggle('hidden', isFullscreen);
+        exitIcon.classList.toggle('hidden', !isFullscreen);
+    };
+
+    document.addEventListener('fullscreenchange', updateIcon);
+    document.addEventListener('webkitfullscreenchange', updateIcon); // Safari support
+
+    updateIcon(); // Set initial icon state
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     /**
      * Callback function that is passed to the setup module.
@@ -78,4 +124,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeScoreControls();
     initializeEditGameScreen();
     initializeFinalRound();
+    initializeFullscreenControls();
 });

@@ -1,5 +1,4 @@
-
-import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam } from './game.js';
+import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState } from './game.js';
 
 // --- Elements ---
 const bettingScreen = document.getElementById('betting-screen');
@@ -357,5 +356,8 @@ export function initializeFinalRound() {
         finalScoringContainer.classList.add('hidden');
         showFinalAnswerBtn.classList.remove('hidden');
         endGameBtn.classList.add('hidden');
+        
+        // Last action: clear the saved state for the completed game.
+        clearGameState();
     });
 }
