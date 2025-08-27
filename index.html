@@ -1,0 +1,257 @@
+
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>משחק חידות ידע</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div id="start-screen">
+        <button id="settings-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49.42l-.38-2.65c.61-.25 1.17-.59 1.69.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+        </button>
+        <div class="start-content">
+            <h1>משחק החיות</h1>
+            <img id="start-screen-image" alt="חיות משחקות">
+            <button id="go-to-setup-btn" class="btn btn-primary btn-large">התחל</button>
+        </div>
+    </div>
+
+    <div id="setup-screen" class="container hidden">
+        <main class="setup-grid">
+            <div class="setup-box rules-box">
+                <h2>משחק החיות - הנחיות:</h2>
+                <ul>
+                    <li>* כל קבוצה עונה על שאלה בתורה.</li>
+                    <li>* בתשובה נכונה מגרילים ניקוד חיובי</li>
+                    <li>* בתשובה חלקית מגרילים ניקוד שלילי</li>
+                    <li>* במקום הגרלה שלילית ניתן להעביר שאלה</li>
+                    <li>* בסיום תהייה שאלה זהה שוברת שוויון לכולם</li>
+                    <li>* רק ראש הקבוצה רשאי לענות את התשובה בשם קבוצתו</li>
+                </ul>
+                 <div class="stats">
+                    <p id="question-bank-stat">בנק שאלות: 15</p>
+                    <p id="actual-questions-stat">שאלות בפועל: 15</p>
+                </div>
+            </div>
+
+            <div class="setup-box">
+                <h2>בחר מספר קבוצות</h2>
+                <ul id="group-list" class="selection-list">
+                    <li>2</li>
+                    <li>3</li>
+                    <li class="selected">4</li>
+                    <li>5</li>
+                </ul>
+            </div>
+
+            <div class="setup-box">
+                <h2>בחר משחק</h2>
+                <ul id="game-list" class="selection-list">
+                    <!-- Games will be loaded here dynamically -->
+                </ul>
+            </div>
+        </main>
+
+        <footer class="options-container">
+            <div class="checkbox-group">
+                <input type="checkbox" id="shuffle-questions" checked>
+                <label for="shuffle-questions">ערבוב שאלות</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="continue-last-point">
+                <label for="continue-last-point">המשך מנקודה אחרונה</label>
+            </div>
+        </footer>
+        
+        <button id="start-btn" class="btn btn-primary">התחל</button>
+    </div>
+
+    <div id="pre-question-screen" class="hidden">
+        <div class="pre-question-content">
+            <h1 id="pre-question-game-title">משחק: הגנת סייבר</h1>
+            <h2 id="pre-question-number">שאלה 1 מתוך 8</h2>
+            <p id="pre-question-time">מספר שניות למתן תשובה: 30</p>
+            <div class="pre-question-buttons">
+                <button id="bet-question-btn" class="btn btn-secondary">שאלת ההימור</button>
+                <button id="next-question-btn" class="btn btn-primary">השאלה הבאה</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="game-screen" class="hidden">
+        <div class="game-header">
+            <div id="timer-container">
+                <svg class="timer-svg" viewBox="0 0 100 100">
+                    <!-- Background track -->
+                    <circle class="timer-bg-track" cx="50" cy="50" r="42" />
+                    <!-- Progress ring -->
+                    <circle id="timer-progress-ring" cx="50" cy="50" r="42" />
+                </svg>
+                <span id="timer-value">30</span>
+            </div>
+            <div id="q-a-wrapper">
+                <div id="question-container">
+                    <p id="question-text">מהי מתקפת פישינג?</p>
+                </div>
+                <div id="answer-container" class="hidden">
+                    <p id="answer-text"></p>
+                </div>
+            </div>
+        </div>
+
+        <div id="game-controls">
+            <button id="stop-game-btn" class="btn btn-secondary btn-medium">עצור</button>
+            <div id="answer-controls" class="hidden">
+                <button id="correct-answer-btn" class="answer-btn"></button>
+                <button id="incorrect-answer-btn" class="answer-btn"></button>
+            </div>
+            <div id="failure-controls" class="hidden">
+                <button id="failure-box-btn" class="btn btn-danger btn-medium">תיבת כישלון</button>
+                <button id="pass-question-btn" class="btn btn-secondary btn-medium">העבר שאלה</button>
+            </div>
+            <button id="victory-box-btn" class="btn btn-primary btn-medium hidden">תיבת נצחון</button>
+        </div>
+        
+        <button id="undo-answer-choice-btn" class="hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"></path></svg>
+        </button>
+    </div>
+
+    <div id="boxes-screen" class="hidden">
+        <div class="boxes-content">
+            <h1 id="boxes-title">תיבת ניצחון (10-50)</h1>
+            <div id="chests-container">
+                <div class="treasure-chest" data-chest="1">
+                    <img src="" alt="Treasure Chest 1">
+                    <span>1</span>
+                </div>
+                <div class="treasure-chest" data-chest="2">
+                    <img src="" alt="Treasure Chest 2">
+                    <span>2</span>
+                </div>
+                <div class="treasure-chest" data-chest="3">
+                    <img src="" alt="Treasure Chest 3">
+                    <span>3</span>
+                </div>
+            </div>
+            <button id="return-from-boxes-btn" class="btn btn-primary">חזרה</button>
+            <p id="boxes-message">יש לבחור תיבה</p>
+        </div>
+    </div>
+
+    <div id="betting-screen" class="container hidden">
+        <div class="betting-content">
+            <h1>שאלת ההימור הסופית</h1>
+            <p>כל קבוצה מהמרת על הנקודות שצברה. במענה נכון, סכום ההימור יתווסף לניקוד. בטעות, הסכום יופחת.</p>
+            <div id="betting-teams-container">
+                <!-- Betting team cards will be injected here by JS -->
+            </div>
+            <button id="show-final-question-btn" class="btn btn-primary btn-large hidden">שאלת הסיכום</button>
+        </div>
+    </div>
+
+    <div id="final-question-screen" class="container hidden">
+        <div class="final-question-content">
+            <h1>שאלת הסיכום</h1>
+            <div id="final-q-a-wrapper">
+                <div id="final-question-container">
+                    <p id="final-question-text"></p>
+                </div>
+                <div id="final-answer-container" class="hidden">
+                    <p id="final-answer-text"></p>
+                </div>
+            </div>
+            <button id="show-final-answer-btn" class="btn btn-secondary">הצג תשובה</button>
+            <div id="final-scoring-container" class="hidden">
+                <h2>מי ענה נכון?</h2>
+                <div id="final-scoring-teams">
+                    <!-- Final scoring controls for each team will be injected here -->
+                </div>
+            </div>
+             <button id="end-game-btn" class="btn btn-primary btn-large hidden">סיים משחק וחזור למסך הראשי</button>
+        </div>
+    </div>
+
+
+    <div id="edit-game-screen" class="container hidden">
+        <div class="edit-header">
+            <h1>עריכת משחקים</h1>
+            <button id="return-to-start-btn" class="btn btn-secondary">חזור</button>
+        </div>
+
+        <div class="edit-controls">
+            <div class="form-group">
+                <label for="game-editor-select">בחר משחק לעריכה:</label>
+                <select id="game-editor-select">
+                    <option value="">-- בחר משחק --</option>
+                </select>
+            </div>
+            <button id="create-new-game-btn" class="btn btn-primary">צור משחק חדש</button>
+        </div>
+
+        <form id="game-editor-form" class="hidden">
+            <div class="form-group">
+                <label for="game-name-input">שם המשחק:</label>
+                <input type="text" id="game-name-input" placeholder="הכנס שם למשחק">
+            </div>
+
+            <h2>שאלות</h2>
+            <div id="questions-editor-container">
+                <!-- Questions will be dynamically inserted here -->
+            </div>
+
+            <div class="form-actions">
+                <button type="button" id="add-question-btn" class="btn btn-secondary btn-medium">הוסף שאלה</button>
+                <button type="button" id="save-game-btn" class="btn btn-primary btn-medium">שמור שינויים</button>
+            </div>
+        </form>
+
+        <div id="new-game-modal-overlay" class="hidden">
+            <div id="new-game-modal">
+                <h2>יצירת משחק חדש</h2>
+                <div class="form-group">
+                    <label for="new-game-name">שם המשחק:</label>
+                    <input type="text" id="new-game-name" placeholder="לדוגמה: הכל על חלל">
+                </div>
+                <div class="form-group">
+                    <label for="new-game-filename">שם הקובץ:</label>
+                    <input type="text" id="new-game-filename" placeholder="לדוגמה: space_game.json">
+                </div>
+                <div class="modal-actions">
+                    <button id="confirm-new-game-btn" class="btn btn-primary btn-small">צור</button>
+                    <button id="cancel-new-game-btn" class="btn btn-secondary btn-small">בטל</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pass Question Modal -->
+    <div id="pass-question-modal-overlay" class="hidden">
+        <div id="pass-question-modal">
+            <h2>בחר קבוצה להעביר אליה את השאלה</h2>
+            <div id="pass-question-teams-container">
+                <!-- Team icons will be injected here by JS -->
+            </div>
+            <button id="cancel-pass-question-btn" class="btn btn-secondary btn-small">בטל</button>
+        </div>
+    </div>
+
+    <!-- Persistent Game Footer -->
+    <div id="main-game-footer" class="game-footer">
+        <div class="score-controls">
+            <button class="score-btn add-point-btn">+</button>
+            <button class="score-btn subtract-point-btn">-</button>
+        </div>
+        <div id="main-teams-container" class="teams-container">
+            <!-- Teams will be generated here by JS -->
+        </div>
+    </div>
+
+
+    <script src="index.js" type="module"></script>
+</body>
+</html>
