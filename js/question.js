@@ -1,4 +1,5 @@
 
+
 import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTeam } from './game.js';
 import { showBoxesScreen } from './boxes.js';
 
@@ -11,6 +12,7 @@ const stopGameBtn = document.getElementById('stop-game-btn');
 const answerControls = document.getElementById('answer-controls');
 const correctAnswerBtn = document.getElementById('correct-answer-btn');
 const incorrectAnswerBtn = document.getElementById('incorrect-answer-btn');
+const questionContainer = document.getElementById('question-container');
 const questionText = document.getElementById('question-text');
 const answerContainer = document.getElementById('answer-container');
 const answerText = document.getElementById('answer-text');
@@ -22,6 +24,7 @@ const passQuestionModalOverlay = document.getElementById('pass-question-modal-ov
 const passQuestionTeamsContainer = document.getElementById('pass-question-teams-container');
 const cancelPassQuestionBtn = document.getElementById('cancel-pass-question-btn');
 const undoAnswerChoiceBtn = document.getElementById('undo-answer-choice-btn');
+const mainGameFooter = document.getElementById('main-game-footer');
 
 
 // --- State ---
@@ -29,6 +32,67 @@ let timerInterval = null;
 let onQuestionCompleteCallback = null;
 
 // --- Private Functions ---
+
+/**
+ * Truncates text to a specific word limit, adding an ellipsis if needed.
+ * @param {string} text - The text to truncate.
+ * @param {number} [limit=5] - The word limit.
+ * @returns {string} The truncated text.
+ */
+function truncateText(text, limit = 5) {
+    if (!text) return '';
+    const words = text.split(' ');
+    if (words.length > limit) {
+        return words.slice(0, limit).join(' ') + '...';
+    }
+    return text;
+}
+
+/**
+ * Applies the "shrunk" state to a container (question or answer).
+ * @param {HTMLElement} container - The container element.
+ * @param {HTMLElement} textElement - The text element inside the container.
+ */
+function applyShrink(container, textElement) {
+    const originalText = container.dataset.originalText;
+    if (originalText) {
+        textElement.textContent = truncateText(originalText);
+        container.classList.add('shrunk');
+    }
+}
+
+/**
+ * Removes the "shrunk" state from a container, restoring its full text.
+ * @param {HTMLElement} container - The container element.
+ * @param {HTMLElement} textElement - The text element inside the container.
+ */
+function removeShrink(container, textElement) {
+    const originalText = container.dataset.originalText;
+    if (originalText) {
+        textElement.textContent = originalText;
+        container.classList.remove('shrunk');
+    }
+}
+
+/**
+ * Checks if the layout is cramped, meaning the victory button is overlapping with the footer.
+ * @returns {boolean} True if the layout is cramped, false otherwise.
+ */
+function isLayoutCramped() {
+    // Ensure both elements are visible for an accurate measurement
+    if (victoryBoxBtn.classList.contains('hidden') || !mainGameFooter.classList.contains('visible')) {
+        return false;
+    }
+
+    const buttonRect = victoryBoxBtn.getBoundingClientRect();
+    const footerRect = mainGameFooter.getBoundingClientRect();
+
+    // If the bottom of the button is below the top of the footer, it's cramped.
+    // Add a small buffer (e.g., 10px) for better UX.
+    return buttonRect.bottom > footerRect.top - 10;
+}
+
+
 function stopTimer() {
     clearInterval(timerInterval);
     timerInterval = null;
@@ -54,6 +118,17 @@ function handleTurnEnd() {
 export function showQuestionScreen(startTime = 30) {
     const currentQuestion = getCurrentQuestion();
     questionText.textContent = currentQuestion.q;
+
+    // Reset shrunk state and data for a new question
+    questionContainer.classList.remove('shrunk');
+    answerContainer.classList.remove('shrunk');
+    delete gameScreen.dataset.isCramped; // Reset cramped state flag
+    if (questionContainer.dataset.originalText) {
+        delete questionContainer.dataset.originalText;
+    }
+     if (answerContainer.dataset.originalText) {
+        delete answerContainer.dataset.originalText;
+    }
 
     gameScreen.classList.remove('hidden');
     stopGameBtn.classList.remove('hidden');
@@ -122,6 +197,23 @@ export function initializeQuestionScreen(onComplete) {
         answerControls.classList.add('hidden');
         victoryBoxBtn.classList.remove('hidden');
         undoAnswerChoiceBtn.classList.remove('hidden');
+
+        // Store original text for hover logic
+        questionContainer.dataset.originalText = currentQuestion.q;
+        answerContainer.dataset.originalText = currentQuestion.a;
+
+        // Check layout and apply shrink only if needed
+        if (isLayoutCramped()) {
+            gameScreen.dataset.isCramped = 'true';
+            // Initial state for small screens: question is shrunk, answer is not.
+            applyShrink(questionContainer, questionText);
+            removeShrink(answerContainer, answerText); // Ensures it's expanded
+        } else {
+            delete gameScreen.dataset.isCramped;
+            // On larger screens, keep both expanded
+            removeShrink(questionContainer, questionText);
+            removeShrink(answerContainer, answerText);
+        }
     });
 
     incorrectAnswerBtn.addEventListener('click', () => {
@@ -142,11 +234,53 @@ export function initializeQuestionScreen(onComplete) {
         victoryBoxBtn.classList.add('hidden');
         failureControls.classList.add('hidden');
         undoAnswerChoiceBtn.classList.add('hidden');
-        answerContainer.classList.add('hidden'); // Also hide the answer if it was shown
+        answerContainer.classList.add('hidden');
+
+        // Clear the cramped state flag
+        delete gameScreen.dataset.isCramped;
+
+        // Restore containers and clear data
+        if (questionContainer.dataset.originalText) {
+            questionText.textContent = questionContainer.dataset.originalText;
+            questionContainer.classList.remove('shrunk');
+            delete questionContainer.dataset.originalText;
+        }
+        if (answerContainer.dataset.originalText) {
+            answerContainer.classList.remove('shrunk');
+            delete answerContainer.dataset.originalText;
+        }
 
         // Re-show the decision controls
         answerControls.classList.remove('hidden');
     });
+
+    // --- Symmetrical Hover Logic (Conditional) ---
+    const inAnswerState = () => !victoryBoxBtn.classList.contains('hidden');
+    const isShrinkActive = () => inAnswerState() && gameScreen.dataset.isCramped === 'true';
+
+    const setDefaultState = () => {
+        if (isShrinkActive()) {
+            applyShrink(questionContainer, questionText);
+            removeShrink(answerContainer, answerText);
+        }
+    };
+
+    questionContainer.addEventListener('mouseenter', () => {
+        if (isShrinkActive()) {
+            removeShrink(questionContainer, questionText);
+            applyShrink(answerContainer, answerText);
+        }
+    });
+    questionContainer.addEventListener('mouseleave', setDefaultState);
+    
+    answerContainer.addEventListener('mouseenter', () => {
+        if (isShrinkActive()) {
+            removeShrink(answerContainer, answerText);
+            applyShrink(questionContainer, questionText);
+        }
+    });
+    answerContainer.addEventListener('mouseleave', setDefaultState);
+
 
     failureBoxBtn.addEventListener('click', () => {
         showBoxesScreen({ mode: 'failure' });

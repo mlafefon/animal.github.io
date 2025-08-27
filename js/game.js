@@ -284,9 +284,9 @@ export function initializeScoreControls() {
         if (!button) return;
 
         if (button.classList.contains('add-point-btn')) {
-            adjustScore(1);
+            adjustScore(5);
         } else if (button.classList.contains('subtract-point-btn')) {
-            adjustScore(-1);
+            adjustScore(-5);
         }
     });
 }
