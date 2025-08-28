@@ -20,6 +20,8 @@ const gameNameInput = document.getElementById('game-name-input');
 const questionsEditorContainer = document.getElementById('questions-editor-container');
 const addQuestionBtn = document.getElementById('add-question-btn');
 const saveGameBtn = document.getElementById('save-game-btn');
+const finalQuestionQInput = document.getElementById('final-question-q-input');
+const finalQuestionAInput = document.getElementById('final-question-a-input');
 
 // Modal Elements
 const newGameModalOverlay = document.getElementById('new-game-modal-overlay');
@@ -27,6 +29,42 @@ const newGameNameInput = document.getElementById('new-game-name');
 const newGameFilenameInput = document.getElementById('new-game-filename');
 const confirmNewGameBtn = document.getElementById('confirm-new-game-btn');
 const cancelNewGameBtn = document.getElementById('cancel-new-game-btn');
+
+
+/**
+ * Automatically adjusts the height of a textarea to fit its content.
+ * @param {HTMLTextAreaElement} textarea - The textarea element to resize.
+ */
+function autoResizeTextarea(textarea) {
+    if (!textarea) return;
+    textarea.style.height = 'auto'; // Reset height to recalculate
+    textarea.style.height = `${textarea.scrollHeight}px`;
+}
+
+/**
+ * Re-calculates and updates the displayed question number for all cards.
+ */
+function renumberQuestionCards() {
+    const cards = questionsEditorContainer.querySelectorAll('.question-card');
+    cards.forEach((card, i) => {
+        card.dataset.index = i;
+        card.querySelector('h3').textContent = `שאלה ${i + 1}`;
+    });
+}
+
+/**
+ * Updates the state (enabled/disabled) of all reorder buttons.
+ */
+function updateReorderButtons() {
+    const cards = questionsEditorContainer.querySelectorAll('.question-card');
+    cards.forEach((card, index) => {
+        const upBtn = card.querySelector('.reorder-up-btn');
+        const downBtn = card.querySelector('.reorder-down-btn');
+        
+        if (upBtn) upBtn.disabled = (index === 0);
+        if (downBtn) downBtn.disabled = (index === cards.length - 1);
+    });
+}
 
 /**
  * Renders a single question card in the editor.
@@ -40,31 +78,97 @@ function renderQuestionCard(question, index) {
 
     card.innerHTML = `
         <div class="question-card-header">
-            <h3>שאלה ${index + 1}</h3>
-            <button type="button" class="delete-question-btn">מחק</button>
+            <div class="header-left">
+                <div class="reorder-controls">
+                    <button type="button" class="reorder-btn reorder-up-btn" title="העבר למעלה">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/></svg>
+                    </button>
+                    <button type="button" class="reorder-btn reorder-down-btn" title="העבר למטה">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                    </button>
+                </div>
+                <h3>שאלה ${index + 1}</h3>
+            </div>
+            <div class="header-right">
+                <button type="button" class="delete-question-btn">מחק</button>
+                <svg class="collapse-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+            </div>
         </div>
-        <div class="form-group">
-            <label>שאלה:</label>
-            <textarea class="question-input" rows="3">${question.q}</textarea>
-        </div>
-        <div class="form-group">
-            <label>תשובה:</label>
-            <textarea class="answer-input" rows="3">${question.a}</textarea>
-        </div>
-        <div class="form-group">
-            <label>טיימר (שניות):</label>
-            <input type="number" class="timer-input" value="${question.timer}" min="5">
+        <div class="question-card-body">
+            <div class="form-group">
+                <label>שאלה:</label>
+                <textarea class="question-input" rows="1">${question.q}</textarea>
+            </div>
+            <div class="form-group">
+                <label>תשובה:</label>
+                <textarea class="answer-input" rows="1">${question.a}</textarea>
+            </div>
+            <div class="form-group">
+                <label>טיימר (שניות):</label>
+                <input type="number" class="timer-input" value="${question.timer}" min="5">
+            </div>
         </div>
     `;
 
+    const questionInput = card.querySelector('.question-input');
+    const answerInput = card.querySelector('.answer-input');
+
+    [questionInput, answerInput].forEach(textarea => {
+        textarea.addEventListener('input', () => autoResizeTextarea(textarea));
+        // Set initial size after a tiny delay to ensure rendering is complete
+        setTimeout(() => autoResizeTextarea(textarea), 0);
+    });
+
+    const header = card.querySelector('.question-card-header');
+    header.addEventListener('click', (e) => {
+        // Don't toggle if clicking a button
+        if (!e.target.closest('button')) {
+            card.classList.toggle('collapsed');
+        }
+    });
+
     card.querySelector('.delete-question-btn').addEventListener('click', (e) => {
         e.currentTarget.closest('.question-card').remove();
-        // Re-number the remaining questions
-        const cards = questionsEditorContainer.querySelectorAll('.question-card');
-        cards.forEach((c, i) => {
-            c.dataset.index = i;
-            c.querySelector('h3').textContent = `שאלה ${i + 1}`;
-        });
+        renumberQuestionCards();
+        updateReorderButtons();
+    });
+    
+    // Add listeners for reorder buttons
+    const moveUpBtn = card.querySelector('.reorder-up-btn');
+    const moveDownBtn = card.querySelector('.reorder-down-btn');
+
+    moveUpBtn.addEventListener('click', (e) => {
+        const previousCard = card.previousElementSibling;
+        if (previousCard) {
+            // Move the element
+            questionsEditorContainer.insertBefore(card, previousCard);
+
+            // Adjust scroll so the button stays under the cursor
+            const buttonRect = moveUpBtn.getBoundingClientRect();
+            const scrollOffset = buttonRect.top - e.clientY;
+            editGameScreen.scrollTop += scrollOffset;
+            
+            // Update UI
+            renumberQuestionCards();
+            updateReorderButtons();
+        }
+    });
+
+    moveDownBtn.addEventListener('click', (e) => {
+        const nextCard = card.nextElementSibling;
+        if (nextCard) {
+            // Move the element
+            questionsEditorContainer.insertBefore(nextCard, card);
+            
+            // Adjust scroll so the button stays under the cursor
+            const buttonRect = moveDownBtn.getBoundingClientRect();
+            const scrollOffset = buttonRect.top - e.clientY;
+            editGameScreen.scrollTop += scrollOffset;
+
+            // Update UI
+            renumberQuestionCards();
+            updateReorderButtons();
+        }
     });
 
     questionsEditorContainer.appendChild(card);
@@ -77,6 +181,7 @@ function renderQuestionCard(question, index) {
 function renderAllQuestions(questions) {
     questionsEditorContainer.innerHTML = '';
     questions.forEach(renderQuestionCard);
+    updateReorderButtons();
 }
 
 /**
@@ -96,6 +201,22 @@ async function loadGameForEditing(fileName) {
         gameNameInput.value = gameData.game_name;
         renderAllQuestions(gameData.questions);
         
+        // Load the final question
+        if (gameData.final_question) {
+            finalQuestionQInput.value = gameData.final_question.q || '';
+            finalQuestionAInput.value = gameData.final_question.a || '';
+        } else {
+            finalQuestionQInput.value = '';
+            finalQuestionAInput.value = '';
+        }
+
+        // Auto-resize final question textareas after loading content
+        setTimeout(() => {
+            autoResizeTextarea(finalQuestionQInput);
+            autoResizeTextarea(finalQuestionAInput);
+        }, 0);
+
+
         // Store the filename on the form for saving later
         gameEditorForm.dataset.currentFile = fileName;
         gameEditorForm.classList.remove('hidden');
@@ -159,10 +280,18 @@ function compileGameData() {
             questions.push({ q, a, timer });
         }
     });
+    
+    const finalQuestionQ = finalQuestionQInput.value.trim();
+    const finalQuestionA = finalQuestionAInput.value.trim();
+    const final_question = (finalQuestionQ && finalQuestionA)
+        ? { q: finalQuestionQ, a: finalQuestionA }
+        : null;
+
 
     return {
         game_name: gameName,
-        questions: questions
+        questions: questions,
+        final_question: final_question
     };
 }
 
@@ -215,6 +344,7 @@ export function initializeEditGameScreen() {
     addQuestionBtn.addEventListener('click', () => {
         const questionCount = questionsEditorContainer.children.length;
         renderQuestionCard({ q: '', a: '', timer: 30 }, questionCount);
+        updateReorderButtons();
     });
 
     saveGameBtn.addEventListener('click', () => {
@@ -259,6 +389,8 @@ export function initializeEditGameScreen() {
         gameEditorSelect.value = ''; // Deselect any chosen game
         gameNameInput.value = newName;
         renderAllQuestions([]); // Start with no questions
+        finalQuestionQInput.value = ''; // Clear final question fields
+        finalQuestionAInput.value = '';
         gameEditorForm.dataset.currentFile = newFilename; // Set the filename for saving
         gameEditorForm.classList.remove('hidden');
 
@@ -269,4 +401,8 @@ export function initializeEditGameScreen() {
 
         alert(`משחק חדש "${newName}" נוצר. הוסיפו שאלות ולחצו על "שמור שינויים" בסיום.`);
     });
+    
+    // Add auto-resize listeners for final question textareas
+    finalQuestionQInput.addEventListener('input', () => autoResizeTextarea(finalQuestionQInput));
+    finalQuestionAInput.addEventListener('input', () => autoResizeTextarea(finalQuestionAInput));
 }

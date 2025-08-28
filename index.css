@@ -1,5 +1,3 @@
-
-
 * {
     box-sizing: border-box;
     margin: 0;
@@ -440,6 +438,7 @@ h1, h2, h3, h4, h5, h6 {
     color: #f0f8ff;
     margin-bottom: 0;
     text-align: center;
+    white-space: pre-wrap; /* Render newlines */
 }
 
 #answer-container {
@@ -451,6 +450,7 @@ h1, h2, h3, h4, h5, h6 {
     color: #ffeb3b;
     text-align: center;
     font-weight: bold;
+    white-space: pre-wrap; /* Render newlines */
 }
 
 #game-controls {
@@ -938,6 +938,7 @@ h1, h2, h3, h4, h5, h6 {
 #final-question-text, #final-answer-text {
     font-size: 2rem;
     color: #f0f8ff;
+    white-space: pre-wrap; /* Render newlines */
 }
 #final-answer-container {
     border-color: #ffeb3b;
@@ -1127,8 +1128,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 #game-editor-form textarea {
-    resize: vertical;
-    min-height: 80px;
+    resize: none;
+    overflow-y: hidden;
 }
 
 #game-editor-select {
@@ -1154,23 +1155,105 @@ h1, h2, h3, h4, h5, h6 {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 10px;
-    padding: 20px;
+    padding: 0; /* Remove padding from card, add to header/body */
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 0;
+    overflow: hidden; /* Important for collapse animation */
+    transition: box-shadow 0.2s;
+}
+
+.question-card:hover {
+    box-shadow: 0 0 8px rgba(255, 235, 59, 0.3);
 }
 
 .question-card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 10px;
+    padding: 15px 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.question-card.collapsed .question-card-header {
+    border-bottom-color: transparent; /* Hide border when collapsed */
+}
+
+.header-left, .header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.reorder-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.reorder-btn {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.reorder-btn:hover:not(:disabled) {
+    background-color: rgba(255, 235, 59, 0.2);
+    border-color: #ffeb3b;
+}
+
+.reorder-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: #f0f8ff;
+}
+
+.reorder-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
 }
 
 .question-card-header h3 {
     font-size: 1.2rem;
     color: #ffeb3b;
+    margin: 0;
+}
+
+.collapse-icon {
+    transition: transform 0.3s ease-in-out;
+}
+
+.question-card.collapsed .collapse-icon {
+    transform: rotate(-90deg);
+}
+
+.question-card-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-height: 500px; /* arbitrary large value */
+    transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out, opacity 0.3s ease-in-out;
+    opacity: 1;
+}
+
+.question-card.collapsed .question-card-body {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .delete-question-btn {

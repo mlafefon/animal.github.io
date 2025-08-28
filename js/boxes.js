@@ -13,6 +13,7 @@ let chestSelected = false;
 
 const OPEN_CHEST_SRC = 'https://www.pngmart.com/files/7/Treasure-Chest-PNG-Transparent.png';
 const CLOSED_CHEST_SRC = 'https://www.pngmart.com/files/7/Treasure-Chest-PNG-Transparent-Picture.png';
+import { playSound } from './audio.js';
 
 
 /**
@@ -55,6 +56,7 @@ function resetBoxesScreen() {
 function handleChestClick(event) {
     if (chestSelected) return;
     chestSelected = true;
+    playSound('chestOpen');
 
     const selectedChest = event.currentTarget;
     const score = parseInt(selectedChest.dataset.score, 10);

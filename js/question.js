@@ -1,7 +1,9 @@
 
 
+
 import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTeam } from './game.js';
 import { showBoxesScreen } from './boxes.js';
+import { playSound } from './audio.js';
 
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
@@ -163,12 +165,18 @@ export function showQuestionScreen(startTime = 30) {
         timerValue.textContent = timeLeft;
         updateRing(timeLeft, startTime); // Update animation every second
 
-        // Add low-time warning visual cue
-        if (timeLeft <= 5 && !timerContainer.classList.contains('low-time')) {
-            timerContainer.classList.add('low-time');
+        // Add low-time warning visual cue and sound
+        if (timeLeft <= 5) {
+            if (!timerContainer.classList.contains('low-time')) {
+                timerContainer.classList.add('low-time');
+            }
+            if (timeLeft > 0) { // Don't play sound on 0
+                 playSound('timerTick');
+            }
         }
 
         if (timeLeft <= 0) {
+            playSound('incorrect');
             handleTurnEnd(); // Time's up, ends the turn directly.
         }
     }, 1000);
@@ -189,6 +197,7 @@ export function initializeQuestionScreen(onComplete) {
     });
 
     correctAnswerBtn.addEventListener('click', () => {
+        playSound('correct');
         const currentQuestion = getCurrentQuestion();
         answerText.textContent = currentQuestion.a;
         answerContainer.classList.remove('hidden');
@@ -216,6 +225,7 @@ export function initializeQuestionScreen(onComplete) {
     });
 
     incorrectAnswerBtn.addEventListener('click', () => {
+        playSound('incorrect');
         answerControls.classList.add('hidden');
         failureControls.classList.remove('hidden');
         undoAnswerChoiceBtn.classList.remove('hidden');
