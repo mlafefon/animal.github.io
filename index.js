@@ -8,6 +8,7 @@ import { initializeQuestionScreen, showQuestionScreen } from './js/question.js';
 import { initializeBoxesScreen } from './js/boxes.js';
 import { initializeEditGameScreen, showEditScreen } from './js/edit_game.js';
 import { initializeFinalRound, showBettingScreen } from './js/final.js';
+import { initKeyboardNav } from './js/keyboardNav.js';
 
 
 /**
@@ -75,10 +76,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /**
-     * Callback for when a question is answered incorrectly or the timer runs out.
+     * Callback for when a question is answered and a box is chosen.
+     * This signals that the active team's turn is over.
      */
     const onQuestionComplete = () => {
-        switchToNextTeam();
+        // This function is now called *before* showing the boxes screen.
+        // It signals that the current team has finished their answer attempt.
+        // The actual switch to the next team will happen after the box is selected.
     };
 
     /**
@@ -95,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * Callback for when the user clicks "Return" on the boxes screen to continue.
      */
     const onBoxesContinue = () => {
-        // Whether they got points or not, switch to the next team.
+        // This is now the single point where we advance to the next team's turn.
         document.getElementById('boxes-screen').classList.add('hidden');
         switchToNextTeam();
     };
@@ -125,4 +129,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeEditGameScreen();
     initializeFinalRound();
     initializeFullscreenControls();
+    initKeyboardNav(document.body); // Initialize keyboard navigation for the whole app
 });

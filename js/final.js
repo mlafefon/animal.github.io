@@ -1,4 +1,5 @@
 import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState } from './game.js';
+import { playSound } from './audio.js';
 
 // --- Elements ---
 const bettingScreen = document.getElementById('betting-screen');
@@ -95,6 +96,8 @@ function renderFinalScoringControls() {
 function findAndDisplayWinner() {
     const finalScores = getTeamsWithScores();
     if (finalScores.length === 0) return;
+
+    playSound('winner');
 
     const maxScore = Math.max(...finalScores.map(t => t.score));
     const winners = finalScores.filter(t => t.score === maxScore);

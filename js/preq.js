@@ -25,6 +25,8 @@ export function showPreQuestionScreen(options) {
         
         nextQuestionBtn.classList.add('hidden');
         betQuestionBtn.classList.remove('hidden');
+        // Use setTimeout to ensure focus is set after the element is fully visible
+        setTimeout(() => betQuestionBtn.focus(), 0);
     } else {
         const { gameName, currentQuestionNumber, totalQuestions, startTime } = options;
         preQuestionGameTitle.textContent = `משחק: ${gameName}`;
@@ -34,6 +36,8 @@ export function showPreQuestionScreen(options) {
 
         nextQuestionBtn.classList.remove('hidden');
         betQuestionBtn.classList.add('hidden');
+        // Use setTimeout to ensure focus is set after the element is fully visible
+        setTimeout(() => nextQuestionBtn.focus(), 0);
     }
     
     // Ensure only the pre-question screen is visible

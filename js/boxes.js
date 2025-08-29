@@ -11,8 +11,8 @@ let onBoxesCompleteCallback = null;
 let onBoxesContinueCallback = null;
 let chestSelected = false;
 
-const OPEN_CHEST_SRC = 'https://www.pngmart.com/files/7/Treasure-Chest-PNG-Transparent.png';
-const CLOSED_CHEST_SRC = 'https://www.pngmart.com/files/7/Treasure-Chest-PNG-Transparent-Picture.png';
+const OPEN_CHEST_SRC = 'https://drive.google.com/thumbnail?id=1tHAZ7bNSJv6GNi1lFXEcY6HrIU7fQRZa';
+const CLOSED_CHEST_SRC = 'https://drive.google.com/thumbnail?id=1rSOXo048hHdRLX4MWypmdsUWDQkyKipL';
 import { playSound } from './audio.js';
 
 
@@ -56,11 +56,17 @@ function resetBoxesScreen() {
 function handleChestClick(event) {
     if (chestSelected) return;
     chestSelected = true;
-    playSound('chestOpen');
 
     const selectedChest = event.currentTarget;
     const score = parseInt(selectedChest.dataset.score, 10);
     
+    // Play sound based on score
+    if (score < 0) {
+        playSound('failure');
+    } else {
+        playSound('chestOpen');
+    }
+
     // Change image to open chest
     const selectedImg = selectedChest.querySelector('img');
     selectedImg.src = OPEN_CHEST_SRC;
@@ -94,30 +100,44 @@ function handleChestClick(event) {
         onBoxesCompleteCallback(score);
     }
 
-    // Show the return button after a short delay for better visual flow
+    // Show the return button after a short delay for better visual flow.
+    // Focusing an element that just became visible can be tricky due to browser rendering cycles.
     setTimeout(() => {
         returnBtn.classList.add('visible');
+        // We use a nested setTimeout with a 0ms delay. This pushes the focus() call
+        // to the end of the browser's event queue, ensuring it runs *after* the
+        // browser has processed the style changes from adding the '.visible' class.
+        // This makes the element focusable just before we try to focus it.
+        setTimeout(() => {
+            returnBtn.focus();
+        }, 0);
     }, 500);
 }
 
 /**
  * Shows the boxes screen, assigns pre-determined random scores, and hides the game screen.
  * @param {object} options - Configuration for the boxes screen.
- * @param {string} [options.mode='victory'] - The mode, either 'victory' or 'failure'.
+ * @param {string} [options.mode='victory'] - The mode, can be 'victory', 'failure', or 'half-victory'.
  */
 export function showBoxesScreen(options = {}) {
     const { mode = 'victory' } = options;
     resetBoxesScreen();
     
     let scores;
+    let title;
 
     if (mode === 'failure') {
-        boxesTitle.textContent = 'תיבת כישלון (0 עד 25-)';
+        title = 'תיבת כישלון (0 עד 25-)';
         scores = [0, -5, -10, -15, -20, -25];
-    } else { // Default to victory
-        boxesTitle.textContent = 'תיבת נצחון (10-50)';
+    } else if (mode === 'half-victory') {
+        title = 'חצי תיבת נצחון (5-25)';
+        scores = [5, 10, 15, 20, 25];
+    } else { // Default to 'victory'
+        title = 'תיבת נצחון (10-50)';
         scores = [10, 20, 30, 40, 50];
     }
+    
+    boxesTitle.textContent = title;
     
     shuffleArray(scores);
     treasureChests.forEach((chest, index) => {
@@ -139,6 +159,8 @@ export function initializeBoxesScreen(onComplete, onContinue) {
     onBoxesContinueCallback = onContinue;
 
     treasureChests.forEach(chest => {
+        chest.setAttribute('role', 'button');
+        chest.setAttribute('tabindex', '0');
         chest.addEventListener('click', handleChestClick);
     });
 

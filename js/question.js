@@ -1,9 +1,8 @@
 
 
-
 import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTeam } from './game.js';
 import { showBoxesScreen } from './boxes.js';
-import { playSound } from './audio.js';
+import { playSound, stopSound } from './audio.js';
 
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
@@ -94,18 +93,20 @@ function isLayoutCramped(buttonElement) {
 function stopTimer() {
     clearInterval(timerInterval);
     timerInterval = null;
+    stopSound('timerTick');
 }
 
 /**
- * Handles an incorrect answer or timeout by ending the current team's turn.
+ * Stops the timer and shows the manual grading buttons (Correct/Incorrect).
+ * This is used when the 'Stop' button is clicked or when the timer runs out.
  */
-function handleTurnEnd() {
+function triggerManualGrading() {
     stopTimer();
-    timerContainer.classList.remove('low-time'); // Clean up animation class
-    if (onQuestionCompleteCallback) {
-        onQuestionCompleteCallback();
-    }
+    timerContainer.classList.remove('low-time');
+    stopGameBtn.classList.add('hidden');
+    answerControls.classList.remove('hidden');
 }
+
 
 // --- Public (Exported) Functions ---
 
@@ -121,6 +122,7 @@ export function showQuestionScreen(startTime = 30) {
     questionContainer.classList.remove('shrunk');
     answerContainer.classList.remove('shrunk');
     delete gameScreen.dataset.isCramped; // Reset cramped state flag
+    delete gameScreen.dataset.victoryType; // Reset victory type for new question
     if (questionContainer.dataset.originalText) {
         delete questionContainer.dataset.originalText;
     }
@@ -136,6 +138,9 @@ export function showQuestionScreen(startTime = 30) {
     victoryBoxBtn.classList.add('hidden');
     passQuestionModalOverlay.classList.add('hidden');
     undoAnswerChoiceBtn.classList.add('hidden');
+    
+    // Set default focus on the stop button for accessibility
+    stopGameBtn.focus();
     
     // Reset failure box button text for the new question
     failureBoxBtn.textContent = 'תיבת כישלון';
@@ -165,19 +170,22 @@ export function showQuestionScreen(startTime = 30) {
         timerValue.textContent = timeLeft;
         updateRing(timeLeft, startTime); // Update animation every second
 
-        // Add low-time warning visual cue and sound
+        // Play tick sound every second until the end.
+        if (timeLeft > 0) {
+            playSound('timerTick');
+        }
+
+        // Add low-time warning visual cue
         if (timeLeft <= 5) {
             if (!timerContainer.classList.contains('low-time')) {
                 timerContainer.classList.add('low-time');
             }
-            if (timeLeft > 0) { // Don't play sound on 0
-                 playSound('timerTick');
-            }
         }
 
         if (timeLeft <= 0) {
-            playSound('incorrect');
-            handleTurnEnd(); // Time's up, ends the turn directly.
+            stopSound('timerTick');
+            // Behave as if "Stop" was clicked, allowing for manual grading.
+            triggerManualGrading();
         }
     }, 1000);
 }
@@ -190,10 +198,7 @@ export function initializeQuestionScreen(onComplete) {
     onQuestionCompleteCallback = onComplete;
     
     stopGameBtn.addEventListener('click', () => {
-        stopTimer();
-        timerContainer.classList.remove('low-time'); // Clean up animation class
-        stopGameBtn.classList.add('hidden');
-        answerControls.classList.remove('hidden');
+        triggerManualGrading();
     });
 
     correctAnswerBtn.addEventListener('click', () => {
@@ -204,7 +209,15 @@ export function initializeQuestionScreen(onComplete) {
 
         answerControls.classList.add('hidden');
         victoryBoxBtn.classList.remove('hidden');
+        victoryBoxBtn.focus();
         undoAnswerChoiceBtn.classList.remove('hidden');
+
+        // Check if this was a passed question to determine victory type
+        if (getIsQuestionPassed()) {
+            gameScreen.dataset.victoryType = 'half';
+        } else {
+            delete gameScreen.dataset.victoryType;
+        }
 
         // Store original text for hover logic
         questionContainer.dataset.originalText = currentQuestion.q;
@@ -326,6 +339,9 @@ export function initializeQuestionScreen(onComplete) {
             failureBoxBtn.textContent = 'המשך לתיבה';
         } else {
             // Second click: Proceed to the boxes screen
+            if (onQuestionCompleteCallback) {
+                onQuestionCompleteCallback();
+            }
             showBoxesScreen({ mode: 'failure' });
         }
     });
@@ -348,6 +364,9 @@ export function initializeQuestionScreen(onComplete) {
                     </div>
                     <span>${team.name}</span>
                 `;
+                // Add attributes for accessibility and keyboard navigation
+                teamElement.setAttribute('role', 'button');
+                teamElement.setAttribute('tabindex', '0');
                 passQuestionTeamsContainer.appendChild(teamElement);
             }
         });
@@ -373,6 +392,14 @@ export function initializeQuestionScreen(onComplete) {
     });
 
     victoryBoxBtn.addEventListener('click', () => {
-        showBoxesScreen({ mode: 'victory' }); // Explicitly set mode
+        if (onQuestionCompleteCallback) {
+            onQuestionCompleteCallback();
+        }
+        const victoryType = gameScreen.dataset.victoryType;
+        if (victoryType === 'half') {
+            showBoxesScreen({ mode: 'half-victory' });
+        } else {
+            showBoxesScreen({ mode: 'victory' });
+        }
     });
 }

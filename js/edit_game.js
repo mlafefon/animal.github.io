@@ -1,14 +1,3 @@
-
-
-// A list of all known game data files.
-const DATA_FILES = [
-    'cyber_defense.json',
-    'log_lifecycle.json',
-    'all_about_computers.json',
-    'all_about_money.json',
-    'cyber_data.json'
-];
-
 // --- Elements ---
 const editGameScreen = document.getElementById('edit-game-screen');
 const startScreen = document.getElementById('start-screen');
@@ -227,7 +216,7 @@ async function loadGameForEditing(fileName) {
 }
 
 /**
- * Populates the game selection dropdown.
+ * Populates the game selection dropdown from a manifest file.
  */
 async function populateGameSelector() {
     // Clear existing options except the first placeholder
@@ -235,26 +224,41 @@ async function populateGameSelector() {
         gameEditorSelect.remove(1);
     }
 
-    const fetchPromises = DATA_FILES.map(async (fileName) => {
-        try {
-            const response = await fetch(`./data/${fileName}`);
-            if (!response.ok) return null;
-            const data = await response.json();
-            return { name: data.game_name, file: fileName };
-        } catch (error) {
-            console.error(`Failed to load game name from ${fileName}:`, error);
-            return null;
+    try {
+        const manifestResponse = await fetch('./data/manifest.json');
+        if (!manifestResponse.ok) {
+            throw new Error('Could not load game manifest.');
         }
-    });
-    
-    const games = (await Promise.all(fetchPromises)).filter(Boolean);
+        const DATA_FILES = await manifestResponse.json();
 
-    games.forEach(game => {
+        const fetchPromises = DATA_FILES.map(async (fileName) => {
+            try {
+                const response = await fetch(`./data/${fileName}`);
+                if (!response.ok) return null;
+                const data = await response.json();
+                return { name: data.game_name, file: fileName };
+            } catch (error) {
+                console.error(`Failed to load game name from ${fileName}:`, error);
+                return null;
+            }
+        });
+        
+        const games = (await Promise.all(fetchPromises)).filter(Boolean);
+
+        games.forEach(game => {
+            const option = document.createElement('option');
+            option.value = game.file;
+            option.textContent = game.name;
+            gameEditorSelect.appendChild(option);
+        });
+
+    } catch (error) {
+        console.error('Failed to populate game selector:', error);
         const option = document.createElement('option');
-        option.value = game.file;
-        option.textContent = game.name;
+        option.textContent = 'שגיאה בטעינת משחקים';
+        option.disabled = true;
         gameEditorSelect.appendChild(option);
-    });
+    }
 }
 
 /**

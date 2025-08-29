@@ -8,11 +8,11 @@ const setupScreen = document.getElementById('setup-screen');
 
 // --- Data & State ---
 const TEAMS_DATA = [
-    { name: 'ינשופים', icon: 'images/yanshuf.png' },
-    { name: 'שועלים', icon: 'images/fox.png' },
-    { name: 'פילים', icon: 'images/pil.png' },
-    { name: 'צפרדעים', icon: 'images/frog.png' },
-    { name: 'אריות', icon: 'images/lion.png' }
+    { name: 'ינשופים', icon: 'https://drive.google.com/thumbnail?id=1tARCfOYPOljZ5EFgovdaiUxUXwHqJZ7I' },
+    { name: 'שועלים', icon: 'https://drive.google.com/thumbnail?id=1z7HUg1rUjt6MjiycsPxpoyTY9BWvxWgS' },
+    { name: 'פילים', icon: 'https://drive.google.com/thumbnail?id=1hXwW9zfOVdlnEI-P3O9f8AdkvAJV0ljr' },
+    { name: 'צפרדעים', icon: 'https://drive.google.com/thumbnail?id=1owX2_Qo51yF1Mtk7xbxzg7aF1oHY-E4L' },
+    { name: 'אריות', icon: 'https://drive.google.com/thumbnail?id=1GBWmsUQ46_AdL_w_-T6lnsE5hNlR5twb' }
 ];
 
 let isQuestionPassed = false;

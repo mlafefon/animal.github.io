@@ -1,3 +1,4 @@
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -31,6 +32,16 @@ h1, h2, h3, h4, h5, h6 {
 .hidden {
     display: none !important;
 }
+
+/* --- Accessibility Focus --- */
+*:focus-visible {
+    outline: 3px solid #ffeb3b;
+    outline-offset: 3px;
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(255, 235, 59, 0.8);
+    transition: outline 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+}
+
 
 /* --- Start Screen --- */
 #start-screen {
@@ -317,9 +328,13 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: bold;
 }
 
-.pre-question-buttons {
-    margin-top: 30px;
+/* --- Shared Main Action Container --- */
+.main-action-container {
+    margin: 20px auto;
     display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80px; /* Reserve space to prevent layout shift */
     gap: 20px;
 }
 
@@ -454,12 +469,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 #game-controls {
-    margin: 20px auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 80px; /* Reserve space to prevent layout shift */
-    gap: 20px;
+    /* Styles moved to .main-action-container */
 }
 
 #answer-controls {
@@ -785,7 +795,6 @@ h1, h2, h3, h4, h5, h6 {
     transform: translateY(20px) scale(0.95);
     pointer-events: none;
     visibility: hidden;
-    margin-top: 20px;
     /* The transition for the visibility animation */
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -822,7 +831,11 @@ h1, h2, h3, h4, h5, h6 {
 /* --- Betting Screen --- */
 #betting-screen {
     width: 100vw;
-    height: 100vh;
+    min-height: 100vh;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 .betting-content {
     display: flex;
@@ -904,7 +917,11 @@ h1, h2, h3, h4, h5, h6 {
 /* --- Final Question Screen --- */
 #final-question-screen {
     width: 100vw;
-    height: 100vh;
+    min-height: 100vh; /* Changed from height to allow scrolling */
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Center content by default */
 }
 .final-question-content {
     display: flex;
@@ -1453,4 +1470,144 @@ h1, h2, h3, h4, h5, h6 {
 #fullscreen-toggle-btn svg {
     width: 100%;
     height: 100%;
+}
+
+/* --- Responsive Overrides --- */
+
+/* Betting Screen on smaller/shorter devices */
+@media (max-height: 800px), (max-width: 768px) {
+    #betting-screen {
+        padding-top: 15px; /* Add some padding to avoid touching edges */
+        padding-bottom: 15px;
+        justify-content: flex-start; /* Align to top on short screens */
+    }
+
+    .betting-content {
+        gap: 10px;
+    }
+
+    .betting-content h1 {
+        font-size: 2.2rem;
+        margin-bottom: 0;
+    }
+
+    .betting-content p {
+        font-size: 1rem;
+        line-height: 1.4;
+        margin: 5px 0;
+    }
+
+    #betting-teams-container {
+        margin: 10px 0;
+        gap: 15px;
+    }
+
+    .betting-team-card {
+        width: 160px; /* smaller card */
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .betting-team-card .team-icon {
+        width: 70px; /* smaller icon */
+        height: 70px;
+    }
+    .betting-team-card .team-score {
+        font-size: 1.2rem;
+    }
+
+    .bet-stepper-btn {
+        width: 30px; /* smaller buttons */
+        height: 30px;
+        font-size: 1.5rem;
+    }
+
+    .bet-amount {
+        font-size: 1.8rem;
+        width: 50px;
+    }
+
+    /* Override the large button size specifically for this button */
+    #show-final-question-btn.btn-large {
+        padding: 12px 30px; /* btn-medium size */
+        font-size: 1.2rem;
+    }
+}
+
+/* Hide instructions on very small/short screens */
+@media (max-height: 650px) {
+    .betting-content p {
+        display: none;
+    }
+    #show-final-question-btn {
+        margin-top: 10px;
+    }
+}
+
+/* Final Question Screen on smaller/shorter devices */
+@media (max-height: 850px), (max-width: 768px) {
+    #final-question-screen {
+        padding-top: 15px;
+        padding-bottom: 15px;
+        justify-content: flex-start; /* Align to top */
+    }
+
+    .final-question-content {
+        gap: 15px; /* Reduce gap */
+    }
+
+    .final-question-content h1 {
+        font-size: 2.2rem; /* Smaller title */
+    }
+
+    #final-question-container, #final-answer-container {
+        padding: 15px; /* Less padding */
+        min-height: auto; /* Allow it to shrink */
+    }
+
+    #final-question-text, #final-answer-text {
+        font-size: 1.5rem; /* Smaller text */
+    }
+    
+    #final-answer-text {
+        font-size: 1.6rem; /* Make answer slightly bigger than question */
+    }
+    
+    #final-scoring-container {
+        margin-top: 10px;
+    }
+
+    #final-scoring-container h2 {
+        font-size: 1.2rem;
+    }
+    
+    .final-scoring-card {
+        min-width: 150px; /* smaller cards */
+        padding: 10px;
+        gap: 8px;
+    }
+    
+    .final-scoring-controls button {
+        padding: 6px 12px; /* smaller buttons */
+        font-size: 0.9rem;
+    }
+    
+    #end-game-btn.btn-large, #show-final-answer-btn {
+        padding: 12px 30px; /* btn-medium size */
+        font-size: 1.2rem;
+    }
+
+    .winner-announcement h1 {
+        font-size: 2.5rem;
+    }
+    .winner-card .team-icon {
+        width: 100px;
+        height: 100px;
+    }
+    .winner-card .team-name {
+        font-size: 1.2rem;
+    }
+    .winner-card .team-score {
+        font-size: 1.8rem;
+    }
 }
