@@ -1,8 +1,7 @@
 
-
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen } from './js/setup.js';
-import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
+import { startGame, initializeScoreControls, adjustScore, switchToNextTeam, clearGameState } from './js/game.js';
 import { initializePreQuestionScreen } from './js/preq.js';
 import { initializeQuestionScreen, showQuestionScreen } from './js/question.js';
 import { initializeBoxesScreen } from './js/boxes.js';
@@ -54,6 +53,41 @@ function initializeFullscreenControls() {
     document.addEventListener('webkitfullscreenchange', updateIcon); // Safari support
 
     updateIcon(); // Set initial icon state
+}
+
+/**
+ * Initializes the global home button to be available on all screens.
+ * Clicking it returns to the start screen, allowing the game to be resumed later.
+ */
+function initializeGlobalHomeButton() {
+    const homeBtn = document.getElementById('global-home-btn');
+    const startScreen = document.getElementById('start-screen');
+    const allScreens = [
+        document.getElementById('setup-screen'),
+        document.getElementById('pre-question-screen'),
+        document.getElementById('game-screen'),
+        document.getElementById('boxes-screen'),
+        document.getElementById('betting-screen'),
+        document.getElementById('final-question-screen'),
+        document.getElementById('edit-game-screen'),
+    ];
+    const gameFooter = document.getElementById('main-game-footer');
+
+    if (!homeBtn) return;
+
+    homeBtn.addEventListener('click', () => {
+        // Hide all game-related screens and elements
+        allScreens.forEach(screen => screen.classList.add('hidden'));
+        gameFooter.classList.remove('visible');
+        document.body.classList.remove('game-active');
+        homeBtn.classList.add('hidden');
+
+        // Show the start screen
+        startScreen.classList.remove('hidden');
+
+        // The game state is intentionally not cleared. This allows the user to
+        // return to the setup screen and choose to continue their game.
+    });
 }
 
 
@@ -129,5 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeEditGameScreen();
     initializeFinalRound();
     initializeFullscreenControls();
+    initializeGlobalHomeButton();
     initKeyboardNav(document.body); // Initialize keyboard navigation for the whole app
 });

@@ -1,3 +1,4 @@
+
 const groupList = document.getElementById('group-list');
 const gameList = document.getElementById('game-list');
 const startButton = document.getElementById('start-btn');
@@ -53,27 +54,52 @@ function handleSelection(list, event) {
 }
 
 /**
- * Fetches game names from a manifest file, caches their questions, and populates the selection list.
+ * Fetches game names from a manifest file and localStorage, caches their questions, and populates the selection list.
  */
-async function populateGameList() {
+export async function populateGameList() {
     gameList.innerHTML = ''; // Clear any existing items
+    gameDataCache = {}; // Clear cache on repopulation
 
     try {
+        // 1. Get base manifest
         const manifestResponse = await fetch('./data/manifest.json');
-        if (!manifestResponse.ok) {
-            throw new Error('Could not load game manifest.');
-        }
-        const DATA_FILES = await manifestResponse.json();
+        if (!manifestResponse.ok) throw new Error('Could not load game manifest.');
+        const baseFiles = await manifestResponse.json();
 
-        const fetchPromises = DATA_FILES.map(async (fileName) => {
+        // 2. Get user manifest from localStorage
+        let userFiles = [];
+        try {
+            userFiles = JSON.parse(localStorage.getItem('userGamesManifest')) || [];
+        } catch (e) {
+            console.error("Could not parse user games manifest from localStorage.", e);
+        }
+
+        // 3. Combine and ensure uniqueness
+        const allFiles = [...new Set([...baseFiles, ...userFiles])];
+
+        const fetchPromises = allFiles.map(async (fileName) => {
             try {
-                const response = await fetch(`./data/${fileName}`);
-                if (!response.ok) return null;
-                const data = await response.json();
-                gameDataCache[fileName] = data.questions; // Cache the questions
-                return { name: data.game_name, file: fileName };
+                let data = null;
+                const storedData = localStorage.getItem(`game_data_${fileName}`);
+
+                if (storedData) {
+                    data = JSON.parse(storedData);
+                } else if (baseFiles.includes(fileName)) { // Only try to fetch base games
+                    const response = await fetch(`./data/${fileName}`);
+                    if (response.ok) {
+                        data = await response.json();
+                        // Store in localStorage for future edits
+                        localStorage.setItem(`game_data_${fileName}`, JSON.stringify(data));
+                    }
+                }
+                
+                if (data) {
+                    gameDataCache[fileName] = data.questions; // Cache the questions
+                    return { name: data.game_name, file: fileName };
+                }
+                return null;
             } catch (error) {
-                console.error(`Failed to load game data from ${fileName}:`, error);
+                console.error(`Failed to load or parse game data for ${fileName}:`, error);
                 return null;
             }
         });
@@ -102,38 +128,27 @@ async function populateGameList() {
     }
 }
 
+/**
+ * Toggles the enabled/disabled state of the main setup controls.
+ * @param {boolean} disabled - True to disable, false to enable.
+ */
+function toggleSetupControls(disabled) {
+    groupList.style.pointerEvents = disabled ? 'none' : 'auto';
+    groupList.style.opacity = disabled ? 0.6 : 1;
+    gameList.style.pointerEvents = disabled ? 'none' : 'auto';
+    gameList.style.opacity = disabled ? 0.6 : 1;
+    document.getElementById('shuffle-questions').disabled = disabled;
+}
 
 /**
- * Initializes the setup screen by attaching event listeners.
- * @param {function} onStart - The callback function to execute when the start button is clicked.
+ * Selects the group and game list items based on the loaded saved game state.
  */
-export function initializeSetupScreen(onStart) {
-    // Add accessibility attributes to static group list items
-    groupList.querySelectorAll('li').forEach(li => {
-        li.setAttribute('role', 'button');
-        li.setAttribute('tabindex', '0');
-    });
+function applySavedStateSelections() {
+    const savedStateJSON = localStorage.getItem('animalGameState');
+    if (!savedStateJSON) return;
 
-    const continueCheckbox = document.getElementById('continue-last-point');
-    const continueLabel = document.querySelector('label[for="continue-last-point"]');
-    let savedState = null; // Store the parsed state to reuse it
-
-    /**
-     * Toggles the enabled/disabled state of the main setup controls.
-     * @param {boolean} disabled - True to disable, false to enable.
-     */
-    function toggleSetupControls(disabled) {
-        groupList.style.pointerEvents = disabled ? 'none' : 'auto';
-        groupList.style.opacity = disabled ? 0.6 : 1;
-        gameList.style.pointerEvents = disabled ? 'none' : 'auto';
-        gameList.style.opacity = disabled ? 0.6 : 1;
-        document.getElementById('shuffle-questions').disabled = disabled;
-    }
-
-    /**
-     * Selects the group and game list items based on the loaded saved game state.
-     */
-    function applySavedStateSelections() {
+    try {
+        const savedState = JSON.parse(savedStateJSON);
         if (!savedState) return;
 
         // Select Number of Groups
@@ -149,34 +164,57 @@ export function initializeSetupScreen(onStart) {
         });
         
         updateQuestionStats();
+    } catch(e) {
+        console.error("Could not parse saved state to apply selections:", e);
     }
+}
 
-
-    // Check for saved state on initialization
+/**
+ * Checks for a saved game state and updates the "Continue" checkbox accordingly.
+ * This should be called each time the setup screen is shown.
+ */
+export function refreshSetupScreenState() {
+    const continueCheckbox = document.getElementById('continue-last-point');
+    const continueLabel = document.querySelector('label[for="continue-last-point"]');
     const savedStateJSON = localStorage.getItem('animalGameState');
+
     if (savedStateJSON) {
         try {
-            savedState = JSON.parse(savedStateJSON);
+            const savedState = JSON.parse(savedStateJSON);
             continueCheckbox.disabled = false;
             continueLabel.textContent = `המשך "${savedState.gameName}"`;
         } catch (e) {
             // Handle corrupted saved data
             continueCheckbox.disabled = true;
-            continueCheckbox.checked = false;
             continueLabel.textContent = 'המשך מנקודה אחרונה';
             localStorage.removeItem('animalGameState');
-            savedState = null; // Clear corrupted state
         }
     } else {
         continueCheckbox.disabled = true;
-        continueCheckbox.checked = false;
         continueLabel.textContent = 'המשך מנקודה אחרונה';
     }
     
-    // Set initial state of controls based on checkbox
-    toggleSetupControls(continueCheckbox.checked);
+    // Always start with the checkbox unchecked and controls enabled.
+    continueCheckbox.checked = false;
+    toggleSetupControls(false);
+}
 
-    // Add listener to toggle controls when checkbox changes
+
+/**
+ * Initializes the setup screen by attaching event listeners.
+ * @param {function} onStart - The callback function to execute when the start button is clicked.
+ */
+export function initializeSetupScreen(onStart) {
+    // Add accessibility attributes to static group list items
+    groupList.querySelectorAll('li').forEach(li => {
+        li.setAttribute('role', 'button');
+        li.setAttribute('tabindex', '0');
+    });
+
+    const continueCheckbox = document.getElementById('continue-last-point');
+    
+    // The initial state is now set by refreshSetupScreenState() before the screen is shown.
+    // This listener handles subsequent user interactions.
     continueCheckbox.addEventListener('change', (e) => {
         const isChecked = e.target.checked;
         toggleSetupControls(isChecked);
@@ -184,9 +222,6 @@ export function initializeSetupScreen(onStart) {
             applySavedStateSelections();
         }
     });
-
-    // Populate the game list and trigger the first stat update
-    populateGameList();
 
     groupList.addEventListener('click', (e) => {
         handleSelection(groupList, e);
@@ -207,7 +242,7 @@ export function initializeSetupScreen(onStart) {
         // Fallback to the first available game if none is somehow selected
         const gameFileName = selectedGame ? selectedGame.dataset.fileName : (gameList.querySelector('li')?.dataset.fileName || '');
 
-
+        const continueCheckbox = document.getElementById('continue-last-point');
         const shuffleQuestions = document.getElementById('shuffle-questions').checked;
         const continueLastPoint = continueCheckbox.checked;
 

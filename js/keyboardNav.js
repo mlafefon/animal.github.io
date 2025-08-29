@@ -189,9 +189,15 @@ export function initKeyboardNav(container) {
         else if (key === 'Enter' || key === ' ') {
             // Check if the active element is one of our targets before acting.
             if (activeElement && focusableElements.includes(activeElement)) {
-                // Prevent space from scrolling the page
-                e.preventDefault();
-                // We simulate a click to trigger all associated event listeners.
+                // For elements where typing is the primary interaction (textareas, inputs),
+                // we should not override the default behavior of Enter and Space.
+                if (activeElement.tagName === 'TEXTAREA' || 
+                    (activeElement.tagName === 'INPUT' && (activeElement.type === 'text' || activeElement.type === 'number'))) {
+                    return; // Allow default browser action (e.g., typing a space, creating a newline).
+                }
+
+                // For all other interactive elements (buttons, etc.), treat Enter/Space as a click.
+                e.preventDefault(); // Prevent space from scrolling, or enter from submitting a form.
                 activeElement.click();
             }
         }

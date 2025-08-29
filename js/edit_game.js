@@ -1,7 +1,6 @@
 // --- Elements ---
 const editGameScreen = document.getElementById('edit-game-screen');
 const startScreen = document.getElementById('start-screen');
-const returnToStartBtn = document.getElementById('return-to-start-btn');
 const gameEditorSelect = document.getElementById('game-editor-select');
 const createNewGameBtn = document.getElementById('create-new-game-btn');
 const gameEditorForm = document.getElementById('game-editor-form');
@@ -9,8 +8,10 @@ const gameNameInput = document.getElementById('game-name-input');
 const questionsEditorContainer = document.getElementById('questions-editor-container');
 const addQuestionBtn = document.getElementById('add-question-btn');
 const saveGameBtn = document.getElementById('save-game-btn');
+const downloadGameBtn = document.getElementById('download-game-btn');
 const finalQuestionQInput = document.getElementById('final-question-q-input');
 const finalQuestionAInput = document.getElementById('final-question-a-input');
+const toggleAllQuestionsBtn = document.getElementById('toggle-all-questions-btn');
 
 // Modal Elements
 const newGameModalOverlay = document.getElementById('new-game-modal-overlay');
@@ -18,6 +19,48 @@ const newGameNameInput = document.getElementById('new-game-name');
 const newGameFilenameInput = document.getElementById('new-game-filename');
 const confirmNewGameBtn = document.getElementById('confirm-new-game-btn');
 const cancelNewGameBtn = document.getElementById('cancel-new-game-btn');
+
+
+// --- State Management for Save Button ---
+let saveStateTimeout = null;
+
+/**
+ * Sets the visual state of the save button to indicate unsaved changes.
+ * @param {boolean} isUnsaved - True to show unsaved state, false to reset.
+ */
+function setUnsavedState(isUnsaved) {
+    // Clear any pending "saved" state transitions
+    if (saveStateTimeout) {
+        clearTimeout(saveStateTimeout);
+        saveGameBtn.textContent = 'שמור שינויים';
+        saveGameBtn.classList.remove('saved');
+        saveGameBtn.disabled = false;
+        saveStateTimeout = null;
+    }
+
+    if (isUnsaved) {
+        saveGameBtn.classList.add('unsaved');
+    } else {
+        saveGameBtn.classList.remove('unsaved');
+    }
+}
+
+/**
+ * Shows a visual confirmation that the game has been saved successfully.
+ */
+function showSavedState() {
+    setUnsavedState(false); // Remove unsaved state first
+    saveGameBtn.classList.add('saved');
+    saveGameBtn.textContent = 'נשמר!';
+    saveGameBtn.disabled = true;
+
+    saveStateTimeout = setTimeout(() => {
+        saveGameBtn.classList.remove('saved');
+        saveGameBtn.textContent = 'שמור שינויים';
+        saveGameBtn.disabled = false;
+        saveStateTimeout = null;
+    }, 2000);
+}
 
 
 /**
@@ -31,13 +74,91 @@ function autoResizeTextarea(textarea) {
 }
 
 /**
+ * Truncates text to a specific word limit.
+ * @param {string} text The text to truncate.
+ * @param {number} [limit=6] The word limit.
+ * @returns {string} The truncated text.
+ */
+function truncateText(text, limit = 6) {
+    if (!text) return '';
+    const words = text.split(/\s+/); // Split by any whitespace
+    if (words.length > limit) {
+        return words.slice(0, limit).join(' ') + '...';
+    }
+    return text;
+}
+
+/**
+ * Updates the state of the toggle-all button based on the current state of the cards.
+ * If any card is collapsed, it shows the "Expand" icon.
+ * If all cards are expanded, it shows the "Collapse" icon.
+ */
+function updateToggleAllButtonState() {
+    const isAnyCollapsed = !!questionsEditorContainer.querySelector('.question-card.collapsed');
+    if (isAnyCollapsed) {
+        toggleAllQuestionsBtn.classList.remove('state-collapse');
+        toggleAllQuestionsBtn.classList.add('state-expand');
+        toggleAllQuestionsBtn.title = 'הרחב הכל';
+    } else {
+        toggleAllQuestionsBtn.classList.remove('state-expand');
+        toggleAllQuestionsBtn.classList.add('state-collapse');
+        toggleAllQuestionsBtn.title = 'כווץ הכל';
+    }
+}
+
+
+/**
+ * Updates the title of a collapsed card with a styled, truncated question text.
+ * @param {HTMLDivElement} card The question card element.
+ */
+function updateCollapsedTitle(card) {
+    const titleEl = card.querySelector('h3');
+    const index = parseInt(card.dataset.index, 10);
+    const questionText = card.querySelector('.question-input').value.trim();
+    const truncated = truncateText(questionText);
+    titleEl.innerHTML = `<span class="question-title-number">שאלה ${index + 1}:</span><span class="question-title-preview">${truncated}</span>`;
+    titleEl.title = questionText; // Add tooltip with full question
+}
+
+/**
+ * Collapses a single question card and updates its title.
+ * @param {HTMLDivElement} card The question card element.
+ */
+function collapseCard(card) {
+    card.classList.add('collapsed');
+    updateCollapsedTitle(card);
+    updateToggleAllButtonState();
+}
+
+/**
+ * Expands a single question card and restores its title.
+ * @param {HTMLDivElement} card The question card element.
+ */
+function expandCard(card) {
+    card.classList.remove('collapsed');
+    const titleEl = card.querySelector('h3');
+    const index = parseInt(card.dataset.index, 10);
+    titleEl.textContent = `שאלה ${index + 1}`;
+    titleEl.title = ''; // Remove tooltip
+    updateToggleAllButtonState();
+}
+
+
+/**
  * Re-calculates and updates the displayed question number for all cards.
  */
 function renumberQuestionCards() {
     const cards = questionsEditorContainer.querySelectorAll('.question-card');
     cards.forEach((card, i) => {
         card.dataset.index = i;
-        card.querySelector('h3').textContent = `שאלה ${i + 1}`;
+        // Re-apply the correct title based on collapsed state
+        if (card.classList.contains('collapsed')) {
+            updateCollapsedTitle(card);
+        } else {
+            // expandCard would call updateToggleAllButtonState, but this is simpler
+            const titleEl = card.querySelector('h3');
+            titleEl.textContent = `שאלה ${i + 1}`;
+        }
     });
 }
 
@@ -80,7 +201,7 @@ function renderQuestionCard(question, index) {
             </div>
             <div class="header-right">
                 <button type="button" class="delete-question-btn">מחק</button>
-                <svg class="collapse-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                <svg class="collapse-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
             </div>
         </div>
         <div class="question-card-body">
@@ -102,24 +223,40 @@ function renderQuestionCard(question, index) {
     const questionInput = card.querySelector('.question-input');
     const answerInput = card.querySelector('.answer-input');
 
+    // Listener for auto-resizing textareas
     [questionInput, answerInput].forEach(textarea => {
         textarea.addEventListener('input', () => autoResizeTextarea(textarea));
         // Set initial size after a tiny delay to ensure rendering is complete
         setTimeout(() => autoResizeTextarea(textarea), 0);
     });
 
-    const header = card.querySelector('.question-card-header');
-    header.addEventListener('click', (e) => {
-        // Don't toggle if clicking a button
-        if (!e.target.closest('button')) {
-            card.classList.toggle('collapsed');
+    // Listener to update truncated title in real-time
+    questionInput.addEventListener('input', () => {
+        if (card.classList.contains('collapsed')) {
+            updateCollapsedTitle(card);
         }
     });
 
+    // Listener for collapsing/expanding the card
+    const header = card.querySelector('.question-card-header');
+    header.addEventListener('click', (e) => {
+        // Don't toggle if clicking a button inside the header
+        if (!e.target.closest('button')) {
+            if (card.classList.contains('collapsed')) {
+                expandCard(card);
+            } else {
+                collapseCard(card);
+            }
+        }
+    });
+
+    // Listener for deleting the card
     card.querySelector('.delete-question-btn').addEventListener('click', (e) => {
         e.currentTarget.closest('.question-card').remove();
         renumberQuestionCards();
         updateReorderButtons();
+        updateToggleAllButtonState();
+        setUnsavedState(true);
     });
     
     // Add listeners for reorder buttons
@@ -127,36 +264,46 @@ function renderQuestionCard(question, index) {
     const moveDownBtn = card.querySelector('.reorder-down-btn');
 
     moveUpBtn.addEventListener('click', (e) => {
+        const button = e.currentTarget;
+        const oldRect = button.getBoundingClientRect();
+        
         const previousCard = card.previousElementSibling;
         if (previousCard) {
-            // Move the element
             questionsEditorContainer.insertBefore(card, previousCard);
-
-            // Adjust scroll so the button stays under the cursor
-            const buttonRect = moveUpBtn.getBoundingClientRect();
-            const scrollOffset = buttonRect.top - e.clientY;
-            editGameScreen.scrollTop += scrollOffset;
             
-            // Update UI
+            const newRect = button.getBoundingClientRect();
+            const scrollDelta = newRect.top - oldRect.top;
+            
+            editGameScreen.scrollBy({
+                top: scrollDelta,
+                behavior: 'auto'
+            });
+
             renumberQuestionCards();
             updateReorderButtons();
+            setUnsavedState(true);
         }
     });
 
     moveDownBtn.addEventListener('click', (e) => {
+        const button = e.currentTarget;
+        const oldRect = button.getBoundingClientRect();
+
         const nextCard = card.nextElementSibling;
         if (nextCard) {
-            // Move the element
             questionsEditorContainer.insertBefore(nextCard, card);
             
-            // Adjust scroll so the button stays under the cursor
-            const buttonRect = moveDownBtn.getBoundingClientRect();
-            const scrollOffset = buttonRect.top - e.clientY;
-            editGameScreen.scrollTop += scrollOffset;
+            const newRect = button.getBoundingClientRect();
+            const scrollDelta = newRect.top - oldRect.top;
 
-            // Update UI
+            editGameScreen.scrollBy({
+                top: scrollDelta,
+                behavior: 'auto'
+            });
+            
             renumberQuestionCards();
             updateReorderButtons();
+            setUnsavedState(true);
         }
     });
 
@@ -171,21 +318,32 @@ function renderAllQuestions(questions) {
     questionsEditorContainer.innerHTML = '';
     questions.forEach(renderQuestionCard);
     updateReorderButtons();
+    updateToggleAllButtonState();
 }
 
 /**
- * Fetches and loads a game's data into the editor form.
+ * Fetches and loads a game's data into the editor form from localStorage or a file.
  * @param {string} fileName - The JSON file name of the game to load.
  */
 async function loadGameForEditing(fileName) {
     if (!fileName) {
         gameEditorForm.classList.add('hidden');
+        setUnsavedState(false);
         return;
     }
     try {
-        const response = await fetch(`./data/${fileName}`);
-        if (!response.ok) throw new Error(`Network response was not ok for ${fileName}`);
-        const gameData = await response.json();
+        let gameData = null;
+        const storedData = localStorage.getItem(`game_data_${fileName}`);
+        
+        if (storedData) {
+            gameData = JSON.parse(storedData);
+        } else {
+            const response = await fetch(`./data/${fileName}`);
+            if (!response.ok) throw new Error(`Network response was not ok for ${fileName}`);
+            gameData = await response.json();
+            // Cache it in localStorage for future edits
+            localStorage.setItem(`game_data_${fileName}`, JSON.stringify(gameData));
+        }
         
         gameNameInput.value = gameData.game_name;
         renderAllQuestions(gameData.questions);
@@ -209,6 +367,7 @@ async function loadGameForEditing(fileName) {
         // Store the filename on the form for saving later
         gameEditorForm.dataset.currentFile = fileName;
         gameEditorForm.classList.remove('hidden');
+        setUnsavedState(false);
     } catch (error) {
         console.error(`Failed to load game data from ${fileName}:`, error);
         alert(`שגיאה בטעינת המשחק: ${fileName}`);
@@ -216,7 +375,7 @@ async function loadGameForEditing(fileName) {
 }
 
 /**
- * Populates the game selection dropdown from a manifest file.
+ * Populates the game selection dropdown from a manifest file and localStorage.
  */
 async function populateGameSelector() {
     // Clear existing options except the first placeholder
@@ -225,20 +384,44 @@ async function populateGameSelector() {
     }
 
     try {
+        // 1. Get base manifest
         const manifestResponse = await fetch('./data/manifest.json');
-        if (!manifestResponse.ok) {
-            throw new Error('Could not load game manifest.');
-        }
-        const DATA_FILES = await manifestResponse.json();
+        if (!manifestResponse.ok) throw new Error('Could not load game manifest.');
+        const baseFiles = await manifestResponse.json();
 
-        const fetchPromises = DATA_FILES.map(async (fileName) => {
+        // 2. Get user manifest from localStorage
+        let userFiles = [];
+        try {
+            userFiles = JSON.parse(localStorage.getItem('userGamesManifest')) || [];
+        } catch (e) {
+            console.error("Could not parse user games manifest from localStorage.", e);
+        }
+
+        // 3. Combine and ensure uniqueness
+        const allFiles = [...new Set([...baseFiles, ...userFiles])];
+
+        const fetchPromises = allFiles.map(async (fileName) => {
             try {
-                const response = await fetch(`./data/${fileName}`);
-                if (!response.ok) return null;
-                const data = await response.json();
-                return { name: data.game_name, file: fileName };
+                let data = null;
+                const storedData = localStorage.getItem(`game_data_${fileName}`);
+                
+                if (storedData) {
+                    data = JSON.parse(storedData);
+                } else if (baseFiles.includes(fileName)) { // Only try to fetch base games
+                    const response = await fetch(`./data/${fileName}`);
+                    if (response.ok) {
+                        data = await response.json();
+                        localStorage.setItem(`game_data_${fileName}`, JSON.stringify(data));
+                    }
+                }
+
+                if (data) {
+                    return { name: data.game_name, file: fileName };
+                }
+                return null;
+
             } catch (error) {
-                console.error(`Failed to load game name from ${fileName}:`, error);
+                console.error(`Failed to load or parse game name for ${fileName}:`, error);
                 return null;
             }
         });
@@ -328,6 +511,7 @@ export function showEditScreen() {
     editGameScreen.classList.remove('hidden');
     gameEditorForm.classList.add('hidden');
     gameEditorSelect.value = '';
+    document.getElementById('global-home-btn').classList.remove('hidden');
     delete gameEditorForm.dataset.currentFile; // Clear any previously set filename
     populateGameSelector();
 }
@@ -336,22 +520,33 @@ export function showEditScreen() {
  * Initializes all event listeners for the edit game screen.
  */
 export function initializeEditGameScreen() {
-    returnToStartBtn.addEventListener('click', () => {
+    const backToHomeBtn = document.getElementById('back-to-home-from-edit-btn');
+
+    backToHomeBtn.addEventListener('click', () => {
         editGameScreen.classList.add('hidden');
         startScreen.classList.remove('hidden');
+        const globalHomeBtn = document.getElementById('global-home-btn');
+        if (globalHomeBtn) {
+            globalHomeBtn.classList.add('hidden');
+        }
     });
 
     gameEditorSelect.addEventListener('change', () => {
         loadGameForEditing(gameEditorSelect.value);
     });
 
+    // Add listener to form to detect any input changes
+    gameEditorForm.addEventListener('input', () => setUnsavedState(true));
+
     addQuestionBtn.addEventListener('click', () => {
         const questionCount = questionsEditorContainer.children.length;
         renderQuestionCard({ q: '', a: '', timer: 30 }, questionCount);
         updateReorderButtons();
+        updateToggleAllButtonState();
+        setUnsavedState(true);
     });
 
-    saveGameBtn.addEventListener('click', () => {
+    saveGameBtn.addEventListener('click', async () => {
         const gameData = compileGameData();
         const fileName = gameEditorForm.dataset.currentFile;
 
@@ -361,21 +556,61 @@ export function initializeEditGameScreen() {
         }
         
         if (gameData) {
-            downloadJsonFile(fileName, gameData);
-            alert(`קובץ המשחק '${fileName}' הורד בהצלחה! יש להעביר אותו לתיקיית 'data' בפרוייקט.`);
+            try {
+                // Save to localStorage
+                localStorage.setItem(`game_data_${fileName}`, JSON.stringify(gameData));
+                
+                showSavedState();
+    
+                // Refresh the list to show the new name if it was changed
+                const currentlySelected = gameEditorSelect.value;
+                await populateGameSelector();
+                gameEditorSelect.value = currentlySelected;
+    
+            } catch (e) {
+                console.error("Error saving game to localStorage", e);
+                alert("שגיאה בשמירת המשחק. ייתכן שאחסון הדפדפן מלא.");
+            }
         }
     });
+
+    downloadGameBtn.addEventListener('click', () => {
+        const gameData = compileGameData();
+        const fileName = gameEditorForm.dataset.currentFile;
+
+        if (!fileName) {
+            alert('לא נבחר משחק להורדה. אנא בחר משחק קיים.');
+            return;
+        }
+
+        if (gameData) {
+            downloadJsonFile(fileName, gameData);
+        }
+    });
+
+    // --- Single Toggle Button Listener ---
+    toggleAllQuestionsBtn.addEventListener('click', () => {
+        const cards = questionsEditorContainer.querySelectorAll('.question-card');
+        // If the button is in 'expand' mode, it means at least one is collapsed, so expand all.
+        if (toggleAllQuestionsBtn.classList.contains('state-expand')) {
+            cards.forEach(expandCard);
+        } else { // Otherwise, collapse all.
+            cards.forEach(collapseCard);
+        }
+    });
+
 
     // --- Modal Logic ---
     createNewGameBtn.addEventListener('click', () => {
         newGameModalOverlay.classList.remove('hidden');
+        newGameNameInput.focus();
     });
 
     cancelNewGameBtn.addEventListener('click', () => {
         newGameModalOverlay.classList.add('hidden');
     });
 
-    confirmNewGameBtn.addEventListener('click', () => {
+    confirmNewGameBtn.addEventListener('click', async () => {
         const newName = newGameNameInput.value.trim();
         const newFilename = newGameFilenameInput.value.trim();
 
@@ -389,21 +624,45 @@ export function initializeEditGameScreen() {
             return;
         }
         
-        // Reset and show the form for the new game
-        gameEditorSelect.value = ''; // Deselect any chosen game
-        gameNameInput.value = newName;
-        renderAllQuestions([]); // Start with no questions
-        finalQuestionQInput.value = ''; // Clear final question fields
-        finalQuestionAInput.value = '';
-        gameEditorForm.dataset.currentFile = newFilename; // Set the filename for saving
-        gameEditorForm.classList.remove('hidden');
-
-        // Hide modal and clear inputs
-        newGameModalOverlay.classList.add('hidden');
-        newGameNameInput.value = '';
-        newGameFilenameInput.value = '';
-
-        alert(`משחק חדש "${newName}" נוצר. הוסיפו שאלות ולחצו על "שמור שינויים" בסיום.`);
+        // Create empty game structure
+        const newGameData = {
+            game_name: newName,
+            questions: [],
+            final_question: { q: "", a: "" }
+        };
+    
+        try {
+            // Save new game data to localStorage
+            localStorage.setItem(`game_data_${newFilename}`, JSON.stringify(newGameData));
+    
+            // Update user games manifest
+            let userGames = [];
+            try {
+                userGames = JSON.parse(localStorage.getItem('userGamesManifest')) || [];
+            } catch (e) {
+                console.warn("Could not parse existing user games manifest. Starting fresh.", e);
+            }
+            if (!userGames.includes(newFilename)) {
+                userGames.push(newFilename);
+            }
+            localStorage.setItem('userGamesManifest', JSON.stringify(userGames));
+            
+            // Hide modal and clear inputs
+            newGameModalOverlay.classList.add('hidden');
+            newGameNameInput.value = '';
+            newGameFilenameInput.value = '';
+    
+            // Refresh selector and load the new game for editing
+            await populateGameSelector();
+            gameEditorSelect.value = newFilename; // Select the new game
+            await loadGameForEditing(newFilename); // Load it into the form
+    
+            alert(`משחק חדש "${newName}" נוצר ונשמר. כעת ניתן לערוך אותו.`);
+    
+        } catch(e) {
+            console.error("Error creating new game:", e);
+            alert("שגיאה ביצירת המשחק החדש.");
+        }
     });
     
     // Add auto-resize listeners for final question textareas

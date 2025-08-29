@@ -1,5 +1,7 @@
 
 
+import { populateGameList, refreshSetupScreenState } from './setup.js';
+
 const startScreen = document.getElementById('start-screen');
 const setupScreen = document.getElementById('setup-screen');
 const goToSetupBtn = document.getElementById('go-to-setup-btn');
@@ -24,9 +26,17 @@ export function initializeStartScreen(onGoToSettings) {
         startImage.src = START_IMAGE_URL;
     }
 
-    goToSetupBtn.addEventListener('click', () => {
+    goToSetupBtn.addEventListener('click', async () => {
         startScreen.classList.add('hidden');
+        
+        // Refresh the game list every time before showing the setup screen
+        await populateGameList();
+
+        // Refresh the 'Continue' checkbox state every time as well
+        refreshSetupScreenState();
+
         setupScreen.classList.remove('hidden');
+        document.getElementById('global-home-btn').classList.remove('hidden');
 
         // Set initial focus on the selected group button for accessibility
         const selectedGroup = setupScreen.querySelector('#group-list li.selected');

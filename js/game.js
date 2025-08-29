@@ -240,6 +240,7 @@ export function switchToNextTeam() {
 export async function startGame(options) {
     const continueLastPoint = options.continueLastPoint;
     const savedStateJSON = localStorage.getItem('animalGameState');
+    const homeBtn = document.getElementById('global-home-btn');
 
     // --- LOAD SAVED GAME ---
     if (continueLastPoint && savedStateJSON) {
@@ -266,6 +267,7 @@ export async function startGame(options) {
         
         document.body.classList.add('game-active');
         mainGameFooter.classList.add('visible');
+        if (homeBtn) homeBtn.classList.remove('hidden');
         
         const scoreControls = document.querySelector('.score-controls');
         if (scoreControls) scoreControls.classList.remove('hidden');
@@ -297,11 +299,16 @@ export async function startGame(options) {
     }
 
     try {
-        const response = await fetch(`./data/${fileName}`);
-        if (!response.ok) {
-            throw new Error(`שגיאת רשת: ${response.status}`);
+        let gameData = null;
+        const storedData = localStorage.getItem(`game_data_${fileName}`);
+        if (storedData) {
+            gameData = JSON.parse(storedData);
+        } else {
+            const response = await fetch(`./data/${fileName}`);
+            if (!response.ok) throw new Error(`שגיאת רשת: ${response.status}`);
+            gameData = await response.json();
         }
-        const gameData = await response.json();
+
         loadedQuestions = gameData.questions;
         finalQuestionData = gameData.final_question;
         gameName = gameData.game_name; // The gameName from the file is the source of truth
@@ -342,6 +349,8 @@ export async function startGame(options) {
     // Show the persistent footer
     document.body.classList.add('game-active');
     mainGameFooter.classList.add('visible');
+    if (homeBtn) homeBtn.classList.remove('hidden');
+
 
     // Make sure the manual score controls are visible at the start of a new game
     const scoreControls = document.querySelector('.score-controls');

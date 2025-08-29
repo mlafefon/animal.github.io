@@ -9,7 +9,7 @@
 <body>
     <div id="start-screen">
         <button id="settings-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19-.15-.24.42-.12-.64l2 3.46c.12.22.39.3.61.22l2.49 1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.4-.4.4-1 .1-1.4z"/></svg>
         </button>
         <div class="start-content">
             <h1>משחק החיות</h1>
@@ -181,7 +181,15 @@
     <div id="edit-game-screen" class="container hidden">
         <div class="edit-header">
             <h1>עריכת משחקים</h1>
-            <button id="return-to-start-btn" class="btn btn-secondary">חזור</button>
+        </div>
+
+        <div class="edit-sticky-actions">
+            <button type="button" id="back-to-home-from-edit-btn" class="btn btn-secondary btn-medium">חזור</button>
+            <div class="main-edit-actions">
+                <button type="button" id="add-question-btn" class="btn btn-secondary btn-medium">הוסף שאלה</button>
+                <button type="button" id="download-game-btn" class="btn btn-secondary btn-medium">הורד קובץ</button>
+                <button type="button" id="save-game-btn" class="btn btn-primary btn-medium">שמור שינויים</button>
+            </div>
         </div>
 
         <div class="edit-controls">
@@ -200,7 +208,15 @@
                 <input type="text" id="game-name-input" placeholder="הכנס שם למשחק">
             </div>
 
-            <h2>שאלות</h2>
+            <div class="questions-header">
+                <h2>שאלות</h2>
+                <div class="question-toggle-controls">
+                    <button type="button" id="toggle-all-questions-btn" class="btn-icon" title="כווץ/הרחב הכל">
+                        <svg class="expand-icon-svg" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 5.83L15.17 9l1.41-1.41L12 3 7.41 7.59 8.83 9 12 5.83zm0 12.34L8.83 15l-1.41 1.41L12 21l4.59-4.59L15.17 15 12 18.17z"/></svg>
+                        <svg class="collapse-icon-svg" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M7.41 18.59L8.83 20 12 16.83 15.17 20l1.41-1.41L12 14l-4.59 4.59zm9.18-13.18L15.17 4 12 7.17 8.83 4 7.41 5.41 12 10l4.59-4.59z"/></svg>
+                    </button>
+                </div>
+            </div>
             <div id="questions-editor-container">
                 <!-- Questions will be dynamically inserted here -->
             </div>
@@ -213,11 +229,6 @@
             <div class="form-group">
                 <label for="final-question-a-input">תשובה:</label>
                 <textarea id="final-question-a-input" rows="1" placeholder="הכנס את תשובת הסיכום"></textarea>
-            </div>
-
-            <div class="form-actions">
-                <button type="button" id="add-question-btn" class="btn btn-secondary btn-medium">הוסף שאלה</button>
-                <button type="button" id="save-game-btn" class="btn btn-primary btn-medium">שמור שינויים</button>
             </div>
         </form>
 
@@ -254,6 +265,10 @@
     <button id="fullscreen-toggle-btn">
         <svg id="fullscreen-enter-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
         <svg id="fullscreen-exit-icon" class="hidden" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+    </button>
+
+    <button id="global-home-btn" class="hidden" title="חזור למסך הראשי">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"/></svg>
     </button>
 
     <!-- Persistent Game Footer -->

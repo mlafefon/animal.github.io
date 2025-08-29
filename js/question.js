@@ -163,7 +163,19 @@ export function showQuestionScreen(startTime = 30) {
         timerProgressRing.style.strokeDashoffset = offset;
     };
 
-    updateRing(timeLeft, startTime); // Set initial state (full)
+    // --- INSTANT TIMER RESET ---
+    // 1. Remove the transition to prevent animating from the previous state.
+    timerProgressRing.style.transition = 'none';
+
+    // 2. Set the ring to its full initial state immediately.
+    updateRing(timeLeft, startTime);
+
+    // 3. Defer re-enabling the transition until after the browser has painted the initial state.
+    // Using setTimeout with a 0ms delay is a reliable way to do this.
+    setTimeout(() => {
+        timerProgressRing.style.transition = 'stroke-dashoffset 1s linear, stroke 0.5s ease-in-out';
+    }, 0);
+    // --- END OF INSTANT TIMER RESET ---
 
     timerInterval = setInterval(() => {
         timeLeft--;
