@@ -1,9 +1,10 @@
 
+
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam, clearGameState } from './js/game.js';
 import { initializePreQuestionScreen } from './js/preq.js';
-import { initializeQuestionScreen, showQuestionScreen } from './js/question.js';
+import { initializeQuestionScreen, showQuestionScreen, stopTimer } from './js/question.js';
 import { initializeBoxesScreen } from './js/boxes.js';
 import { initializeEditGameScreen, showEditScreen } from './js/edit_game.js';
 import { initializeFinalRound, showBettingScreen } from './js/final.js';
@@ -76,6 +77,9 @@ function initializeGlobalHomeButton() {
     if (!homeBtn) return;
 
     homeBtn.addEventListener('click', () => {
+        // Stop the question timer and its sound if it's running
+        stopTimer();
+
         // Hide all game-related screens and elements
         allScreens.forEach(screen => screen.classList.add('hidden'));
         gameFooter.classList.remove('visible');
@@ -120,13 +124,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /**
-     * Callback for when the box selection animation completes.
-     * This function ONLY adjusts the score on the screen.
+     * Callback for when a box is selected and its value should be awarded.
+     * This function triggers the score adjustment and animation.
      * @param {number} points - The points awarded from the box.
+     * @param {function} [onAnimationComplete] - An optional callback to run after the score animation finishes.
      */
-    const onBoxesScoreAwarded = (points) => {
-        // Now handles both positive (victory) and negative (failure) scores.
-        adjustScore(points);
+    const onBoxesScoreAwarded = (points, onAnimationComplete) => {
+        // Adjusts the score and passes the completion callback to the animation logic.
+        adjustScore(points, onAnimationComplete);
     };
 
     /**

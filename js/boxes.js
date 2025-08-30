@@ -60,9 +60,11 @@ function handleChestClick(event) {
     const selectedChest = event.currentTarget;
     const score = parseInt(selectedChest.dataset.score, 10);
     
+    let soundDelay = 1500; // Default for chestOpen sound
     // Play sound based on score
     if (score < 0) {
         playSound('failure');
+        soundDelay = 1000; // Approx. duration of failure sound
     } else {
         playSound('chestOpen');
     }
@@ -95,14 +97,8 @@ function handleChestClick(event) {
     // Use LRM character for the message as well.
     boxesMessage.textContent = `הניקוד שהתקבל: \u200e${score} נקודות`;
     
-    // Call the score award callback immediately after revealing scores.
-    if (onBoxesCompleteCallback) {
-        onBoxesCompleteCallback(score);
-    }
-
-    // Show the return button after a short delay for better visual flow.
-    // Focusing an element that just became visible can be tricky due to browser rendering cycles.
-    setTimeout(() => {
+    // This function will be called once the score animation finishes.
+    const showReturnButton = () => {
         returnBtn.classList.add('visible');
         // We use a nested setTimeout with a 0ms delay. This pushes the focus() call
         // to the end of the browser's event queue, ensuring it runs *after* the
@@ -111,7 +107,15 @@ function handleChestClick(event) {
         setTimeout(() => {
             returnBtn.focus();
         }, 0);
-    }, 500);
+    };
+
+    // Call the score award callback after the sound delay.
+    // Pass the score and the new callback to be executed upon animation completion.
+    setTimeout(() => {
+        if (onBoxesCompleteCallback) {
+            onBoxesCompleteCallback(score, showReturnButton);
+        }
+    }, soundDelay);
 }
 
 /**

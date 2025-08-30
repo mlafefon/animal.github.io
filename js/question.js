@@ -1,5 +1,6 @@
 
 
+
 import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTeam } from './game.js';
 import { showBoxesScreen } from './boxes.js';
 import { playSound, stopSound } from './audio.js';
@@ -90,7 +91,7 @@ function isLayoutCramped(buttonElement) {
 }
 
 
-function stopTimer() {
+export function stopTimer() {
     clearInterval(timerInterval);
     timerInterval = null;
     stopSound('timerTick');
@@ -196,6 +197,7 @@ export function showQuestionScreen(startTime = 30) {
 
         if (timeLeft <= 0) {
             stopSound('timerTick');
+            playSound('gong');
             // Behave as if "Stop" was clicked, allowing for manual grading.
             triggerManualGrading();
         }

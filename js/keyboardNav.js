@@ -117,6 +117,18 @@ export function initKeyboardNav(container) {
                 }
                 return; // Navigation handled
             }
+
+            // --- Betting Screen Navigation ---
+            const isBettingScreenVisible = document.getElementById('betting-screen').offsetParent !== null;
+            if (key === 'ArrowDown' && isBettingScreenVisible) {
+                const finalQuestionBtn = document.getElementById('show-final-question-btn');
+                // Check if the button is actually visible and can be focused
+                if (finalQuestionBtn && finalQuestionBtn.offsetParent !== null) {
+                    e.preventDefault();
+                    finalQuestionBtn.focus();
+                    return; // Navigation handled
+                }
+            }
         }
         
         // --- Horizontal Navigation (Left/Right) for specific lists on setup screen ---

@@ -1,4 +1,5 @@
 import { showPreQuestionScreen } from './preq.js';
+import { playSound, stopSound } from './audio.js';
 
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
@@ -23,8 +24,60 @@ let currentQuestionNumber = 1;
 let gameName = '';
 let totalQuestions = 0;
 let currentGameOptions = {}; // To store options for saving state
+let scoreAnimationId = null;
 
 // --- Private Functions ---
+
+/**
+ * Animates a number counting up or down in an HTML element.
+ * Plays a counting sound during the animation.
+ * @param {HTMLElement} element The element to update.
+ * @param {number} start The starting number.
+ * @param {number} end The ending number.
+ * @param {function} [onComplete=null] - A callback to run when the animation finishes.
+ */
+function animateScore(element, start, end, onComplete = null) {
+    if (scoreAnimationId) {
+        cancelAnimationFrame(scoreAnimationId);
+        stopSound('scoreCount'); // Stop the previous sound
+    }
+    if (start === end) {
+        element.textContent = end;
+        element.classList.remove('score-updating');
+        if (onComplete) {
+            onComplete();
+        }
+        return;
+    };
+
+    // The duration is fixed to 2 seconds (2500 milliseconds) as requested.
+    const duration = 2500;
+    
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const currentNumber = Math.floor(progress * (end - start) + start);
+        element.textContent = currentNumber;
+
+        if (progress < 1) {
+            scoreAnimationId = window.requestAnimationFrame(step);
+        } else {
+            element.textContent = end; // Ensure the final value is exact
+            element.classList.remove('score-updating');
+            stopSound('scoreCount');
+            scoreAnimationId = null;
+            if (onComplete) {
+                onComplete();
+            }
+        }
+    };
+
+    element.classList.add('score-updating');
+    playSound('scoreCount');
+    scoreAnimationId = window.requestAnimationFrame(step);
+}
+
 
 /**
  * Saves the current game state to localStorage.
@@ -74,6 +127,7 @@ function generateTeams(count) {
         const score = document.createElement('p');
         score.className = 'team-score';
         score.textContent = '0';
+        score.dataset.score = '0';
 
         teamElement.appendChild(iconContainer);
         teamElement.appendChild(name);
@@ -172,7 +226,9 @@ export function getTeamsWithScores() {
     teams.forEach((team) => {
         const index = parseInt(team.dataset.index, 10);
         const teamInfo = TEAMS_DATA[index % TEAMS_DATA.length];
-        const score = parseInt(team.querySelector('.team-score').textContent, 10);
+        const scoreElement = team.querySelector('.team-score');
+        // Read from data-score attribute, not textContent, to get the "real" score
+        const score = parseInt(scoreElement.dataset.score, 10);
         teamData.push({
             index,
             name: teamInfo.name,
@@ -183,23 +239,37 @@ export function getTeamsWithScores() {
     return teamData;
 }
 
-export function adjustScore(amount) {
+export function adjustScore(amount, onAnimationComplete = null) {
     const activeTeam = mainTeamsContainer.querySelector('.team-member.active');
     if (activeTeam) {
         const scoreElement = activeTeam.querySelector('.team-score');
-        let currentScore = parseInt(scoreElement.textContent, 10);
-        scoreElement.textContent = currentScore + amount;
-        saveGameState(); // Save state after score change
+        const startScore = parseInt(scoreElement.textContent, 10) || 0;
+        const currentRealScore = parseInt(scoreElement.dataset.score, 10) || 0;
+        const endScore = currentRealScore + amount;
+
+        // 1. Update the "real" score in the data attribute
+        scoreElement.dataset.score = endScore;
+        // 2. Save the state with the new real score
+        saveGameState();
+        // 3. Trigger the visual animation
+        animateScore(scoreElement, startScore, endScore, onAnimationComplete);
     }
 }
 
-export function adjustScoreForTeam(teamIndex, amount) {
+export function adjustScoreForTeam(teamIndex, amount, onAnimationComplete = null) {
     const team = mainTeamsContainer.querySelector(`.team-member[data-index="${teamIndex}"]`);
     if (team) {
         const scoreElement = team.querySelector('.team-score');
-        let currentScore = parseInt(scoreElement.textContent, 10);
-        scoreElement.textContent = currentScore + amount;
-        saveGameState(); // Save state after score change
+        const startScore = parseInt(scoreElement.textContent, 10) || 0;
+        const currentRealScore = parseInt(scoreElement.dataset.score, 10) || 0;
+        const endScore = currentRealScore + amount;
+
+        // 1. Update the "real" score in the data attribute
+        scoreElement.dataset.score = endScore;
+        // 2. Save the state with the new real score
+        saveGameState();
+        // 3. Trigger the visual animation
+        animateScore(scoreElement, startScore, endScore, onAnimationComplete);
     }
 }
 
@@ -261,7 +331,10 @@ export async function startGame(options) {
         savedState.teams.forEach(team => {
             // Directly set the score text content to avoid re-triggering save
             const scoreElement = mainTeamsContainer.querySelector(`.team-member[data-index="${team.index}"] .team-score`);
-            if (scoreElement) scoreElement.textContent = team.score;
+            if (scoreElement) {
+                scoreElement.textContent = team.score;
+                scoreElement.dataset.score = team.score;
+            }
         });
         updateActiveTeam();
         
