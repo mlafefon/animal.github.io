@@ -474,6 +474,18 @@ h1, h2, h3, h4, h5, h6 {
     }
 }
 
+@keyframes pulse-text-warning {
+    0%, 100% {
+        transform: scale(1);
+        color: #f0f8ff;
+    }
+    50% {
+        transform: scale(1.1);
+        color: #DC143C; /* Crimson red */
+        text-shadow: 0 0 0.625rem #DC143C;
+    }
+}
+
 #timer-container.low-time {
     animation: pulse-warning 1.2s infinite ease-in-out;
 }
@@ -481,6 +493,22 @@ h1, h2, h3, h4, h5, h6 {
 #timer-container.low-time #timer-progress-ring {
     stroke: #DC143C; /* Crimson red */
     filter: drop-shadow(0 0 0.5rem #DC143C);
+}
+
+#timer-container.low-time #timer-value {
+    animation: pulse-text-warning 1.2s infinite ease-in-out;
+}
+
+@keyframes timer-stopped-effect {
+    0% { transform: scale(1) rotate(0); }
+    25% { transform: scale(1.1) rotate(-3deg); box-shadow: 0 0 2.5rem rgba(255, 235, 59, 0.8), inset 0 0 1.25rem rgba(0,0,0,0.5); }
+    50% { transform: scale(1.1) rotate(3deg); }
+    75% { transform: scale(1.1) rotate(-3deg); }
+    100% { transform: scale(1) rotate(0); }
+}
+
+#timer-container.timer-stopped {
+    animation: timer-stopped-effect 0.5s ease-in-out;
 }
 
 

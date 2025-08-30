@@ -1,4 +1,5 @@
 
+
 const groupList = document.getElementById('group-list');
 const gameList = document.getElementById('game-list');
 const startButton = document.getElementById('start-btn');
@@ -9,7 +10,8 @@ let gameDataCache = {};
 
 /**
  * Updates the UI with the number of questions in the bank and the calculated
- * number of questions that will actually be used in the game.
+ * number of questions that will actually be used in the game. It also enables/disables
+ * the start button based on the number of actual questions.
  */
 function updateQuestionStats() {
     const selectedGameLi = gameList.querySelector('.selected');
@@ -27,17 +29,28 @@ function updateQuestionStats() {
     if (!questions) {
         questionBankStat.textContent = 'בנק שאלות: טוען...';
         actualQuestionsStat.textContent = 'שאלות בפועל: טוען...';
+        startButton.disabled = true; // Disable if data is not loaded yet
         return;
     };
 
     const questionBankCount = questions.length;
     const numberOfGroups = parseInt(selectedGroupLi.textContent, 10);
 
-    // Calculation: find the largest multiple of numberOfGroups that is <= questionBankCount
     const actualQuestionsCount = Math.floor(questionBankCount / numberOfGroups) * numberOfGroups;
 
     questionBankStat.textContent = `בנק שאלות: ${questionBankCount}`;
     actualQuestionsStat.textContent = `שאלות בפועל: ${actualQuestionsCount}`;
+
+    const canContinue = document.getElementById('continue-last-point').checked;
+    
+    // Disable start button if there are no questions for a new game
+    if (actualQuestionsCount === 0 && !canContinue) {
+        startButton.disabled = true;
+        startButton.title = 'לא ניתן להתחיל משחק ללא שאלות. יש לבחור פחות קבוצות.';
+    } else {
+        startButton.disabled = false;
+        startButton.title = '';
+    }
 }
 
 
@@ -197,6 +210,7 @@ export function refreshSetupScreenState() {
     // Always start with the checkbox unchecked and controls enabled.
     continueCheckbox.checked = false;
     toggleSetupControls(false);
+    updateQuestionStats(); // Update button state
 }
 
 
@@ -213,14 +227,13 @@ export function initializeSetupScreen(onStart) {
 
     const continueCheckbox = document.getElementById('continue-last-point');
     
-    // The initial state is now set by refreshSetupScreenState() before the screen is shown.
-    // This listener handles subsequent user interactions.
     continueCheckbox.addEventListener('change', (e) => {
         const isChecked = e.target.checked;
         toggleSetupControls(isChecked);
         if (isChecked) {
             applySavedStateSelections();
         }
+        updateQuestionStats(); // Re-check button state
     });
 
     groupList.addEventListener('click', (e) => {
@@ -233,6 +246,18 @@ export function initializeSetupScreen(onStart) {
     });
 
     startButton.addEventListener('click', () => {
+        // Get the calculated number of questions from the UI to check before proceeding
+        const actualQuestionsText = document.getElementById('actual-questions-stat').textContent;
+        const actualQuestions = parseInt(actualQuestionsText.split(':')[1].trim(), 10) || 0;
+        const continueLastPoint = document.getElementById('continue-last-point').checked;
+
+        // This check should only apply when starting a new game.
+        // When continuing, we trust the saved state has questions.
+        if (actualQuestions === 0 && !continueLastPoint) {
+            alert('לא ניתן להתחיל את המשחק כי מספר השאלות בפועל הוא אפס. אנא בחר מספר קבוצות קטן יותר.');
+            return; // Stop here, don't hide the screen or start the game
+        }
+
         setupScreen.classList.add('hidden');
         
         const selectedGroup = groupList.querySelector('.selected');
@@ -242,14 +267,8 @@ export function initializeSetupScreen(onStart) {
         // Fallback to the first available game if none is somehow selected
         const gameFileName = selectedGame ? selectedGame.dataset.fileName : (gameList.querySelector('li')?.dataset.fileName || '');
 
-        const continueCheckbox = document.getElementById('continue-last-point');
         const shuffleQuestions = document.getElementById('shuffle-questions').checked;
-        const continueLastPoint = continueCheckbox.checked;
-
-        // Get the calculated number of questions from the UI to pass to the game logic
-        const actualQuestionsText = document.getElementById('actual-questions-stat').textContent;
-        const actualQuestions = parseInt(actualQuestionsText.split(':')[1].trim(), 10) || 0;
-
+        
         onStart({ numberOfGroups, gameFileName, shuffleQuestions, actualQuestions, continueLastPoint });
     });
 }

@@ -264,11 +264,11 @@ export function adjustScore(amount, onAnimationComplete = null, instant = false)
     }
 }
 
-export function adjustScoreForTeam(teamIndex, amount, onAnimationComplete = null) {
+export function adjustScoreForTeam(teamIndex, amount, onAnimationComplete = null, instant = false) {
     const team = mainTeamsContainer.querySelector(`.team-member[data-index="${teamIndex}"]`);
     if (team) {
         const scoreElement = team.querySelector('.team-score');
-        const startScore = parseInt(scoreElement.textContent, 10) || 0;
+        // 'startScore' is only needed for animation.
         const currentRealScore = parseInt(scoreElement.dataset.score, 10) || 0;
         const endScore = currentRealScore + amount;
 
@@ -276,8 +276,16 @@ export function adjustScoreForTeam(teamIndex, amount, onAnimationComplete = null
         scoreElement.dataset.score = endScore;
         // 2. Save the state with the new real score
         saveGameState();
-        // 3. Trigger the visual animation
-        animateScore(scoreElement, startScore, endScore, onAnimationComplete);
+        // 3. Trigger the visual animation or update instantly
+        if (instant) {
+            scoreElement.textContent = endScore;
+            if (onAnimationComplete) {
+                onAnimationComplete();
+            }
+        } else {
+            const startScore = parseInt(scoreElement.textContent, 10) || 0;
+            animateScore(scoreElement, startScore, endScore, onAnimationComplete);
+        }
     }
 }
 

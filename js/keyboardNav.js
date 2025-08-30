@@ -196,6 +196,18 @@ export function initKeyboardNav(container) {
                     return; // Navigation handled
                 }
             }
+            
+            // --- Final Question Screen Navigation ---
+            const isFinalQuestionScreenVisible = document.getElementById('final-question-screen').offsetParent !== null;
+            if (key === 'ArrowDown' && isFinalQuestionScreenVisible) {
+                const showFinalAnswerBtn = document.getElementById('show-final-answer-btn');
+                // Check if the button is visible and can be focused
+                if (showFinalAnswerBtn && showFinalAnswerBtn.offsetParent !== null) {
+                    e.preventDefault();
+                    showFinalAnswerBtn.focus();
+                    return; // Navigation handled
+                }
+            }
         }
         
         // --- Horizontal Navigation (Left/Right) for specific lists on setup screen ---

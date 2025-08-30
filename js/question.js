@@ -104,8 +104,18 @@ export function stopTimer() {
 function triggerManualGrading() {
     stopTimer();
     timerContainer.classList.remove('low-time');
+
+    // Add a one-time "stopped" animation
+    timerContainer.classList.add('timer-stopped');
+    timerContainer.addEventListener('animationend', () => {
+        timerContainer.classList.remove('timer-stopped');
+    }, { once: true });
+
     stopGameBtn.classList.add('hidden');
     answerControls.classList.remove('hidden');
+    
+    // Set focus on the next logical control for accessibility
+    correctAnswerBtn.focus();
 }
 
 

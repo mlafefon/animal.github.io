@@ -7,7 +7,7 @@ const soundEffects = {
     chestOpen: new Audio('https://assets.mixkit.co/active_storage/sfx/598/598-preview.mp3'),
     failure: new Audio('https://assets.mixkit.co/active_storage/sfx/473/473-preview.mp3'),
     winner: new Audio('https://assets.mixkit.co/active_storage/sfx/485/485-preview.mp3'),
-    gong: new Audio('https://assets.mixkit.co/active_storage/sfx/939/939-preview.mp3'),
+    gong: new Audio('https://assets.mixkit.co/active_storage/sfx/109/109-preview.mp3'),
     scoreCount: new Audio('https://assets.mixkit.co/active_storage/sfx/1998/1998-preview.mp3')
 };
 // Adjust volume for subtlety

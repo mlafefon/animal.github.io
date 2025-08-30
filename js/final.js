@@ -178,8 +178,16 @@ function checkAllTeamsScored() {
 function handleFinalScore(teamIndex, wasCorrect) {
     const betAmount = teamBets[teamIndex];
     const scoreChange = wasCorrect ? betAmount : -betAmount;
-    
-    adjustScoreForTeam(teamIndex, scoreChange);
+
+    // Play the correct sound based on the result
+    if (wasCorrect) {
+        playSound('correct');
+    } else {
+        playSound('incorrect');
+    }
+
+    // Adjust the score instantly without animation
+    adjustScoreForTeam(teamIndex, scoreChange, null, true);
 
     const controls = finalScoringTeams.querySelector(`.final-scoring-controls[data-index="${teamIndex}"]`);
     if (controls) {
