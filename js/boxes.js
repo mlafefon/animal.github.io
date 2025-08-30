@@ -12,6 +12,7 @@ let onBoxesContinueCallback = null;
 let chestSelected = false;
 
 const OPEN_CHEST_SRC = 'https://drive.google.com/thumbnail?id=1tHAZ7bNSJv6GNi1lFXEcY6HrIU7fQRZa';
+const BROKEN_CHEST_SRC = 'https://drive.google.com/thumbnail?id=1zmhK3PApQnzyFj2VLkANftxStwryp-hD';
 const CLOSED_CHEST_SRC = 'https://drive.google.com/thumbnail?id=1rSOXo048hHdRLX4MWypmdsUWDQkyKipL';
 import { playSound } from './audio.js';
 
@@ -53,25 +54,32 @@ function resetBoxesScreen() {
  * Handles the selection of a treasure chest.
  * @param {Event} event - The click event from the chest.
  */
-function handleChestClick(event) {
+async function handleChestClick(event) {
     if (chestSelected) return;
     chestSelected = true;
 
     const selectedChest = event.currentTarget;
     const score = parseInt(selectedChest.dataset.score, 10);
-    
-    let soundDelay = 1500; // Default for chestOpen sound
-    // Play sound based on score
-    if (score < 0) {
-        playSound('failure');
-        soundDelay = 1000; // Approx. duration of failure sound
-    } else {
-        playSound('chestOpen');
-    }
+
+    // This function will be called once the score animation finishes.
+    const showReturnButton = () => {
+        returnBtn.classList.add('visible');
+        // We use a nested setTimeout with a 0ms delay. This pushes the focus() call
+        // to the end of the browser's event queue, ensuring it runs *after* the
+        // browser has processed the style changes from adding the '.visible' class.
+        // This makes the element focusable just before we try to focus it.
+        setTimeout(() => {
+            returnBtn.focus();
+        }, 0);
+    };
 
     // Change image to open chest
     const selectedImg = selectedChest.querySelector('img');
-    selectedImg.src = OPEN_CHEST_SRC;
+    if (score < 0) {
+        selectedImg.src = BROKEN_CHEST_SRC;
+    } else {
+        selectedImg.src = OPEN_CHEST_SRC;
+    }
     selectedImg.style.transform = 'scale(1.1)';
 
     // Mark the selected chest and disable others
@@ -96,26 +104,24 @@ function handleChestClick(event) {
 
     // Use LRM character for the message as well.
     boxesMessage.textContent = `הניקוד שהתקבל: \u200e${score} נקודות`;
-    
-    // This function will be called once the score animation finishes.
-    const showReturnButton = () => {
-        returnBtn.classList.add('visible');
-        // We use a nested setTimeout with a 0ms delay. This pushes the focus() call
-        // to the end of the browser's event queue, ensuring it runs *after* the
-        // browser has processed the style changes from adding the '.visible' class.
-        // This makes the element focusable just before we try to focus it.
-        setTimeout(() => {
-            returnBtn.focus();
-        }, 0);
-    };
 
-    // Call the score award callback after the sound delay.
-    // Pass the score and the new callback to be executed upon animation completion.
-    setTimeout(() => {
+    // Play sound and then trigger score animation. The timing depends on the outcome.
+    if (score < 0) {
+        // For failure, wait for the failure sound to end before starting the score animation.
+        await playSound('failure');
         if (onBoxesCompleteCallback) {
             onBoxesCompleteCallback(score, showReturnButton);
         }
-    }, soundDelay);
+    } else {
+        // For victory, play the sound and start the score animation after a fixed delay.
+        playSound('chestOpen');
+        const soundDelay = 1500;
+        setTimeout(() => {
+            if (onBoxesCompleteCallback) {
+                onBoxesCompleteCallback(score, showReturnButton);
+            }
+        }, soundDelay);
+    }
 }
 
 /**

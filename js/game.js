@@ -239,20 +239,28 @@ export function getTeamsWithScores() {
     return teamData;
 }
 
-export function adjustScore(amount, onAnimationComplete = null) {
+export function adjustScore(amount, onAnimationComplete = null, instant = false) {
     const activeTeam = mainTeamsContainer.querySelector('.team-member.active');
     if (activeTeam) {
         const scoreElement = activeTeam.querySelector('.team-score');
-        const startScore = parseInt(scoreElement.textContent, 10) || 0;
         const currentRealScore = parseInt(scoreElement.dataset.score, 10) || 0;
         const endScore = currentRealScore + amount;
 
-        // 1. Update the "real" score in the data attribute
+        // Update the "real" score and save state
         scoreElement.dataset.score = endScore;
-        // 2. Save the state with the new real score
         saveGameState();
-        // 3. Trigger the visual animation
-        animateScore(scoreElement, startScore, endScore, onAnimationComplete);
+        
+        if (instant) {
+            // Instantly update the display and call the callback if it exists
+            scoreElement.textContent = endScore;
+            if (onAnimationComplete) {
+                onAnimationComplete();
+            }
+        } else {
+            // Trigger the visual animation for non-instant updates
+            const startScore = parseInt(scoreElement.textContent, 10) || 0;
+            animateScore(scoreElement, startScore, endScore, onAnimationComplete);
+        }
     }
 }
 
@@ -454,9 +462,9 @@ export function initializeScoreControls() {
         if (!button) return;
 
         if (button.classList.contains('add-point-btn')) {
-            adjustScore(5);
+            adjustScore(5, null, true);
         } else if (button.classList.contains('subtract-point-btn')) {
-            adjustScore(-5);
+            adjustScore(-5, null, true);
         }
     });
 }

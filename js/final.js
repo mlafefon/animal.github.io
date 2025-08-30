@@ -34,7 +34,8 @@ function renderBettingCards() {
     teamBets = {}; // Reset bets
 
     teamsData.forEach(team => {
-        teamBets[team.index] = 0; // Default bet to 0
+        const canBet = team.score > 0;
+        teamBets[team.index] = 0; // Default bet to 0 for everyone.
 
         const card = document.createElement('div');
         card.className = 'betting-team-card';
@@ -44,11 +45,17 @@ function renderBettingCards() {
             </div>
             <p class="team-name">${team.name}</p>
             <p class="team-score">ניקוד: ${team.score}</p>
-            <div class="bet-control">
-                <button class="bet-stepper-btn bet-increase" data-index="${team.index}">+</button>
-                <span class="bet-amount" data-index="${team.index}">0</span>
-                <button class="bet-stepper-btn bet-decrease" data-index="${team.index}">-</button>
-            </div>
+            ${canBet ? `
+                <div class="bet-control">
+                    <button class="bet-stepper-btn bet-increase" data-index="${team.index}">+</button>
+                    <span class="bet-amount" data-index="${team.index}">0</span>
+                    <button class="bet-stepper-btn bet-decrease" data-index="${team.index}">-</button>
+                </div>
+            ` : `
+                <div class="bet-control no-bet">
+                    <p>לא ניתן להמר</p>
+                </div>
+            `}
         `;
         bettingTeamsContainer.appendChild(card);
     });

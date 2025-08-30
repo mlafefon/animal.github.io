@@ -28,23 +28,45 @@ Object.values(soundEffects).forEach(sound => {
 });
 
 /**
- * Plays a sound effect by its key.
+ * Plays a sound effect by its key and returns a Promise that resolves when the sound ends.
  * The browser might block autoplay until the user interacts with the page.
  * This is generally fine as sounds are triggered by user actions (clicks).
  * @param {('correct'|'incorrect'|'timerTick'|'chestOpen'|'failure'|'winner'|'gong'|'scoreCount')} soundKey - The key of the sound to play.
+ * @returns {Promise<void>} A promise that resolves when the sound finishes playing.
  */
 export function playSound(soundKey) {
-    const sound = soundEffects[soundKey];
-    if (sound) {
-        // Rewind to the start in case it's played again quickly
-        sound.currentTime = 0;
-        sound.play().catch(error => {
-            // Autoplay may be blocked. We can warn in the console but not disrupt the user.
-            console.warn(`Could not play sound "${soundKey}":`, error);
-        });
-    } else {
-        console.error(`Sound key "${soundKey}" not found.`);
-    }
+    return new Promise((resolve, reject) => {
+        const sound = soundEffects[soundKey];
+        if (sound) {
+            // For looping sounds, we can't wait for 'ended', so we resolve immediately.
+            if (sound.loop) {
+                sound.currentTime = 0;
+                sound.play().catch(error => {
+                    console.warn(`Could not play looping sound "${soundKey}":`, error);
+                    reject(error);
+                });
+                resolve();
+                return;
+            }
+
+            // Function to handle cleanup and resolve the promise
+            const onPlayEnd = () => {
+                resolve();
+            };
+            sound.addEventListener('ended', onPlayEnd, { once: true });
+
+            sound.currentTime = 0;
+            sound.play().catch(error => {
+                console.warn(`Could not play sound "${soundKey}":`, error);
+                sound.removeEventListener('ended', onPlayEnd); // Clean up listener on error
+                reject(error);
+            });
+        } else {
+            const errorMsg = `Sound key "${soundKey}" not found.`;
+            console.error(errorMsg);
+            reject(new Error(errorMsg));
+        }
+    });
 }
 
 /**
