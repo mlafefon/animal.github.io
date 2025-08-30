@@ -27,8 +27,75 @@ export function initKeyboardNav(container) {
     if (!container) return;
 
     container.addEventListener('keydown', (e) => {
-        // We handle a specific set of keys for navigation and activation.
         const key = e.key;
+
+        // --- Pass Question Modal Navigation & Focus Trap ---
+        const passModal = document.getElementById('pass-question-modal-overlay');
+        const isPassModalVisible = passModal && passModal.offsetParent !== null;
+
+        if (isPassModalVisible) {
+            const focusableInModal = Array.from(
+                passModal.querySelectorAll('.team-member-modal-select, #cancel-pass-question-btn')
+            );
+            const activeElement = document.activeElement;
+            const currentIndex = focusableInModal.indexOf(activeElement);
+
+            // Handle Tab key for focus trapping
+            if (key === 'Tab') {
+                e.preventDefault();
+                let nextIndex = 0;
+                if (currentIndex !== -1) {
+                    nextIndex = e.shiftKey
+                        ? (currentIndex - 1 + focusableInModal.length) % focusableInModal.length
+                        : (currentIndex + 1) % focusableInModal.length;
+                }
+                focusableInModal[nextIndex].focus();
+                return; // Event handled
+            }
+
+            // Handle Arrow keys for custom navigation
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
+                e.preventDefault();
+                const teamIcons = focusableInModal.filter(el => el.matches('.team-member-modal-select'));
+                const cancelButton = focusableInModal.find(el => el.id === 'cancel-pass-question-btn');
+                const isTeamIconFocused = teamIcons.includes(activeElement);
+                const isCancelButtonFocused = (activeElement === cancelButton);
+
+                if (isTeamIconFocused) {
+                    const currentTeamIndex = teamIcons.indexOf(activeElement);
+                    if (key === 'ArrowDown' && cancelButton) {
+                        cancelButton.focus();
+                    } else if (key === 'ArrowRight') { // RTL: Right arrow moves to previous element in DOM
+                        const nextIndex = (currentTeamIndex - 1 + teamIcons.length) % teamIcons.length;
+                        teamIcons[nextIndex].focus();
+                    } else if (key === 'ArrowLeft') { // RTL: Left arrow moves to next element in DOM
+                        const nextIndex = (currentTeamIndex + 1) % teamIcons.length;
+                        teamIcons[nextIndex].focus();
+                    }
+                } else if (isCancelButtonFocused) {
+                    if (key === 'ArrowUp' && teamIcons.length > 0) {
+                        // From cancel button, move up to the first team icon
+                        teamIcons[0].focus();
+                    }
+                }
+                return; // Event handled
+            }
+            
+            // Handle activation keys within the modal
+            if (key === 'Enter' || key === ' ') {
+                if (focusableInModal.includes(activeElement)) {
+                    e.preventDefault();
+                    activeElement.click();
+                }
+                return; // Event handled
+            }
+            
+            // Stop any other general navigation logic from running while the modal is open
+            return;
+        }
+
+        // --- General App Navigation (runs only if modal is not visible) ---
+
         if (!['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'Enter', ' '].includes(key)) {
             return;
         }

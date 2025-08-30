@@ -612,16 +612,22 @@ export function initializeEditGameScreen() {
 
     confirmNewGameBtn.addEventListener('click', async () => {
         const newName = newGameNameInput.value.trim();
-        const newFilename = newGameFilenameInput.value.trim();
+        let newFilename = newGameFilenameInput.value.trim();
 
         if (!newName || !newFilename) {
             alert('יש למלא את שם המשחק ואת שם הקובץ.');
             return;
         }
 
-        if (!newFilename.endsWith('.json')) {
-            alert('שם הקובץ חייב להסתיים ב-.json');
+        // English filename validation: only letters, numbers, underscore, hyphen
+        const englishFilenameRegex = /^[a-zA-Z0-9_-]+$/;
+        if (!englishFilenameRegex.test(newFilename)) {
+            alert('שם הקובץ יכול להכיל אותיות באנגלית, מספרים, קו תחתון (_) ומקף (-) בלבד.');
             return;
+        }
+
+        if (!newFilename.endsWith('.json')) {
+            newFilename += '.json';
         }
         
         // Create empty game structure
