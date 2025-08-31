@@ -11,9 +11,7 @@ let onBoxesCompleteCallback = null;
 let onBoxesContinueCallback = null;
 let chestSelected = false;
 
-const OPEN_CHEST_SRC = 'https://drive.google.com/thumbnail?id=1tHAZ7bNSJv6GNi1lFXEcY6HrIU7fQRZa';
-const BROKEN_CHEST_SRC = 'https://drive.google.com/thumbnail?id=1zmhK3PApQnzyFj2VLkANftxStwryp-hD';
-const CLOSED_CHEST_SRC = 'https://drive.google.com/thumbnail?id=1rSOXo048hHdRLX4MWypmdsUWDQkyKipL';
+import { IMAGE_URLS } from './assets.js';
 import { playSound } from './audio.js';
 
 
@@ -42,7 +40,7 @@ function resetBoxesScreen() {
         chest.querySelector('.score-reveal-above')?.remove();
         
         const img = chest.querySelector('img');
-        img.src = CLOSED_CHEST_SRC;
+        img.src = IMAGE_URLS.CHEST_CLOSED;
         img.style.transform = 'scale(1)';
         img.style.display = 'block';
 
@@ -76,9 +74,9 @@ async function handleChestClick(event) {
     // Change image to open chest
     const selectedImg = selectedChest.querySelector('img');
     if (score < 0) {
-        selectedImg.src = BROKEN_CHEST_SRC;
+        selectedImg.src = IMAGE_URLS.CHEST_BROKEN;
     } else {
-        selectedImg.src = OPEN_CHEST_SRC;
+        selectedImg.src = IMAGE_URLS.CHEST_OPEN;
     }
     selectedImg.style.transform = 'scale(1.1)';
 

@@ -1525,10 +1525,6 @@ h1, h2, h3, h4, h5, h6 {
     background-color: #b01030;
 }
 
-.form-actions {
-    display: none;
-}
-
 /* --- Save Button State --- */
 #save-game-btn.unsaved {
     background-color: #ffc107; /* Amber */

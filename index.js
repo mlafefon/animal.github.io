@@ -2,13 +2,14 @@
 
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen } from './js/setup.js';
-import { startGame, initializeScoreControls, adjustScore, switchToNextTeam, clearGameState } from './js/game.js';
+import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
 import { initializePreQuestionScreen } from './js/preq.js';
 import { initializeQuestionScreen, showQuestionScreen, stopTimer } from './js/question.js';
 import { initializeBoxesScreen } from './js/boxes.js';
 import { initializeEditGameScreen, showEditScreen } from './js/edit_game.js';
 import { initializeFinalRound, showBettingScreen } from './js/final.js';
 import { initKeyboardNav } from './js/keyboardNav.js';
+import { preloadGameAssets } from './js/assets.js';
 
 
 /**
@@ -96,6 +97,9 @@ function initializeGlobalHomeButton() {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Preload all critical assets as soon as the DOM is ready to prevent UI lag.
+    preloadGameAssets();
+
     /**
      * Callback function that is passed to the setup module.
      * It's called when the user clicks the "Start" button.

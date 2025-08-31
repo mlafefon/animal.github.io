@@ -1,15 +1,13 @@
 
 
 import { populateGameList, refreshSetupScreenState } from './setup.js';
+import { IMAGE_URLS } from './assets.js';
 
 const startScreen = document.getElementById('start-screen');
 const setupScreen = document.getElementById('setup-screen');
 const goToSetupBtn = document.getElementById('go-to-setup-btn');
 const settingsBtn = document.getElementById('settings-btn');
 const startImage = document.getElementById('start-screen-image');
-
-// Centralizing the image URL here makes it easier to change in the future.
-const START_IMAGE_URL = 'https://drive.google.com/thumbnail?id=17M-mnVL1Ifm-H2umz6dSiVux5WD_e7Mh';
 
 /**
  * Initializes the start screen, handling the transition to the setup screen.
@@ -21,9 +19,9 @@ export function initializeStartScreen(onGoToSettings) {
         return;
     }
 
-    // Set the image source dynamically
+    // Set the image source dynamically from the central assets file
     if (startImage) {
-        startImage.src = START_IMAGE_URL;
+        startImage.src = IMAGE_URLS.START_SCREEN;
     }
 
     goToSetupBtn.addEventListener('click', async () => {

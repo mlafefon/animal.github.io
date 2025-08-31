@@ -1,5 +1,6 @@
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
+import { IMAGE_URLS } from './assets.js';
 
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
@@ -9,11 +10,11 @@ const setupScreen = document.getElementById('setup-screen');
 
 // --- Data & State ---
 const TEAMS_DATA = [
-    { name: 'ינשופים', icon: 'https://drive.google.com/thumbnail?id=1tARCfOYPOljZ5EFgovdaiUxUXwHqJZ7I' },
-    { name: 'שועלים', icon: 'https://drive.google.com/thumbnail?id=1z7HUg1rUjt6MjiycsPxpoyTY9BWvxWgS' },
-    { name: 'פילים', icon: 'https://drive.google.com/thumbnail?id=1hXwW9zfOVdlnEI-P3O9f8AdkvAJV0ljr' },
-    { name: 'צפרדעים', icon: 'https://drive.google.com/thumbnail?id=1owX2_Qo51yF1Mtk7xbxzg7aF1oHY-E4L' },
-    { name: 'אריות', icon: 'https://drive.google.com/thumbnail?id=1GBWmsUQ46_AdL_w_-T6lnsE5hNlR5twb' }
+    { name: 'ינשופים', icon: IMAGE_URLS.TEAM_OWL },
+    { name: 'שועלים', icon: IMAGE_URLS.TEAM_FOX },
+    { name: 'פילים', icon: IMAGE_URLS.TEAM_ELEPHANT },
+    { name: 'צפרדעים', icon: IMAGE_URLS.TEAM_FROG },
+    { name: 'אריות', icon: IMAGE_URLS.TEAM_LION }
 ];
 
 let isQuestionPassed = false;
