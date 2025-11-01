@@ -74,6 +74,103 @@ h1, h2, h3, h4, h5, h6 {
     transition: outline 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
 }
 
+/* --- Auth Screen --- */
+#auth-screen {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 1.25rem;
+}
+
+.auth-container {
+    background: rgba(0, 0, 0, 0.2);
+    border: 0.0625rem solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.9375rem;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 25rem;
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.auth-container h1 {
+    font-size: 2.5rem;
+    color: #ffeb3b;
+}
+
+.auth-container p {
+    font-size: 1.1rem;
+    margin-bottom: 0.625rem;
+}
+
+#auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+#auth-form .form-group {
+    width: 100%;
+}
+
+#auth-form input {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1.1rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 0.0625rem solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.5rem;
+    color: #f0f8ff;
+    text-align: right;
+}
+
+#auth-form input:focus {
+    outline: none;
+    border-color: #ffeb3b;
+}
+
+#auth-form .auth-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 0.9375rem;
+}
+
+#auth-form .separator {
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0.3125rem 0;
+}
+
+#login-google-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.9375rem;
+    background-color: #fff;
+    color: #444;
+    border: 0.1875rem solid #ccc;
+}
+#login-google-btn:hover {
+    background-color: #f1f1f1;
+    border-color: #aaa;
+}
+#login-google-btn svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+#auth-error {
+    color: #ff5252;
+    font-weight: bold;
+    min-height: 1.2rem; /* Reserve space */
+}
+
 
 /* --- Start Screen --- */
 #start-screen {
@@ -88,6 +185,24 @@ h1, h2, h3, h4, h5, h6 {
     padding: 1.25rem;
     position: relative;
     color: white;
+}
+
+#user-info {
+    position: absolute;
+    top: 1.25rem;
+    left: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.9375rem;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.5rem 0.9375rem;
+    border-radius: 1.875rem;
+    border: 0.0625rem solid rgba(255, 255, 255, 0.3);
+}
+
+#user-name {
+    font-weight: bold;
+    font-size: 1.1rem;
 }
 
 #settings-btn {
@@ -1234,16 +1349,33 @@ h1, h2, h3, h4, h5, h6 {
 
 .main-edit-actions {
     display: flex;
-    gap: 1.25rem;
+    gap: 0.9375rem;
     align-items: center;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
+.public-toggle-group {
+    padding-left: 0.9375rem;
+    border-left: 0.0625rem solid rgba(255, 255, 255, 0.3);
+    margin-left: 0.625rem;
 }
 
 .edit-controls {
     display: flex;
     gap: 1.25rem;
-    align-items: center;
+    align-items: flex-end; /* Align to the bottom for a cleaner look */
     flex-wrap: wrap;
     margin-bottom: 1.25rem;
+}
+
+/* New rules for balancing edit controls */
+.edit-controls > .form-group {
+    flex: 2; /* Give the select box group more weight */
+    min-width: 15rem; /* Prevent it from becoming too small on wrap */
+}
+
+.edit-controls > .btn {
+    flex: 1; /* Make buttons grow proportionally */
 }
 
 .form-group {

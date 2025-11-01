@@ -1,8 +1,18 @@
+import {
+    getMyGames,
+    saveGame,
+    createGame,
+    deleteGame
+} from './auth.js';
+
+
 // --- Elements ---
 const editGameScreen = document.getElementById('edit-game-screen');
 const startScreen = document.getElementById('start-screen');
 const gameEditorSelect = document.getElementById('game-editor-select');
 const createNewGameBtn = document.getElementById('create-new-game-btn');
+const uploadGameBtn = document.getElementById('upload-game-btn');
+const uploadGameInput = document.getElementById('upload-game-input');
 const gameEditorForm = document.getElementById('game-editor-form');
 const gameNameInput = document.getElementById('game-name-input');
 const questionsEditorContainer = document.getElementById('questions-editor-container');
@@ -12,24 +22,76 @@ const downloadGameBtn = document.getElementById('download-game-btn');
 const finalQuestionQInput = document.getElementById('final-question-q-input');
 const finalQuestionAInput = document.getElementById('final-question-a-input');
 const toggleAllQuestionsBtn = document.getElementById('toggle-all-questions-btn');
+const deleteGameBtn = document.getElementById('delete-game-btn');
+const publicGameToggle = document.getElementById('public-game-toggle');
 
 // Modal Elements
 const newGameModalOverlay = document.getElementById('new-game-modal-overlay');
 const newGameNameInput = document.getElementById('new-game-name');
-const newGameFilenameInput = document.getElementById('new-game-filename');
 const confirmNewGameBtn = document.getElementById('confirm-new-game-btn');
 const cancelNewGameBtn = document.getElementById('cancel-new-game-btn');
 
 
 // --- State Management for Save Button ---
 let saveStateTimeout = null;
+let gamesCache = {}; // Cache for currently loaded games in the editor
+
+/**
+ * Validates if the provided data object conforms to the game data schema.
+ * @param {object} data - The parsed JSON data from the uploaded file.
+ * @returns {string|null} An error message string if invalid, or null if valid.
+ */
+function getGameDataValidationError(data) {
+    if (!data || typeof data !== 'object') {
+        return 'הקובץ אינו מכיל אובייקט JSON תקין.';
+    }
+
+    if (typeof data.game_name !== 'string' || data.game_name.trim() === '') {
+        return 'שדה "game_name" חסר או ריק.';
+    }
+
+    if (!Array.isArray(data.questions)) {
+        return 'שדה "questions" חסר או שאינו מערך (array).';
+    }
+
+    for (let i = 0; i < data.questions.length; i++) {
+        const q = data.questions[i];
+         if (typeof q !== 'object' || q === null) {
+            return `שאלה מספר ${i + 1} אינה אובייקט תקין.`;
+        }
+        if (typeof q.q !== 'string' || q.q.trim() === '') {
+            return `שאלה מספר ${i + 1} חסרה את שדה "q" או שהוא ריק.`;
+        }
+        if (typeof q.a !== 'string' || q.a.trim() === '') {
+            return `שאלה מספר ${i + 1} חסרה את שדה "a" או שהוא ריק.`;
+        }
+        if (typeof q.timer !== 'number' || !Number.isInteger(q.timer) || q.timer <= 0) {
+            return `שאלה מספר ${i + 1} חסרה את שדה "timer" או שהוא אינו מספר חיובי שלם.`;
+        }
+    }
+
+    if (data.hasOwnProperty('final_question') && data.final_question !== null) {
+        if (typeof data.final_question !== 'object') {
+            return 'השדה "final_question" אינו אובייקט תקין.';
+        }
+        const fq = data.final_question;
+        if (typeof fq.q !== 'string' || fq.q.trim() === '') {
+            return 'שאלת הסיכום חסרה את שדה "q" או שהוא ריק.';
+        }
+        if (typeof fq.a !== 'string' || fq.a.trim() === '') {
+            return 'שאלת הסיכום חסרה את שדה "a" או שהוא ריק.';
+        }
+    }
+
+    return null; // Data is valid
+}
+
 
 /**
  * Sets the visual state of the save button to indicate unsaved changes.
  * @param {boolean} isUnsaved - True to show unsaved state, false to reset.
  */
 function setUnsavedState(isUnsaved) {
-    // Clear any pending "saved" state transitions
     if (saveStateTimeout) {
         clearTimeout(saveStateTimeout);
         saveGameBtn.textContent = 'שמור שינויים';
@@ -45,11 +107,8 @@ function setUnsavedState(isUnsaved) {
     }
 }
 
-/**
- * Shows a visual confirmation that the game has been saved successfully.
- */
 function showSavedState() {
-    setUnsavedState(false); // Remove unsaved state first
+    setUnsavedState(false);
     saveGameBtn.classList.add('saved');
     saveGameBtn.textContent = 'נשמר!';
     saveGameBtn.disabled = true;
@@ -62,6 +121,13 @@ function showSavedState() {
     }, 2000);
 }
 
+function setMainActionButtonsVisibility(visible) {
+    const mainEditActions = document.querySelector('.main-edit-actions');
+    if (mainEditActions) {
+        mainEditActions.classList.toggle('hidden', !visible);
+    }
+}
+
 
 /**
  * Automatically adjusts the height of a textarea to fit its content.
@@ -69,30 +135,19 @@ function showSavedState() {
  */
 function autoResizeTextarea(textarea) {
     if (!textarea) return;
-    textarea.style.height = 'auto'; // Reset height to recalculate
+    textarea.style.height = 'auto';
     textarea.style.height = `${textarea.scrollHeight}px`;
 }
 
-/**
- * Truncates text to a specific word limit.
- * @param {string} text The text to truncate.
- * @param {number} [limit=6] The word limit.
- * @returns {string} The truncated text.
- */
 function truncateText(text, limit = 6) {
     if (!text) return '';
-    const words = text.split(/\s+/); // Split by any whitespace
+    const words = text.split(/\s+/);
     if (words.length > limit) {
         return words.slice(0, limit).join(' ') + '...';
     }
     return text;
 }
 
-/**
- * Updates the state of the toggle-all button based on the current state of the cards.
- * If any card is collapsed, it shows the "Expand" icon.
- * If all cards are expanded, it shows the "Collapse" icon.
- */
 function updateToggleAllButtonState() {
     const isAnyCollapsed = !!questionsEditorContainer.querySelector('.question-card.collapsed');
     if (isAnyCollapsed) {
@@ -107,64 +162,44 @@ function updateToggleAllButtonState() {
 }
 
 
-/**
- * Updates the title of a collapsed card with a styled, truncated question text.
- * @param {HTMLDivElement} card The question card element.
- */
 function updateCollapsedTitle(card) {
     const titleEl = card.querySelector('h3');
     const index = parseInt(card.dataset.index, 10);
     const questionText = card.querySelector('.question-input').value.trim();
     const truncated = truncateText(questionText);
     titleEl.innerHTML = `<span class="question-title-number">שאלה ${index + 1}:</span><span class="question-title-preview">${truncated}</span>`;
-    titleEl.title = questionText; // Add tooltip with full question
+    titleEl.title = questionText;
 }
 
-/**
- * Collapses a single question card and updates its title.
- * @param {HTMLDivElement} card The question card element.
- */
 function collapseCard(card) {
     card.classList.add('collapsed');
     updateCollapsedTitle(card);
     updateToggleAllButtonState();
 }
 
-/**
- * Expands a single question card and restores its title.
- * @param {HTMLDivElement} card The question card element.
- */
 function expandCard(card) {
     card.classList.remove('collapsed');
     const titleEl = card.querySelector('h3');
     const index = parseInt(card.dataset.index, 10);
     titleEl.textContent = `שאלה ${index + 1}`;
-    titleEl.title = ''; // Remove tooltip
+    titleEl.title = '';
     updateToggleAllButtonState();
 }
 
 
-/**
- * Re-calculates and updates the displayed question number for all cards.
- */
 function renumberQuestionCards() {
     const cards = questionsEditorContainer.querySelectorAll('.question-card');
     cards.forEach((card, i) => {
         card.dataset.index = i;
-        // Re-apply the correct title based on collapsed state
         if (card.classList.contains('collapsed')) {
             updateCollapsedTitle(card);
         } else {
-            // expandCard would call updateToggleAllButtonState, but this is simpler
             const titleEl = card.querySelector('h3');
             titleEl.textContent = `שאלה ${i + 1}`;
         }
     });
 }
 
-/**
- * Updates the state (enabled/disabled) of all reorder buttons.
- */
 function updateReorderButtons() {
     const cards = questionsEditorContainer.querySelectorAll('.question-card');
     cards.forEach((card, index) => {
@@ -176,11 +211,6 @@ function updateReorderButtons() {
     });
 }
 
-/**
- * Renders a single question card in the editor.
- * @param {object} question - The question object {q, a, timer}.
- * @param {number} index - The index of the question.
- */
 function renderQuestionCard(question, index) {
     const card = document.createElement('div');
     card.className = 'question-card';
@@ -194,7 +224,7 @@ function renderQuestionCard(question, index) {
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/></svg>
                     </button>
                     <button type="button" class="reorder-btn reorder-down-btn" title="העבר למטה">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6 6 1.41-1.41z"/></svg>
                     </button>
                 </div>
                 <h3>שאלה ${index + 1}</h3>
@@ -223,24 +253,19 @@ function renderQuestionCard(question, index) {
     const questionInput = card.querySelector('.question-input');
     const answerInput = card.querySelector('.answer-input');
 
-    // Listener for auto-resizing textareas
     [questionInput, answerInput].forEach(textarea => {
         textarea.addEventListener('input', () => autoResizeTextarea(textarea));
-        // Set initial size after a tiny delay to ensure rendering is complete
         setTimeout(() => autoResizeTextarea(textarea), 0);
     });
 
-    // Listener to update truncated title in real-time
     questionInput.addEventListener('input', () => {
         if (card.classList.contains('collapsed')) {
             updateCollapsedTitle(card);
         }
     });
 
-    // Listener for collapsing/expanding the card
     const header = card.querySelector('.question-card-header');
     header.addEventListener('click', (e) => {
-        // Don't toggle if clicking a button inside the header
         if (!e.target.closest('button')) {
             if (card.classList.contains('collapsed')) {
                 expandCard(card);
@@ -250,7 +275,6 @@ function renderQuestionCard(question, index) {
         }
     });
 
-    // Listener for deleting the card
     card.querySelector('.delete-question-btn').addEventListener('click', (e) => {
         e.currentTarget.closest('.question-card').remove();
         renumberQuestionCards();
@@ -259,7 +283,6 @@ function renderQuestionCard(question, index) {
         setUnsavedState(true);
     });
     
-    // Add listeners for reorder buttons
     const moveUpBtn = card.querySelector('.reorder-up-btn');
     const moveDownBtn = card.querySelector('.reorder-down-btn');
 
@@ -274,10 +297,7 @@ function renderQuestionCard(question, index) {
             const newRect = button.getBoundingClientRect();
             const scrollDelta = newRect.top - oldRect.top;
             
-            editGameScreen.scrollBy({
-                top: scrollDelta,
-                behavior: 'auto'
-            });
+            editGameScreen.scrollBy({ top: scrollDelta, behavior: 'auto' });
 
             renumberQuestionCards();
             updateReorderButtons();
@@ -296,10 +316,7 @@ function renderQuestionCard(question, index) {
             const newRect = button.getBoundingClientRect();
             const scrollDelta = newRect.top - oldRect.top;
 
-            editGameScreen.scrollBy({
-                top: scrollDelta,
-                behavior: 'auto'
-            });
+            editGameScreen.scrollBy({ top: scrollDelta, behavior: 'auto' });
             
             renumberQuestionCards();
             updateReorderButtons();
@@ -308,47 +325,32 @@ function renderQuestionCard(question, index) {
     });
 
     questionsEditorContainer.appendChild(card);
+    return card;
 }
 
-/**
- * Clears and renders all questions for the currently loaded game.
- * @param {Array<object>} questions - An array of question objects.
- */
-function renderAllQuestions(questions) {
+function renderAllQuestions(questions = []) {
     questionsEditorContainer.innerHTML = '';
     questions.forEach(renderQuestionCard);
     updateReorderButtons();
     updateToggleAllButtonState();
 }
 
-/**
- * Fetches and loads a game's data into the editor form from localStorage or a file.
- * @param {string} fileName - The JSON file name of the game to load.
- */
-async function loadGameForEditing(fileName) {
-    if (!fileName) {
+async function loadGameForEditing(gameId) {
+    if (!gameId) {
         gameEditorForm.classList.add('hidden');
         setUnsavedState(false);
+        setMainActionButtonsVisibility(false);
         return;
     }
     try {
-        let gameData = null;
-        const storedData = localStorage.getItem(`game_data_${fileName}`);
+        const gameDoc = gamesCache[gameId];
+        if (!gameDoc) throw new Error("Game not found in cache");
         
-        if (storedData) {
-            gameData = JSON.parse(storedData);
-        } else {
-            const response = await fetch(`./data/${fileName}`);
-            if (!response.ok) throw new Error(`Network response was not ok for ${fileName}`);
-            gameData = await response.json();
-            // Cache it in localStorage for future edits
-            localStorage.setItem(`game_data_${fileName}`, JSON.stringify(gameData));
-        }
-        
-        gameNameInput.value = gameData.game_name;
+        const gameData = gameDoc.content;
+
+        gameNameInput.value = gameData.game_name || '';
         renderAllQuestions(gameData.questions);
         
-        // Load the final question
         if (gameData.final_question) {
             finalQuestionQInput.value = gameData.final_question.q || '';
             finalQuestionAInput.value = gameData.final_question.a || '';
@@ -356,81 +358,43 @@ async function loadGameForEditing(fileName) {
             finalQuestionQInput.value = '';
             finalQuestionAInput.value = '';
         }
+        
+        publicGameToggle.checked = gameDoc.isPublic;
 
-        // Auto-resize final question textareas after loading content
         setTimeout(() => {
             autoResizeTextarea(finalQuestionQInput);
             autoResizeTextarea(finalQuestionAInput);
         }, 0);
 
-
-        // Store the filename on the form for saving later
-        gameEditorForm.dataset.currentFile = fileName;
+        gameEditorForm.dataset.currentGameId = gameId;
         gameEditorForm.classList.remove('hidden');
         setUnsavedState(false);
+        setMainActionButtonsVisibility(true);
     } catch (error) {
-        console.error(`Failed to load game data from ${fileName}:`, error);
-        alert(`שגיאה בטעינת המשחק: ${fileName}`);
+        console.error(`Failed to load game data for ${gameId}:`, error);
+        alert(`שגיאה בטעינת המשחק.`);
+        setMainActionButtonsVisibility(false);
     }
 }
 
-/**
- * Populates the game selection dropdown from a manifest file and localStorage.
- */
 async function populateGameSelector() {
-    // Clear existing options except the first placeholder
     while (gameEditorSelect.options.length > 1) {
         gameEditorSelect.remove(1);
     }
+    gamesCache = {};
 
     try {
-        // 1. Get base manifest
-        const manifestResponse = await fetch('./data/manifest.json');
-        if (!manifestResponse.ok) throw new Error('Could not load game manifest.');
-        const baseFiles = await manifestResponse.json();
-
-        // 2. Get user manifest from localStorage
-        let userFiles = [];
-        try {
-            userFiles = JSON.parse(localStorage.getItem('userGamesManifest')) || [];
-        } catch (e) {
-            console.error("Could not parse user games manifest from localStorage.", e);
+        const games = await getMyGames(); // Fetch user's own games
+        if (games.length === 0) {
+            gameEditorSelect.querySelector('option').textContent = "-- אין לך משחקים, צור אחד חדש! --";
+            return;
         }
 
-        // 3. Combine and ensure uniqueness
-        const allFiles = [...new Set([...baseFiles, ...userFiles])];
-
-        const fetchPromises = allFiles.map(async (fileName) => {
-            try {
-                let data = null;
-                const storedData = localStorage.getItem(`game_data_${fileName}`);
-                
-                if (storedData) {
-                    data = JSON.parse(storedData);
-                } else if (baseFiles.includes(fileName)) { // Only try to fetch base games
-                    const response = await fetch(`./data/${fileName}`);
-                    if (response.ok) {
-                        data = await response.json();
-                        localStorage.setItem(`game_data_${fileName}`, JSON.stringify(data));
-                    }
-                }
-
-                if (data) {
-                    return { name: data.game_name, file: fileName };
-                }
-                return null;
-
-            } catch (error) {
-                console.error(`Failed to load or parse game name for ${fileName}:`, error);
-                return null;
-            }
-        });
-        
-        const games = (await Promise.all(fetchPromises)).filter(Boolean);
-
+        gameEditorSelect.querySelector('option').textContent = "-- בחר משחק לעריכה --";
         games.forEach(game => {
+            gamesCache[game.$id] = game; // Cache the full document
             const option = document.createElement('option');
-            option.value = game.file;
+            option.value = game.$id;
             option.textContent = game.name;
             gameEditorSelect.appendChild(option);
         });
@@ -444,10 +408,6 @@ async function populateGameSelector() {
     }
 }
 
-/**
- * Gathers all data from the form and compiles it into a game object.
- * @returns {object|null} The compiled game data object or null if invalid.
- */
 function compileGameData() {
     const gameName = gameNameInput.value.trim();
     if (!gameName) {
@@ -482,13 +442,8 @@ function compileGameData() {
     };
 }
 
-/**
- * Triggers a browser download for the provided data.
- * @param {string} filename - The name of the file to download.
- * @param {object} data - The JS object to convert to JSON and download.
- */
 function downloadJsonFile(filename, data) {
-    const jsonString = JSON.stringify(data, null, 4); // Pretty print the JSON
+    const jsonString = JSON.stringify(data, null, 4);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     
@@ -504,21 +459,16 @@ function downloadJsonFile(filename, data) {
 }
 
 
-/**
- * Shows the main edit screen and populates the game list.
- */
 export function showEditScreen() {
     editGameScreen.classList.remove('hidden');
     gameEditorForm.classList.add('hidden');
     gameEditorSelect.value = '';
     document.getElementById('global-home-btn').classList.remove('hidden');
-    delete gameEditorForm.dataset.currentFile; // Clear any previously set filename
+    delete gameEditorForm.dataset.currentGameId;
     populateGameSelector();
+    setMainActionButtonsVisibility(false);
 }
 
-/**
- * Initializes all event listeners for the edit game screen.
- */
 export function initializeEditGameScreen() {
     const backToHomeBtn = document.getElementById('back-to-home-from-edit-btn');
 
@@ -535,72 +485,126 @@ export function initializeEditGameScreen() {
         loadGameForEditing(gameEditorSelect.value);
     });
 
-    // Add listener to form to detect any input changes
+    uploadGameBtn.addEventListener('click', () => uploadGameInput.click());
+
+    uploadGameInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const gameData = JSON.parse(e.target.result);
+                
+                const validationError = getGameDataValidationError(gameData);
+                if (validationError) {
+                    alert(`הקובץ שהועלה אינו תקין.\nסיבה: ${validationError}`);
+                    return;
+                }
+
+                const newGame = await createGame(gameData);
+                alert(`המשחק "${gameData.game_name}" נוצר בהצלחה.`);
+                
+                await populateGameSelector();
+                gameEditorSelect.value = newGame.$id;
+                await loadGameForEditing(newGame.$id);
+
+            } catch (error) {
+                console.error("Error processing uploaded game file:", error);
+                alert('הקובץ אינו קובץ JSON תקין או שחלה שגיאה בעיבודו.');
+            } finally {
+                uploadGameInput.value = '';
+            }
+        };
+        reader.onerror = () => alert('שגיאה בקריאת הקובץ.');
+        reader.readAsText(file);
+    });
+
     gameEditorForm.addEventListener('input', () => setUnsavedState(true));
 
     addQuestionBtn.addEventListener('click', () => {
         const questionCount = questionsEditorContainer.children.length;
-        renderQuestionCard({ q: '', a: '', timer: 30 }, questionCount);
+        const newCard = renderQuestionCard({ q: '', a: '', timer: 30 }, questionCount);
         updateReorderButtons();
         updateToggleAllButtonState();
         setUnsavedState(true);
+
+        if (newCard) {
+            newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const firstInput = newCard.querySelector('.question-input');
+            if (firstInput) setTimeout(() => firstInput.focus(), 400); 
+        }
     });
 
     saveGameBtn.addEventListener('click', async () => {
         const gameData = compileGameData();
-        const fileName = gameEditorForm.dataset.currentFile;
+        const gameId = gameEditorForm.dataset.currentGameId;
 
-        if (!fileName) {
-            alert('לא נבחר קובץ לשמירה. אנא צור משחק חדש או בחר משחק קיים.');
+        if (!gameId) {
+            alert('לא נבחר משחק לשמירה.');
             return;
         }
         
         if (gameData) {
             try {
-                // Save to localStorage
-                localStorage.setItem(`game_data_${fileName}`, JSON.stringify(gameData));
-                
+                const isPublic = publicGameToggle.checked;
+                await saveGame(gameId, gameData, isPublic);
                 showSavedState();
-    
-                // Refresh the list to show the new name if it was changed
+                
                 const currentlySelected = gameEditorSelect.value;
                 await populateGameSelector();
                 gameEditorSelect.value = currentlySelected;
     
             } catch (e) {
-                console.error("Error saving game to localStorage", e);
-                alert("שגיאה בשמירת המשחק. ייתכן שאחסון הדפדפן מלא.");
+                console.error("Error saving game", e);
+                alert("שגיאה בשמירת המשחק.");
             }
         }
     });
 
     downloadGameBtn.addEventListener('click', () => {
         const gameData = compileGameData();
-        const fileName = gameEditorForm.dataset.currentFile;
+        const gameId = gameEditorForm.dataset.currentGameId;
 
-        if (!fileName) {
-            alert('לא נבחר משחק להורדה. אנא בחר משחק קיים.');
+        if (!gameId) {
+            alert('לא נבחר משחק להורדה.');
             return;
         }
 
         if (gameData) {
+            const fileName = `${gameData.game_name.replace(/\s+/g, '_')}.json`;
             downloadJsonFile(fileName, gameData);
         }
     });
 
-    // --- Single Toggle Button Listener ---
+    deleteGameBtn.addEventListener('click', async () => {
+        const gameId = gameEditorForm.dataset.currentGameId;
+        if (!gameId) return;
+
+        const gameName = gamesCache[gameId]?.name || "המשחק הנבחר";
+        if (confirm(`האם אתה בטוח שברצונך למחוק את המשחק "${gameName}"?`)) {
+            try {
+                await deleteGame(gameId);
+                alert("המשחק נמחק בהצלחה.");
+                gameEditorForm.classList.add('hidden');
+                setMainActionButtonsVisibility(false);
+                await populateGameSelector();
+            } catch (error) {
+                console.error("Failed to delete game:", error);
+                alert("המחיקה נכשלה.");
+            }
+        }
+    });
+
     toggleAllQuestionsBtn.addEventListener('click', () => {
         const cards = questionsEditorContainer.querySelectorAll('.question-card');
-        // If the button is in 'expand' mode, it means at least one is collapsed, so expand all.
         if (toggleAllQuestionsBtn.classList.contains('state-expand')) {
             cards.forEach(expandCard);
-        } else { // Otherwise, collapse all.
+        } else {
             cards.forEach(collapseCard);
         }
     });
 
-
-    // --- Modal Logic ---
     createNewGameBtn.addEventListener('click', () => {
         newGameModalOverlay.classList.remove('hidden');
         newGameNameInput.focus();
@@ -612,25 +616,11 @@ export function initializeEditGameScreen() {
 
     confirmNewGameBtn.addEventListener('click', async () => {
         const newName = newGameNameInput.value.trim();
-        let newFilename = newGameFilenameInput.value.trim();
-
-        if (!newName || !newFilename) {
-            alert('יש למלא את שם המשחק ואת שם הקובץ.');
+        if (!newName) {
+            alert('יש למלא את שם המשחק.');
             return;
-        }
-
-        // English filename validation: only letters, numbers, underscore, hyphen
-        const englishFilenameRegex = /^[a-zA-Z0-9_-]+$/;
-        if (!englishFilenameRegex.test(newFilename)) {
-            alert('שם הקובץ יכול להכיל אותיות באנגלית, מספרים, קו תחתון (_) ומקף (-) בלבד.');
-            return;
-        }
-
-        if (!newFilename.endsWith('.json')) {
-            newFilename += '.json';
         }
         
-        // Create empty game structure
         const newGameData = {
             game_name: newName,
             questions: [],
@@ -638,32 +628,16 @@ export function initializeEditGameScreen() {
         };
     
         try {
-            // Save new game data to localStorage
-            localStorage.setItem(`game_data_${newFilename}`, JSON.stringify(newGameData));
-    
-            // Update user games manifest
-            let userGames = [];
-            try {
-                userGames = JSON.parse(localStorage.getItem('userGamesManifest')) || [];
-            } catch (e) {
-                console.warn("Could not parse existing user games manifest. Starting fresh.", e);
-            }
-            if (!userGames.includes(newFilename)) {
-                userGames.push(newFilename);
-            }
-            localStorage.setItem('userGamesManifest', JSON.stringify(userGames));
+            const newGame = await createGame(newGameData);
             
-            // Hide modal and clear inputs
             newGameModalOverlay.classList.add('hidden');
             newGameNameInput.value = '';
-            newGameFilenameInput.value = '';
     
-            // Refresh selector and load the new game for editing
             await populateGameSelector();
-            gameEditorSelect.value = newFilename; // Select the new game
-            await loadGameForEditing(newFilename); // Load it into the form
+            gameEditorSelect.value = newGame.$id;
+            await loadGameForEditing(newGame.$id);
     
-            alert(`משחק חדש "${newName}" נוצר ונשמר. כעת ניתן לערוך אותו.`);
+            alert(`משחק חדש "${newName}" נוצר. כעת ניתן לערוך אותו.`);
     
         } catch(e) {
             console.error("Error creating new game:", e);
@@ -671,7 +645,6 @@ export function initializeEditGameScreen() {
         }
     });
     
-    // Add auto-resize listeners for final question textareas
     finalQuestionQInput.addEventListener('input', () => autoResizeTextarea(finalQuestionQInput));
     finalQuestionAInput.addEventListener('input', () => autoResizeTextarea(finalQuestionAInput));
 }

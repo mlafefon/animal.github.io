@@ -1,5 +1,6 @@
 {
   "name": "animal html",
   "description": "Example chat app built with Gemini",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "version": "1.0.00"
 }
