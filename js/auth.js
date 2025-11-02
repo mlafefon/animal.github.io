@@ -60,7 +60,8 @@ async function handleLogin(e) {
         showApp();
     } catch (error) {
         console.error('Login Failed:', error);
-        showAuthError('ההתחברות נכשלה. בדוק אימייל וסיסמה.');
+        // Display the specific error message from Appwrite for better debugging.
+        showAuthError(`ההתחברות נכשלה: ${error.message}`);
     }
 }
 

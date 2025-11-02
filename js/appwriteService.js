@@ -58,23 +58,30 @@ export function getAccount() {
 // --- Database (Game Templates) Functions ---
 
 /**
- * Fetches all non-deleted game templates from the database.
+ * Fetches all non-deleted game templates from the database for the current user.
  * @returns {Promise<Array<object>>} A list of game documents.
  */
 export async function listGames() {
     try {
+        const user = await getAccount();
+        if (!user) {
+            // If no user is logged in, return an empty array.
+            return [];
+        }
+
         const response = await database.listDocuments(
             AppwriteConfig.databaseId,
             AppwriteConfig.collectionId,
             [
                 Query.equal('is_deleted', false), // Only get games that are not soft-deleted
+                Query.equal('ownerId', user.$id), // Only get games owned by the current user
                 Query.limit(100) // Appwrite has a default limit of 25, so we increase it
             ]
         );
         return response.documents;
     } catch (error) {
         console.error("Failed to list games:", error);
-        throw error;
+        return []; // Return an empty array on failure to prevent crashes
     }
 }
 
@@ -84,18 +91,31 @@ export async function listGames() {
  * @param {object} gameData - The full game object (questions, final_question).
  * @returns {Promise<object>} The newly created document.
  */
-export function createGame(gameName, gameData) {
-     return database.createDocument(
-        AppwriteConfig.databaseId,
-        AppwriteConfig.collectionId,
-        ID.unique(),
-        {
-            game_name: gameName,
-            game_data: JSON.stringify(gameData), // Store the game data as a JSON string
-            is_deleted: false
+export async function createGame(gameName, gameData) {
+    try {
+        const user = await getAccount();
+        if (!user) {
+            throw new Error("User not authenticated");
         }
-    );
+
+        return database.createDocument(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.collectionId,
+            ID.unique(),
+            {
+                game_name: gameName,
+                game_data: JSON.stringify(gameData),
+                is_deleted: false,
+                ownerId: user.$id, // Add the required ownerId
+                is_public: false // Add the newly required is_public attribute
+            }
+        );
+    } catch (error) {
+        console.error("Error creating new game:", error);
+        throw error;
+    }
 }
+
 
 /**
  * Updates an existing game template document.
