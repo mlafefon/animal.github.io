@@ -1,15 +1,30 @@
 // A simple audio player for game sound effects.
+import { getFileUrl } from './appwriteService.js';
+
+// The user must upload audio files to their bucket and manually set
+// the File ID of each file to match these keys.
+const SOUND_FILE_IDS = {
+    correct: 'correct',
+    incorrect: 'incorrect',
+    timerTick: 'timerTick',
+    chestOpen: 'chestOpen',
+    failure: 'failure',
+    winner: 'winner',
+    gong: 'gong',
+    scoreCount: 'scoreCount'
+};
 
 const soundEffects = {
-    correct: new Audio('https://assets.mixkit.co/active_storage/sfx/952/952-preview.mp3'),
-    incorrect: new Audio('https://assets.mixkit.co/active_storage/sfx/946/946-preview.mp3'),
-    timerTick: new Audio('https://assets.mixkit.co/active_storage/sfx/1047/1047-preview.mp3'),
-    chestOpen: new Audio('https://assets.mixkit.co/active_storage/sfx/598/598-preview.mp3'),
-    failure: new Audio('https://assets.mixkit.co/active_storage/sfx/473/473-preview.mp3'),
-    winner: new Audio('https://assets.mixkit.co/active_storage/sfx/485/485-preview.mp3'),
-    gong: new Audio('https://assets.mixkit.co/active_storage/sfx/109/109-preview.mp3'),
-    scoreCount: new Audio('https://assets.mixkit.co/active_storage/sfx/1998/1998-preview.mp3')
+    correct: new Audio(getFileUrl(SOUND_FILE_IDS.correct)),
+    incorrect: new Audio(getFileUrl(SOUND_FILE_IDS.incorrect)),
+    timerTick: new Audio(getFileUrl(SOUND_FILE_IDS.timerTick)),
+    chestOpen: new Audio(getFileUrl(SOUND_FILE_IDS.chestOpen)),
+    failure: new Audio(getFileUrl(SOUND_FILE_IDS.failure)),
+    winner: new Audio(getFileUrl(SOUND_FILE_IDS.winner)),
+    gong: new Audio(getFileUrl(SOUND_FILE_IDS.gong)),
+    scoreCount: new Audio(getFileUrl(SOUND_FILE_IDS.scoreCount))
 };
+
 // Adjust volume for subtlety
 soundEffects.correct.volume = 0.5;
 soundEffects.incorrect.volume = 0.5;

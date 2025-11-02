@@ -3,11 +3,12 @@ const AppwriteConfig = {
     endpoint: 'https://fra.cloud.appwrite.io/v1',
     projectId: '690655370021dba8ada1', // Replace with your Project ID
     databaseId: '69065916001e6cdd8b06',       // Replace with your Database ID
-    collectionId: 'animal-data'    // Replace with your Collection ID
+    collectionId: 'animal-data',    // Replace with your Collection ID
+    bucketId: '6907a2590030f0e8ed04' // <--- עדכן עם ה-Bucket ID שלך!
 };
 
 // --- Appwrite SDK Initialization ---
-const { Client, Account, Databases, ID, Query } = window.Appwrite;
+const { Client, Account, Databases, ID, Query, Storage } = window.Appwrite;
 
 const client = new Client();
 client
@@ -16,6 +17,7 @@ client
 
 const account = new Account(client);
 const database = new Databases(client);
+const storage = new Storage(client);
 
 // --- Authentication Functions ---
 
@@ -150,4 +152,21 @@ export function deleteGame(documentId) {
             is_deleted: true
         }
     );
+}
+
+
+// --- Storage Functions ---
+
+/**
+ * Constructs a public URL for a file in the Appwrite storage bucket.
+ * @param {string} fileId - The ID of the file.
+ * @returns {string} The public URL to view the file.
+ */
+export function getFileUrl(fileId) {
+    // If the bucket ID or file ID are placeholders, return an empty string to avoid errors.
+    if (!fileId || fileId.startsWith('REPLACE_WITH') || AppwriteConfig.bucketId === 'YOUR_BUCKET_ID') {
+        return '';
+    }
+    // storage.getFileView returns a URL object. We need its string representation.
+    return storage.getFileView(AppwriteConfig.bucketId, fileId).href;
 }

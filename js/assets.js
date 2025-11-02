@@ -1,15 +1,29 @@
-// Central repository for all image URLs, used for preloading and single-source-of-truth.
+import { getFileUrl } from './appwriteService.js';
 
+// *** שלום! יש לעדכן כאן את מזהי הקבצים (File IDs) שהעתקת מ-Appwrite ***
+const IMAGE_FILE_IDS = {
+    START_SCREEN: '6907a5790023434e293c',
+    TEAM_OWL: '6907a5a0001f41c62853',
+    TEAM_FOX: '6907a34200341b1376eb',
+    TEAM_ELEPHANT: '6907a560003e403da517',
+    TEAM_FROG: '6907a34e0019ed1bd7f6',
+    TEAM_LION: '6907a56d0005c76ac2a0',
+    CHEST_OPEN: '6907a59000124db5c410',
+    CHEST_BROKEN: '6907a597002ec4e72def',
+    CHEST_CLOSED: '6907a581002d5279cb02'
+};
+
+// Central repository for all image URLs, now built dynamically from Appwrite.
 export const IMAGE_URLS = {
-    START_SCREEN: 'https://drive.google.com/thumbnail?id=17M-mnVL1Ifm-H2umz6dSiVux5WD_e7Mh',
-    TEAM_OWL: 'https://drive.google.com/thumbnail?id=1tARCfOYPOljZ5EFgovdaiUxUXwHqJZ7I',
-    TEAM_FOX: 'https://drive.google.com/thumbnail?id=1z7HUg1rUjt6MjiycsPxpoyTY9BWvxWgS',
-    TEAM_ELEPHANT: 'https://drive.google.com/thumbnail?id=1hXwW9zfOVdlnEI-P3O9f8AdkvAJV0ljr',
-    TEAM_FROG: 'https://drive.google.com/thumbnail?id=1owX2_Qo51yF1Mtk7xbxzg7aF1oHY-E4L',
-    TEAM_LION: 'https://drive.google.com/thumbnail?id=1GBWmsUQ46_AdL_w_-T6lnsE5hNlR5twb',
-    CHEST_OPEN: 'https://drive.google.com/thumbnail?id=1tHAZ7bNSJv6GNi1lFXEcY6HrIU7fQRZa',
-    CHEST_BROKEN: 'https://drive.google.com/thumbnail?id=1zmhK3PApQnzyFj2VLkANftxStwryp-hD',
-    CHEST_CLOSED: 'https://drive.google.com/thumbnail?id=1rSOXo048hHdRLX4MWypmdsUWDQkyKipL'
+    START_SCREEN: getFileUrl(IMAGE_FILE_IDS.START_SCREEN),
+    TEAM_OWL: getFileUrl(IMAGE_FILE_IDS.TEAM_OWL),
+    TEAM_FOX: getFileUrl(IMAGE_FILE_IDS.TEAM_FOX),
+    TEAM_ELEPHANT: getFileUrl(IMAGE_FILE_IDS.TEAM_ELEPHANT),
+    TEAM_FROG: getFileUrl(IMAGE_FILE_IDS.TEAM_FROG),
+    TEAM_LION: getFileUrl(IMAGE_FILE_IDS.TEAM_LION),
+    CHEST_OPEN: getFileUrl(IMAGE_FILE_IDS.CHEST_OPEN),
+    CHEST_BROKEN: getFileUrl(IMAGE_FILE_IDS.CHEST_BROKEN),
+    CHEST_CLOSED: getFileUrl(IMAGE_FILE_IDS.CHEST_CLOSED)
 };
 
 /**
@@ -18,13 +32,16 @@ export const IMAGE_URLS = {
  * to fetch and cache them. It does not block the main thread.
  */
 export function preloadGameAssets() {
-    console.log('Preloading game assets...');
+    console.log('Preloading game assets from Appwrite...');
     Object.values(IMAGE_URLS).forEach(url => {
-        try {
-            const img = new Image();
-            img.src = url;
-        } catch (e) {
-            console.warn(`Could not preload image: ${url}`, e);
+        // Only try to load if the URL is not an empty string (i.e., not a placeholder)
+        if (url) {
+            try {
+                const img = new Image();
+                img.src = url;
+            } catch (e) {
+                console.warn(`Could not preload image: ${url}`, e);
+            }
         }
     });
 }
