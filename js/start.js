@@ -1,3 +1,5 @@
+
+
 import { populateGameList, refreshSetupScreenState } from './setup.js';
 import { IMAGE_URLS } from './assets.js';
 
@@ -6,14 +8,12 @@ const setupScreen = document.getElementById('setup-screen');
 const goToSetupBtn = document.getElementById('go-to-setup-btn');
 const settingsBtn = document.getElementById('settings-btn');
 const startImage = document.getElementById('start-screen-image');
-const logoutBtn = document.getElementById('logout-btn');
 
 /**
  * Initializes the start screen, handling the transition to the setup screen.
  * @param {function} onGoToSettings - Callback to execute when the settings button is clicked.
- * @param {function} onLogout - Callback to execute when the logout button is clicked.
  */
-export function initializeStartScreen(onGoToSettings, onLogout) {
+export function initializeStartScreen(onGoToSettings) {
     if (!startScreen || !setupScreen || !goToSetupBtn || !settingsBtn) {
         console.error('Start screen elements not found!');
         return;
@@ -45,14 +45,9 @@ export function initializeStartScreen(onGoToSettings, onLogout) {
     });
 
     settingsBtn.addEventListener('click', () => {
+        // Instead of an alert, we now call the callback to navigate to the edit screen.
         if (onGoToSettings) {
             onGoToSettings();
-        }
-    });
-
-    logoutBtn.addEventListener('click', () => {
-        if (onLogout) {
-            onLogout();
         }
     });
 }

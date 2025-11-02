@@ -1,4 +1,4 @@
-import { getGames } from './auth.js';
+import { listGames } from './appwriteService.js';
 
 const groupList = document.getElementById('group-list');
 const gameList = document.getElementById('game-list');
@@ -23,18 +23,17 @@ function updateQuestionStats() {
         return;
     }
 
-    const gameId = selectedGameLi.dataset.gameId;
-    const game = gameDataCache[gameId];
+    const documentId = selectedGameLi.dataset.documentId;
+    const gameData = gameDataCache[documentId];
     
-    if (!game) {
+    if (!gameData) {
         questionBankStat.textContent = 'בנק שאלות: טוען...';
         actualQuestionsStat.textContent = 'שאלות בפועל: טוען...';
         startButton.disabled = true; // Disable if data is not loaded yet
         return;
     };
-    
-    const questions = game.content.questions || [];
-    const questionBankCount = questions.length;
+
+    const questionBankCount = gameData.questions.length;
     const numberOfGroups = parseInt(selectedGroupLi.textContent, 10);
 
     const actualQuestionsCount = Math.floor(questionBankCount / numberOfGroups) * numberOfGroups;
@@ -42,8 +41,10 @@ function updateQuestionStats() {
     questionBankStat.textContent = `בנק שאלות: ${questionBankCount}`;
     actualQuestionsStat.textContent = `שאלות בפועל: ${actualQuestionsCount}`;
 
+    const canContinue = document.getElementById('continue-last-point').checked;
+    
     // Disable start button if there are no questions for a new game
-    if (actualQuestionsCount === 0) {
+    if (actualQuestionsCount === 0 && !canContinue) {
         startButton.disabled = true;
         startButton.title = 'לא ניתן להתחיל משחק ללא שאלות. יש לבחור פחות קבוצות.';
     } else {
@@ -66,34 +67,46 @@ function handleSelection(list, event) {
 }
 
 /**
- * Fetches games from Appwrite, caches them, and populates the selection list.
+ * Fetches game from Appwrite, caches their data, and populates the selection list.
  */
 export async function populateGameList() {
-    gameList.innerHTML = '<li>טוען משחקים...</li>'; // Clear and show loading state
-    gameDataCache = {};
+    gameList.innerHTML = '<li>טוען משחקים...</li>'; // Show loading indicator
+    gameDataCache = {}; // Clear cache on repopulation
 
     try {
-        const games = await getGames();
-        gameList.innerHTML = ''; // Clear loading state
-
+        const games = await listGames();
+        gameList.innerHTML = ''; // Clear loading indicator
+        
         if (games.length === 0) {
-             gameList.innerHTML = '<li>לא נמצאו משחקים. צור משחק חדש במסך ההגדרות!</li>';
-             return;
+            gameList.innerHTML = '<li>לא נמצאו משחקים. צור משחק חדש במסך העריכה.</li>';
+            return;
         }
 
         games.forEach((game, index) => {
-            gameDataCache[game.$id] = game; // Cache the full game document
-            const li = document.createElement('li');
-            li.textContent = game.name;
-            li.dataset.gameId = game.$id; // Store the document ID
-            if (index === 0) {
-                li.classList.add('selected'); // Select the first game by default
+            try {
+                // The game_data is a string, we need to parse it to get questions
+                const fullGameData = JSON.parse(game.game_data);
+                gameDataCache[game.$id] = fullGameData; // Cache the parsed data
+
+                const li = document.createElement('li');
+                li.textContent = game.game_name;
+                li.dataset.documentId = game.$id;
+                li.dataset.gameData = game.game_data; // Store the raw string data as well
+
+                if (index === 0) {
+                    li.classList.add('selected'); // Select the first game by default
+                }
+                
+                li.setAttribute('role', 'button');
+                li.setAttribute('tabindex', '0');
+                gameList.appendChild(li);
+            } catch (parseError) {
+                console.error(`Could not parse game data for "${game.game_name}" (ID: ${game.$id})`, parseError);
+                // Optionally, skip this game in the list
             }
-            li.setAttribute('role', 'button');
-            li.setAttribute('tabindex', '0');
-            gameList.appendChild(li);
         });
 
+        // Initial update after loading and populating
         updateQuestionStats();
 
     } catch (error) {
@@ -103,11 +116,75 @@ export async function populateGameList() {
 }
 
 /**
- * This function can be called when the setup screen is shown to ensure its state is fresh.
- * (Currently just updates stats, but could be expanded).
+ * Toggles the enabled/disabled state of the main setup controls.
+ * @param {boolean} disabled - True to disable, false to enable.
+ */
+function toggleSetupControls(disabled) {
+    groupList.style.pointerEvents = disabled ? 'none' : 'auto';
+    groupList.style.opacity = disabled ? 0.6 : 1;
+    gameList.style.pointerEvents = disabled ? 'none' : 'auto';
+    gameList.style.opacity = disabled ? 0.6 : 1;
+    document.getElementById('shuffle-questions').disabled = disabled;
+}
+
+/**
+ * Selects the group and game list items based on the loaded saved game state.
+ */
+function applySavedStateSelections() {
+    const savedStateJSON = localStorage.getItem('animalGameState');
+    if (!savedStateJSON) return;
+
+    try {
+        const savedState = JSON.parse(savedStateJSON);
+        if (!savedState) return;
+
+        // Select Number of Groups
+        const numberOfGroups = savedState.teams.length;
+        [...groupList.children].forEach(li => {
+            li.classList.toggle('selected', parseInt(li.textContent, 10) === numberOfGroups);
+        });
+
+        // Select Game
+        const documentId = savedState.options.documentId;
+        [...gameList.children].forEach(li => {
+            li.classList.toggle('selected', li.dataset.documentId === documentId);
+        });
+        
+        updateQuestionStats();
+    } catch(e) {
+        console.error("Could not parse saved state to apply selections:", e);
+    }
+}
+
+/**
+ * Checks for a saved game state and updates the "Continue" checkbox accordingly.
+ * This should be called each time the setup screen is shown.
  */
 export function refreshSetupScreenState() {
-    updateQuestionStats();
+    const continueCheckbox = document.getElementById('continue-last-point');
+    const continueLabel = document.querySelector('label[for="continue-last-point"]');
+    const savedStateJSON = localStorage.getItem('animalGameState');
+
+    if (savedStateJSON) {
+        try {
+            const savedState = JSON.parse(savedStateJSON);
+            continueCheckbox.disabled = false;
+            continueLabel.textContent = `המשך "${savedState.gameName}"`;
+        } catch (e) {
+            // Handle corrupted saved data
+            continueCheckbox.disabled = true;
+            continueLabel.textContent = 'המשך מנקודה אחרונה';
+            localStorage.removeItem('animalGameState');
+        }
+    } else {
+        continueCheckbox.disabled = true;
+        continueLabel.textContent = 'המשך מנקודה אחרונה';
+    }
+    
+    // Always start with the checkbox unchecked and controls enabled.
+    continueCheckbox.checked = false;
+    toggleSetupControls(false);
+    updateQuestionStats(); // Update button state
 }
 
 
@@ -116,9 +193,21 @@ export function refreshSetupScreenState() {
  * @param {function} onStart - The callback function to execute when the start button is clicked.
  */
 export function initializeSetupScreen(onStart) {
+    // Add accessibility attributes to static group list items
     groupList.querySelectorAll('li').forEach(li => {
         li.setAttribute('role', 'button');
         li.setAttribute('tabindex', '0');
+    });
+
+    const continueCheckbox = document.getElementById('continue-last-point');
+    
+    continueCheckbox.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        toggleSetupControls(isChecked);
+        if (isChecked) {
+            applySavedStateSelections();
+        }
+        updateQuestionStats(); // Re-check button state
     });
 
     groupList.addEventListener('click', (e) => {
@@ -131,12 +220,16 @@ export function initializeSetupScreen(onStart) {
     });
 
     startButton.addEventListener('click', () => {
+        // Get the calculated number of questions from the UI to check before proceeding
         const actualQuestionsText = document.getElementById('actual-questions-stat').textContent;
         const actualQuestions = parseInt(actualQuestionsText.split(':')[1].trim(), 10) || 0;
+        const continueLastPoint = document.getElementById('continue-last-point').checked;
 
-        if (actualQuestions === 0) {
+        // This check should only apply when starting a new game.
+        // When continuing, we trust the saved state has questions.
+        if (actualQuestions === 0 && !continueLastPoint) {
             alert('לא ניתן להתחיל את המשחק כי מספר השאלות בפועל הוא אפס. אנא בחר מספר קבוצות קטן יותר.');
-            return;
+            return; // Stop here, don't hide the screen or start the game
         }
 
         setupScreen.classList.add('hidden');
@@ -144,18 +237,18 @@ export function initializeSetupScreen(onStart) {
         const selectedGroup = groupList.querySelector('.selected');
         const numberOfGroups = selectedGroup ? parseInt(selectedGroup.textContent, 10) : 4;
         
-        const selectedGameLi = gameList.querySelector('.selected');
-        const gameId = selectedGameLi ? selectedGameLi.dataset.gameId : null;
-        
-        if (!gameId) {
-            alert('אנא בחר משחק.');
+        const selectedGame = gameList.querySelector('.selected');
+        const documentId = selectedGame ? selectedGame.dataset.documentId : '';
+        const gameDataString = selectedGame ? selectedGame.dataset.gameData : '{}';
+
+        if (!documentId) {
+            alert('לא נבחר משחק. אנא בחר משחק מהרשימה.');
             setupScreen.classList.remove('hidden');
             return;
         }
-        
-        const gameData = gameDataCache[gameId].content;
+
         const shuffleQuestions = document.getElementById('shuffle-questions').checked;
         
-        onStart({ numberOfGroups, gameData, shuffleQuestions, actualQuestions });
+        onStart({ numberOfGroups, documentId, gameDataString, shuffleQuestions, actualQuestions, continueLastPoint });
     });
 }
