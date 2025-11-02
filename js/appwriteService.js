@@ -37,7 +37,9 @@ export function login(email, password) {
 export function loginWithGoogle() {
     // The second argument is the success URL, the third is failure.
     // Both need to be valid URLs. We'll redirect to the current page in both cases.
-    account.createOAuth2Session('google', window.location.href, window.location.href);
+    // Using origin + pathname creates a cleaner URL and avoids issues with query params or hashes.
+    const redirectUrl = `${window.location.origin}${window.location.pathname}`;
+    account.createOAuth2Session('google', redirectUrl, redirectUrl);
 }
 
 /**
