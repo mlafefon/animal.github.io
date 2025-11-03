@@ -157,7 +157,7 @@ function expandCard(card) {
  */
 function renumberQuestionCards() {
     const cards = questionsEditorContainer.querySelectorAll('.question-card');
-    cards.forEach((i, card) => {
+    cards.forEach((card, i) => {
         card.dataset.index = i;
         if (card.classList.contains('collapsed')) {
             updateCollapsedTitle(card);
@@ -188,7 +188,7 @@ function updateReorderButtons() {
  */
 function renderQuestionCard(question, index) {
     const card = document.createElement('div');
-    card.className = 'question-card';
+    card.className = 'question-card collapsed';
     card.dataset.index = index;
 
     card.innerHTML = `
@@ -286,7 +286,8 @@ function renderQuestionCard(question, index) {
             setUnsavedState(true);
         }
     });
-
+    
+    updateCollapsedTitle(card);
     questionsEditorContainer.appendChild(card);
 }
 
@@ -509,14 +510,6 @@ export async function showEditScreen() {
  * Initializes all event listeners for the edit game screen.
  */
 export function initializeEditGameScreen() {
-    const backToHomeBtn = document.getElementById('back-to-home-from-edit-btn');
-
-    backToHomeBtn.addEventListener('click', () => {
-        editGameScreen.classList.add('hidden');
-        startScreen.classList.remove('hidden');
-        document.getElementById('global-home-btn')?.classList.add('hidden');
-    });
-
     categoryListContainer.addEventListener('click', (e) => {
         const selectedCard = e.target.closest('.category-card');
         if (!selectedCard) return;

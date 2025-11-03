@@ -1495,7 +1495,7 @@ h1, h2, h3, h4, h5, h6 {
 #category-panel .category-card {
     width: 100%;
     padding: 0.6rem 0.75rem;
-    flex-direction: row-reverse; /* Icon on right, text on left for RTL */
+    flex-direction: row; /* Correct for RTL to place icon on right */
     justify-content: flex-start;
     align-items: center;
     gap: 0.75rem;
