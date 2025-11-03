@@ -1,4 +1,4 @@
-import { listGames, createGame, updateGame, deleteGame } from './appwriteService.js';
+import { listGames, createGame, updateGame, deleteGame, listCategories } from './appwriteService.js';
 
 // --- Elements ---
 const editGameScreen = document.getElementById('edit-game-screen');
@@ -8,6 +8,8 @@ const createNewGameBtn = document.getElementById('create-new-game-btn');
 const deleteGameBtn = document.getElementById('delete-game-btn');
 const gameEditorForm = document.getElementById('game-editor-form');
 const gameNameInput = document.getElementById('game-name-input');
+const gameDescriptionInput = document.getElementById('game-description-input');
+const gameCategorySelect = document.getElementById('game-category-select');
 const questionsEditorContainer = document.getElementById('questions-editor-container');
 const addQuestionBtn = document.getElementById('add-question-btn');
 const saveGameBtn = document.getElementById('save-game-btn');
@@ -19,6 +21,8 @@ const toggleAllQuestionsBtn = document.getElementById('toggle-all-questions-btn'
 // Modal Elements
 const newGameModalOverlay = document.getElementById('new-game-modal-overlay');
 const newGameNameInput = document.getElementById('new-game-name');
+const newGameDescriptionInput = document.getElementById('new-game-description');
+const newGameCategorySelect = document.getElementById('new-game-category');
 const confirmNewGameBtn = document.getElementById('confirm-new-game-btn');
 const cancelNewGameBtn = document.getElementById('cancel-new-game-btn');
 
@@ -338,7 +342,9 @@ async function loadGameForEditing(gameDocument) {
         // The game data is stored as a JSON string in the 'game_data' attribute.
         const gameData = JSON.parse(gameDocument.game_data);
         
-        gameNameInput.value = gameDocument.game_name;
+        gameNameInput.value = gameDocument.game_name || '';
+        gameDescriptionInput.value = gameDocument.description || '';
+        gameCategorySelect.value = gameDocument.categoryId || ''; // The value is now a document ID
         renderAllQuestions(gameData.questions);
         
         // Load the final question
@@ -350,8 +356,9 @@ async function loadGameForEditing(gameDocument) {
             finalQuestionAInput.value = '';
         }
 
-        // Auto-resize final question textareas after loading content
+        // Auto-resize textareas after loading content
         setTimeout(() => {
+            autoResizeTextarea(gameDescriptionInput);
             autoResizeTextarea(finalQuestionQInput);
             autoResizeTextarea(finalQuestionAInput);
         }, 0);
@@ -400,16 +407,11 @@ async function populateGameSelector() {
 }
 
 /**
- * Gathers all data from the form and compiles it into a game object.
+ * Gathers all question data from the form and compiles it into a game data object.
+ * This is now separate from the top-level game details.
  * @returns {object|null} The compiled game data object or null if invalid.
  */
 function compileGameData() {
-    const gameName = gameNameInput.value.trim();
-    if (!gameName) {
-        alert('יש להזין שם למשחק.');
-        return null;
-    }
-
     const questions = [];
     const questionCards = questionsEditorContainer.querySelectorAll('.question-card');
     
@@ -431,7 +433,6 @@ function compileGameData() {
 
 
     return {
-        game_name: gameName,
         questions: questions,
         final_question: final_question
     };
@@ -458,18 +459,63 @@ function downloadJsonFile(filename, data) {
     URL.revokeObjectURL(url);
 }
 
+/**
+ * Fetches categories and populates the editor and new game modal dropdowns.
+ */
+async function populateCategorySelectors() {
+    const selectors = [gameCategorySelect, newGameCategorySelect];
+    selectors.forEach(sel => sel.innerHTML = ''); // Clear existing options
+
+    try {
+        const categories = await listCategories();
+        if (categories.length === 0) {
+            selectors.forEach(sel => {
+                const option = document.createElement('option');
+                option.textContent = 'לא נמצאו קטגוריות';
+                option.disabled = true;
+                sel.appendChild(option);
+            });
+            return;
+        }
+
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.$id;
+            option.textContent = category.name;
+            
+            // Clone the option for the second selector
+            gameCategorySelect.appendChild(option);
+            newGameCategorySelect.appendChild(option.cloneNode(true));
+        });
+
+    } catch (error) {
+        console.error("Failed to populate category selectors:", error);
+        selectors.forEach(sel => {
+            const option = document.createElement('option');
+            option.textContent = 'שגיאה בטעינת קטגוריות';
+            option.disabled = true;
+            sel.appendChild(option);
+        });
+    }
+}
+
 
 /**
  * Shows the main edit screen and populates the game list.
  */
-export function showEditScreen() {
+export async function showEditScreen() {
     editGameScreen.classList.remove('hidden');
     gameEditorForm.classList.add('hidden');
     deleteGameBtn.classList.add('hidden');
     gameEditorSelect.value = '';
     document.getElementById('global-home-btn').classList.remove('hidden');
     delete gameEditorForm.dataset.documentId; // Clear any previously set ID
-    populateGameSelector();
+    
+    // Populate both selectors simultaneously
+    await Promise.all([
+        populateGameSelector(),
+        populateCategorySelectors()
+    ]);
 }
 
 /**
@@ -505,31 +551,35 @@ export function initializeEditGameScreen() {
     });
 
     saveGameBtn.addEventListener('click', async () => {
-        const gameDataToSave = compileGameData();
         const documentId = gameEditorForm.dataset.documentId;
-
         if (!documentId) {
             alert('לא נבחר משחק לשמירה.');
             return;
         }
+
+        const gameName = gameNameInput.value.trim();
+        if (!gameName) {
+            alert('יש להזין שם למשחק.');
+            return;
+        }
+
+        const description = gameDescriptionInput.value.trim();
+        const categoryId = gameCategorySelect.value;
+        const gameData = compileGameData();
         
-        if (gameDataToSave) {
-            try {
-                // The game name from the form is the source of truth
-                const gameName = gameNameInput.value.trim();
-                await updateGame(documentId, gameName, gameDataToSave);
-                
-                showSavedState();
-    
-                // Refresh the list to show the new name if it was changed
-                const currentlySelectedId = gameEditorSelect.value;
-                await populateGameSelector();
-                gameEditorSelect.value = currentlySelectedId;
-    
-            } catch (e) {
-                console.error("Error saving game to Appwrite", e);
-                alert("שגיאה בשמירת המשחק.");
-            }
+        try {
+            await updateGame(documentId, gameName, description, categoryId, gameData);
+            
+            showSavedState();
+
+            // Refresh the list to show the new name if it was changed
+            const currentlySelectedId = gameEditorSelect.value;
+            await populateGameSelector();
+            gameEditorSelect.value = currentlySelectedId;
+
+        } catch (e) {
+            console.error("Error saving game to Appwrite", e);
+            alert("שגיאה בשמירת המשחק.");
         }
     });
 
@@ -556,19 +606,26 @@ export function initializeEditGameScreen() {
     });
 
     downloadGameBtn.addEventListener('click', () => {
-        const gameData = compileGameData();
         const documentId = gameEditorForm.dataset.documentId;
-        const selectedOption = gameEditorSelect.options[gameEditorSelect.selectedIndex];
-
         if (!documentId) {
             alert('לא נבחר משחק להורדה. אנא בחר משחק קיים.');
             return;
         }
 
-        if (gameData) {
-            const fileName = `${selectedOption.textContent.replace(/\s+/g, '_')}.json`;
-            downloadJsonFile(fileName, gameData);
-        }
+        const gameName = gameNameInput.value.trim();
+        const description = gameDescriptionInput.value.trim();
+        const categoryId = gameCategorySelect.value;
+        const gameData = compileGameData();
+
+        const fullGameJson = {
+            game_name: gameName,
+            description: description,
+            categoryId: categoryId, // Now saving the ID
+            ...gameData
+        };
+        
+        const fileName = `${gameName.replace(/\s+/g, '_')}.json`;
+        downloadJsonFile(fileName, fullGameJson);
     });
 
     // --- Single Toggle Button Listener ---
@@ -595,8 +652,15 @@ export function initializeEditGameScreen() {
 
     confirmNewGameBtn.addEventListener('click', async () => {
         const newName = newGameNameInput.value.trim();
+        const newDescription = newGameDescriptionInput.value.trim();
+        const newCategoryId = newGameCategorySelect.value;
+
         if (!newName) {
             alert('יש למלא את שם המשחק.');
+            return;
+        }
+        if (!newCategoryId) {
+            alert('יש לבחור קטגוריה.');
             return;
         }
         
@@ -607,16 +671,20 @@ export function initializeEditGameScreen() {
         };
     
         try {
-            const newDocument = await createGame(newName, newGameData);
+            const newDocument = await createGame(newName, newDescription, newCategoryId, newGameData);
             
             // Hide modal and clear inputs
             newGameModalOverlay.classList.add('hidden');
             newGameNameInput.value = '';
+            newGameDescriptionInput.value = '';
+            // newGameCategorySelect.value remains as is.
     
             // Refresh selector and load the new game for editing
             await populateGameSelector();
             gameEditorSelect.value = newDocument.$id; // Select the new game
-            await loadGameForEditing(newDocument); // Load it into the form
+            
+            const gameToLoad = { ...newDocument, game_data: JSON.stringify(newGameData) };
+            await loadGameForEditing(gameToLoad);
     
             alert(`משחק חדש "${newName}" נוצר. כעת ניתן לערוך אותו.`);
     
@@ -626,7 +694,9 @@ export function initializeEditGameScreen() {
         }
     });
     
-    // Add auto-resize listeners for final question textareas
+    // Add auto-resize listeners for textareas
+    gameDescriptionInput.addEventListener('input', () => autoResizeTextarea(gameDescriptionInput));
     finalQuestionQInput.addEventListener('input', () => autoResizeTextarea(finalQuestionQInput));
     finalQuestionAInput.addEventListener('input', () => autoResizeTextarea(finalQuestionAInput));
+    newGameDescriptionInput.addEventListener('input', () => autoResizeTextarea(newGameDescriptionInput));
 }

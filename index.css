@@ -201,6 +201,14 @@ h1, h2, h3, h4, h5, h6 {
     right: 1.25rem;
     display: flex;
     gap: 0.9375rem;
+    align-items: center;
+}
+
+.user-greeting {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #f0f8ff;
+    text-shadow: 0.0625rem 0.0625rem 0.125rem rgba(0,0,0,0.5);
 }
 
 
@@ -341,6 +349,71 @@ h1, h2, h3, h4, h5, h6 {
     max-width: 87.5rem;
     padding: 1.25rem;
     position: relative;
+}
+
+/* --- New Category Selection on Setup Screen --- */
+.category-selection-container {
+    width: 100%;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.category-selection-container h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1.25rem;
+    color: #ffeb3b;
+}
+
+.category-list-container {
+    display: flex;
+    justify-content: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.category-card {
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 0.125rem solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.75rem;
+    padding: 0.9375rem;
+    width: 9.375rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.625rem;
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out, border-color 0.2s, box-shadow 0.2s;
+}
+
+.category-card:hover {
+    transform: translateY(-0.3125rem);
+    border-color: rgba(255, 235, 59, 0.8);
+}
+
+.category-card.selected {
+    border-color: #ffeb3b;
+    box-shadow: 0 0 0.9375rem rgba(255, 235, 59, 0.7);
+    transform: scale(1.05);
+}
+
+.category-card img {
+    width: 5rem;
+    height: 5rem;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 0.3125rem;
+    border: 0.125rem solid transparent;
+}
+
+.category-card.selected img {
+    border-color: #ffeb3b;
+}
+
+.category-card span {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #f0f8ff;
 }
 
 .stats {
@@ -1384,6 +1457,7 @@ h1, h2, h3, h4, h5, h6 {
 #game-editor-form input[type="text"],
 #game-editor-form input[type="number"],
 #game-editor-form textarea,
+#game-editor-form select,
 #game-editor-select {
     width: 100%;
     padding: 0.75rem;
@@ -1398,6 +1472,7 @@ h1, h2, h3, h4, h5, h6 {
 #game-editor-form input[type="text"]:focus,
 #game-editor-form input[type="number"]:focus,
 #game-editor-form textarea:focus,
+#game-editor-form select:focus,
 #game-editor-select:focus {
     outline: none;
     border-color: #ffeb3b;
@@ -1409,8 +1484,22 @@ h1, h2, h3, h4, h5, h6 {
     overflow-y: hidden;
 }
 
-#game-editor-select {
+/* Specific styling for description textarea */
+#game-description-input {
+    resize: vertical;
+    min-height: 5rem;
+}
+
+
+#game-editor-select,
+#game-category-select {
     cursor: pointer;
+}
+
+#game-editor-select option,
+#game-category-select option {
+    background-color: #283246; /* Dark theme color for dropdown background */
+    color: #f0f8ff;
 }
 
 #game-editor-form {
@@ -1437,7 +1526,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 #game-editor-form .form-group input,
-#game-editor-form .form-group textarea {
+#game-editor-form .form-group textarea,
+#game-editor-form .form-group select {
     flex-grow: 1;
 }
 
@@ -1710,7 +1800,9 @@ h1, h2, h3, h4, h5, h6 {
     color: #ffeb3b;
 }
 
-#new-game-modal .form-group input {
+#new-game-modal .form-group input,
+#new-game-modal .form-group textarea,
+#new-game-modal .form-group select {
     width: 100%;
     padding: 0.75rem;
     font-size: 1.1rem;
@@ -1720,12 +1812,21 @@ h1, h2, h3, h4, h5, h6 {
     color: #f0f8ff;
 }
 
-#new-game-modal .form-group input::placeholder {
+#new-game-modal #new-game-description {
+    resize: vertical;
+    min-height: 4rem;
+}
+
+
+#new-game-modal .form-group input::placeholder,
+#new-game-modal .form-group textarea::placeholder {
     color: rgba(240, 248, 255, 0.7);
     opacity: 1;
 }
 
-#new-game-modal .form-group input:focus {
+#new-game-modal .form-group input:focus,
+#new-game-modal .form-group textarea:focus,
+#new-game-modal .form-group select:focus {
     outline: none;
     border-color: #ffeb3b;
 }

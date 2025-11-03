@@ -1,6 +1,6 @@
 
 
-import { populateGameList, refreshSetupScreenState } from './setup.js';
+import { refreshSetupScreenState } from './setup.js';
 import { IMAGE_URLS } from './assets.js';
 
 const startScreen = document.getElementById('start-screen');
@@ -27,11 +27,8 @@ export function initializeStartScreen(onGoToSettings) {
     goToSetupBtn.addEventListener('click', async () => {
         startScreen.classList.add('hidden');
         
-        // Refresh the game list every time before showing the setup screen
-        await populateGameList();
-
-        // Refresh the 'Continue' checkbox state every time as well
-        refreshSetupScreenState();
+        // This function now handles loading categories and games.
+        await refreshSetupScreenState();
 
         setupScreen.classList.remove('hidden');
         document.getElementById('global-home-btn').classList.remove('hidden');

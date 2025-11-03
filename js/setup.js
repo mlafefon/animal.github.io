@@ -1,9 +1,11 @@
-import { listGames } from './appwriteService.js';
+import { listGames, listCategories, getFileUrl } from './appwriteService.js';
 
 const groupList = document.getElementById('group-list');
 const gameList = document.getElementById('game-list');
 const startButton = document.getElementById('start-btn');
 const setupScreen = document.getElementById('setup-screen');
+const categoryListContainer = document.getElementById('category-list-container');
+
 
 let gameDataCache = {};
 
@@ -19,7 +21,16 @@ function updateQuestionStats() {
     const questionBankStat = document.getElementById('question-bank-stat');
     const actualQuestionsStat = document.getElementById('actual-questions-stat');
 
-    if (!selectedGameLi || !selectedGroupLi || !questionBankStat || !actualQuestionsStat) {
+    if (!selectedGroupLi || !questionBankStat || !actualQuestionsStat) {
+        return;
+    }
+    
+    // If no game is selected, show a default message
+    if (!selectedGameLi) {
+        questionBankStat.textContent = 'בנק שאלות: --';
+        actualQuestionsStat.textContent = 'שאלות בפועל: --';
+        startButton.disabled = true;
+        startButton.title = 'יש לבחור משחק';
         return;
     }
 
@@ -67,53 +78,104 @@ function handleSelection(list, event) {
 }
 
 /**
- * Fetches game from Appwrite, caches their data, and populates the selection list.
+ * Fetches games for a specific category and populates the selection list.
+ * @param {string|null} categoryId - The ID of the category to filter by. Null for all games.
  */
-export async function populateGameList() {
-    gameList.innerHTML = '<li>טוען משחקים...</li>'; // Show loading indicator
-    gameDataCache = {}; // Clear cache on repopulation
+async function populateGameList(categoryId) {
+    gameList.innerHTML = '<li>טוען משחקים...</li>';
+    gameDataCache = {};
+    updateQuestionStats(); // Clear stats while loading
 
     try {
-        const games = await listGames();
-        gameList.innerHTML = ''; // Clear loading indicator
-        
+        const games = await listGames(categoryId);
+        gameList.innerHTML = '';
+
         if (games.length === 0) {
-            gameList.innerHTML = '<li>לא נמצאו משחקים. צור משחק חדש במסך העריכה.</li>';
+            gameList.innerHTML = '<li>לא נמצאו משחקים בקטגוריה זו.</li>';
+            updateQuestionStats(); // Update stats to show no games
             return;
         }
 
         games.forEach((game, index) => {
             try {
-                // The game_data is a string, we need to parse it to get questions
                 const fullGameData = JSON.parse(game.game_data);
-                gameDataCache[game.$id] = fullGameData; // Cache the parsed data
+                gameDataCache[game.$id] = fullGameData;
 
                 const li = document.createElement('li');
                 li.textContent = game.game_name;
                 li.dataset.documentId = game.$id;
-                li.dataset.gameData = game.game_data; // Store the raw string data as well
+                li.dataset.gameData = game.game_data;
 
                 if (index === 0) {
-                    li.classList.add('selected'); // Select the first game by default
+                    li.classList.add('selected');
                 }
                 
                 li.setAttribute('role', 'button');
                 li.setAttribute('tabindex', '0');
                 gameList.appendChild(li);
             } catch (parseError) {
-                console.error(`Could not parse game data for "${game.game_name}" (ID: ${game.$id})`, parseError);
-                // Optionally, skip this game in the list
+                console.error(`Could not parse game data for "${game.game_name}"`, parseError);
             }
         });
-
-        // Initial update after loading and populating
         updateQuestionStats();
-
     } catch (error) {
         console.error('Failed to populate game list:', error);
         gameList.innerHTML = '<li>שגיאה בטעינת רשימת המשחקים</li>';
     }
 }
+
+/**
+ * Fetches and renders the category selection cards.
+ */
+async function renderCategories() {
+    categoryListContainer.innerHTML = '<span>טוען קטגוריות...</span>';
+    
+    try {
+        const categories = await listCategories();
+        categoryListContainer.innerHTML = '';
+
+        // Create and prepend the "All" category card
+        const allCard = document.createElement('div');
+        allCard.className = 'category-card selected'; // Selected by default
+        allCard.dataset.categoryId = 'all';
+        allCard.innerHTML = `
+            <img src="https://img.icons8.com/plasticine/100/question-mark.png" alt="הכל">
+            <span>הכל</span>
+        `;
+        categoryListContainer.appendChild(allCard);
+
+        categories.forEach(category => {
+            const card = document.createElement('div');
+            card.className = 'category-card';
+            card.dataset.categoryId = category.$id;
+            const imageUrl = category.imageId ? getFileUrl(category.imageId) : 'https://img.icons8.com/plasticine/100/folder-invoices.png';
+            card.innerHTML = `
+                <img src="${imageUrl}" alt="${category.name}">
+                <span>${category.name}</span>
+            `;
+            categoryListContainer.appendChild(card);
+        });
+
+        // Add a single event listener to the container
+        categoryListContainer.addEventListener('click', (e) => {
+            const selectedCard = e.target.closest('.category-card');
+            if (!selectedCard) return;
+
+            // Update selection visual
+            categoryListContainer.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+            selectedCard.classList.add('selected');
+
+            // Repopulate games based on selection
+            const categoryId = selectedCard.dataset.categoryId;
+            populateGameList(categoryId === 'all' ? null : categoryId);
+        });
+
+    } catch (error) {
+        console.error("Failed to render categories:", error);
+        categoryListContainer.innerHTML = '<span>שגיאה בטעינת קטגוריות</span>';
+    }
+}
+
 
 /**
  * Toggles the enabled/disabled state of the main setup controls.
@@ -124,6 +186,8 @@ function toggleSetupControls(disabled) {
     groupList.style.opacity = disabled ? 0.6 : 1;
     gameList.style.pointerEvents = disabled ? 'none' : 'auto';
     gameList.style.opacity = disabled ? 0.6 : 1;
+    categoryListContainer.style.pointerEvents = disabled ? 'none' : 'auto';
+    categoryListContainer.style.opacity = disabled ? 0.6 : 1;
     document.getElementById('shuffle-questions').disabled = disabled;
 }
 
@@ -138,19 +202,28 @@ function applySavedStateSelections() {
         const savedState = JSON.parse(savedStateJSON);
         if (!savedState) return;
 
+        // Since we don't know the category of the saved game, we can't select it.
+        // We will just load all games to ensure the saved game appears in the list.
+        populateGameList(null);
+        // And select the "All" category.
+        categoryListContainer.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+        categoryListContainer.querySelector('[data-category-id="all"]').classList.add('selected');
+
         // Select Number of Groups
         const numberOfGroups = savedState.teams.length;
         [...groupList.children].forEach(li => {
             li.classList.toggle('selected', parseInt(li.textContent, 10) === numberOfGroups);
         });
 
-        // Select Game
-        const documentId = savedState.options.documentId;
-        [...gameList.children].forEach(li => {
-            li.classList.toggle('selected', li.dataset.documentId === documentId);
-        });
-        
-        updateQuestionStats();
+        // Select Game - This needs a delay to ensure populateGameList has finished
+        setTimeout(() => {
+            const documentId = savedState.options.documentId;
+            [...gameList.children].forEach(li => {
+                li.classList.toggle('selected', li.dataset.documentId === documentId);
+            });
+            updateQuestionStats();
+        }, 500); // A small delay should be sufficient
+
     } catch(e) {
         console.error("Could not parse saved state to apply selections:", e);
     }
@@ -160,7 +233,7 @@ function applySavedStateSelections() {
  * Checks for a saved game state and updates the "Continue" checkbox accordingly.
  * This should be called each time the setup screen is shown.
  */
-export function refreshSetupScreenState() {
+export async function refreshSetupScreenState() {
     const continueCheckbox = document.getElementById('continue-last-point');
     const continueLabel = document.querySelector('label[for="continue-last-point"]');
     const savedStateJSON = localStorage.getItem('animalGameState');
@@ -171,7 +244,6 @@ export function refreshSetupScreenState() {
             continueCheckbox.disabled = false;
             continueLabel.textContent = `המשך "${savedState.gameName}"`;
         } catch (e) {
-            // Handle corrupted saved data
             continueCheckbox.disabled = true;
             continueLabel.textContent = 'המשך מנקודה אחרונה';
             localStorage.removeItem('animalGameState');
@@ -181,10 +253,12 @@ export function refreshSetupScreenState() {
         continueLabel.textContent = 'המשך מנקודה אחרונה';
     }
     
-    // Always start with the checkbox unchecked and controls enabled.
     continueCheckbox.checked = false;
     toggleSetupControls(false);
-    updateQuestionStats(); // Update button state
+
+    // Initial data load
+    await renderCategories();
+    await populateGameList(null); // Load all games by default
 }
 
 
@@ -220,16 +294,13 @@ export function initializeSetupScreen(onStart) {
     });
 
     startButton.addEventListener('click', () => {
-        // Get the calculated number of questions from the UI to check before proceeding
         const actualQuestionsText = document.getElementById('actual-questions-stat').textContent;
         const actualQuestions = parseInt(actualQuestionsText.split(':')[1].trim(), 10) || 0;
         const continueLastPoint = document.getElementById('continue-last-point').checked;
 
-        // This check should only apply when starting a new game.
-        // When continuing, we trust the saved state has questions.
         if (actualQuestions === 0 && !continueLastPoint) {
             alert('לא ניתן להתחיל את המשחק כי מספר השאלות בפועל הוא אפס. אנא בחר מספר קבוצות קטן יותר.');
-            return; // Stop here, don't hide the screen or start the game
+            return;
         }
 
         setupScreen.classList.add('hidden');
@@ -241,7 +312,7 @@ export function initializeSetupScreen(onStart) {
         const documentId = selectedGame ? selectedGame.dataset.documentId : '';
         const gameDataString = selectedGame ? selectedGame.dataset.gameData : '{}';
 
-        if (!documentId) {
+        if (!documentId && !continueLastPoint) {
             alert('לא נבחר משחק. אנא בחר משחק מהרשימה.');
             setupScreen.classList.remove('hidden');
             return;

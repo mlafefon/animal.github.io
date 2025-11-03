@@ -62,40 +62,67 @@ export function getAccount() {
 // --- Database (Game Templates) Functions ---
 
 /**
- * Fetches all non-deleted game templates from the database for the current user.
+ * Fetches all category documents from the database.
+ * @returns {Promise<Array<object>>} A list of category documents.
+ */
+export async function listCategories() {
+    try {
+        const response = await database.listDocuments(
+            AppwriteConfig.databaseId,
+            'categories', // The new collection for categories
+            [Query.limit(50)]
+        );
+        return response.documents;
+    } catch (error) {
+        console.error("Failed to list categories:", error);
+        return [];
+    }
+}
+
+
+/**
+ * Fetches all non-deleted game templates from the database for the current user, optionally filtered by category.
+ * @param {string|null} categoryId - The ID of the category to filter by. If null, returns all games.
  * @returns {Promise<Array<object>>} A list of game documents.
  */
-export async function listGames() {
+export async function listGames(categoryId = null) {
     try {
         const user = await getAccount();
         if (!user) {
-            // If no user is logged in, return an empty array.
             return [];
+        }
+
+        const queries = [
+            Query.equal('is_deleted', false),
+            Query.equal('ownerId', user.$id),
+            Query.limit(100)
+        ];
+
+        if (categoryId) {
+            queries.push(Query.equal('categoryId', categoryId));
         }
 
         const response = await database.listDocuments(
             AppwriteConfig.databaseId,
             AppwriteConfig.collectionId,
-            [
-                Query.equal('is_deleted', false), // Only get games that are not soft-deleted
-                Query.equal('ownerId', user.$id), // Only get games owned by the current user
-                Query.limit(100) // Appwrite has a default limit of 25, so we increase it
-            ]
+            queries
         );
         return response.documents;
     } catch (error) {
         console.error("Failed to list games:", error);
-        return []; // Return an empty array on failure to prevent crashes
+        return [];
     }
 }
 
 /**
  * Creates a new game template document in the database.
  * @param {string} gameName - The name of the game.
+ * @param {string} description - The game's description.
+ * @param {string} categoryId - The document ID of the game's category.
  * @param {object} gameData - The full game object (questions, final_question).
  * @returns {Promise<object>} The newly created document.
  */
-export async function createGame(gameName, gameData) {
+export async function createGame(gameName, description, categoryId, gameData) {
     try {
         const user = await getAccount();
         if (!user) {
@@ -108,10 +135,12 @@ export async function createGame(gameName, gameData) {
             ID.unique(),
             {
                 game_name: gameName,
+                description: description,
+                categoryId: categoryId,
                 game_data: JSON.stringify(gameData),
                 is_deleted: false,
-                ownerId: user.$id, // Add the required ownerId
-                is_public: false // Add the newly required is_public attribute
+                ownerId: user.$id,
+                is_public: false
             }
         );
     } catch (error) {
@@ -125,16 +154,20 @@ export async function createGame(gameName, gameData) {
  * Updates an existing game template document.
  * @param {string} documentId - The ID of the document to update.
  * @param {string} gameName - The updated name of the game.
+ * @param {string} description - The updated description of the game.
+ * @param {string} categoryId - The updated category document ID for the game.
  * @param {object} gameData - The updated full game object.
  * @returns {Promise<object>} The updated document.
  */
-export function updateGame(documentId, gameName, gameData) {
+export function updateGame(documentId, gameName, description, categoryId, gameData) {
     return database.updateDocument(
         AppwriteConfig.databaseId,
         AppwriteConfig.collectionId,
         documentId,
         {
             game_name: gameName,
+            description: description,
+            categoryId: categoryId,
             game_data: JSON.stringify(gameData)
         }
     );

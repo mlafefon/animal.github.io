@@ -9,16 +9,29 @@ const passwordInput = document.getElementById('password');
 const googleLoginBtn = document.getElementById('google-login-btn');
 const logoutBtn = document.getElementById('logout-btn');
 const authError = document.getElementById('auth-error');
+const userGreeting = document.getElementById('user-greeting');
 
 let isAppInitialized = false;
 
 /**
- * Hides the authentication screen and shows the main application start screen.
+ * Hides the authentication screen, shows the main app, and updates the user greeting.
  * It also initializes the main application logic if it hasn't been already.
  */
-function showApp() {
+async function showApp() {
     authScreen.classList.add('hidden');
     startScreen.classList.remove('hidden');
+
+    // Fetch user and update greeting
+    try {
+        const user = await getAccount();
+        if (user && userGreeting) {
+            const displayName = user.name || user.email;
+            userGreeting.textContent = `שלום, ${displayName}`;
+        }
+    } catch (error) {
+        console.warn("Could not fetch user account to display name.", error);
+        if (userGreeting) userGreeting.textContent = '';
+    }
 
     if (!isAppInitialized) {
         initializeApp();
@@ -57,7 +70,7 @@ async function handleLogin(e) {
     const password = passwordInput.value;
     try {
         await login(email, password);
-        showApp();
+        await showApp();
     } catch (error) {
         console.error('Login Failed:', error);
         // Display the specific error message from Appwrite for better debugging.
@@ -90,7 +103,7 @@ export async function initializeAuth() {
         const user = await getAccount();
         if (user) {
             console.log('User already logged in:', user.name);
-            showApp();
+            await showApp();
         } else {
             showLogin();
         }
