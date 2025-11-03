@@ -1625,6 +1625,12 @@ h1, h2, h3, h4, h5, h6 {
     gap: 1.5625rem;
 }
 
+#game-editor-form .form-row {
+    display: flex;
+    gap: 1.5625rem;
+    align-items: baseline;
+}
+
 /* NEW STYLES: Horizontal layout for form groups in the editor */
 #game-editor-form .form-group {
     flex-direction: row;
