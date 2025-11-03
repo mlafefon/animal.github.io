@@ -1856,35 +1856,105 @@ h1, h2, h3, h4, h5, h6 {
     background-color: #b01030;
 }
 
-/* --- Save Button State --- */
-#save-game-btn.unsaved {
-    background-color: #ffc107; /* Amber */
-    color: #424242; /* Dark Grey */
-    border-bottom-color: #ffa000; /* Darker Amber */
-    animation: pulse-unsaved 1.5s infinite;
+/* --- New Editor Toolbar --- */
+#editor-toolbar {
+    display: flex;
+    justify-content: flex-start; /* Align to the right in RTL */
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: rgba(40, 50, 70, 0.9);
+    backdrop-filter: blur(0.625rem);
+    -webkit-backdrop-filter: blur(0.625rem);
+    border-radius: 0 0 0.75rem 0.75rem;
+}
+.btn-icon-round {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+    position: relative;
+    box-shadow: 0 0.125rem 0.3125rem rgba(0,0,0,0.2), inset 0 0.0625rem 0.125rem rgba(255,255,255,0.2);
+}
+.btn-icon-round:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 0.25rem 0.625rem rgba(0,0,0,0.3), inset 0 0.0625rem 0.125rem rgba(255,255,255,0.3);
+}
+.btn-icon-round:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 0.0625rem 0.125rem rgba(0,0,0,0.3), inset 0 0.125rem 0.25rem rgba(0,0,0,0.2);
+}
+.btn-icon-round:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.btn-icon-round svg {
+    width: 1.6rem;
+    height: 1.6rem;
+    fill: #ffffff;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.4));
+    transition: opacity 0.2s;
 }
 
-#save-game-btn.saved {
-    background-color: #4CAF50; /* Green */
-    color: white;
-    border-bottom-color: #388E3C; /* Darker Green */
-    animation: none; /* Stop pulsing if it was unsaved */
+/* --- Toolbar Button Colors --- */
+#toolbar-add-question-btn {
+    background-color: #2ecc71; /* Emerald */
+}
+#toolbar-add-question-btn:hover:not(:disabled) {
+    background-color: #27ae60; /* Darker Emerald */
+}
+#toolbar-download-btn {
+    background-color: #3498db; /* Peter River */
+}
+#toolbar-download-btn:hover:not(:disabled) {
+    background-color: #2980b9; /* Darker Peter River */
+}
+#toolbar-save-btn {
+     background-color: #f39c12; /* Orange */
+}
+#toolbar-save-btn:hover:not(:disabled) {
+    background-color: #e67e22; /* Darker Orange */
+}
+.btn-icon-round.btn-icon-danger {
+    background-color: #e74c3c; /* Alizarin */
+}
+.btn-icon-round.btn-icon-danger:hover:not(:disabled) {
+    background-color: #c0392b; /* Darker Alizarin */
 }
 
-@keyframes pulse-unsaved {
-    0% {
-        box-shadow: 0 0.3125rem 0.9375rem rgba(0,0,0,0.2);
-        transform: scale(1);
-    }
-    50% {
-        box-shadow: 0 0.5rem 1.5625rem rgba(255, 193, 7, 0.6);
-        transform: scale(1.05);
-    }
-    100% {
-        box-shadow: 0 0.3125rem 0.9375rem rgba(0,0,0,0.2);
-        transform: scale(1);
-    }
+/* --- Save Button State (New Toolbar Button) --- */
+#toolbar-save-btn .save-icon-svg { display: block; }
+#toolbar-save-btn .saved-icon-svg { display: none; }
+
+#toolbar-save-btn.unsaved {
+    background-color: #f1c40f; /* Sun Flower yellow */
+    animation: pulse-unsaved-icon 1.5s infinite;
 }
+#toolbar-save-btn.unsaved:hover:not(:disabled) {
+    background-color: #f39c12; /* Orange on hover */
+}
+@keyframes pulse-unsaved-icon {
+    0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7), 0 0.125rem 0.3125rem rgba(0,0,0,0.2); }
+    70% { box-shadow: 0 0 0 0.625rem rgba(241, 196, 15, 0), 0 0.25rem 0.625rem rgba(0,0,0,0.3); }
+    100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0), 0 0.125rem 0.3125rem rgba(0,0,0,0.2); }
+}
+
+#toolbar-save-btn.saved {
+    background-color: #2ecc71; /* Emerald, same as add button */
+    animation: none;
+    cursor: default;
+}
+#toolbar-save-btn.saved .save-icon-svg { display: none; }
+#toolbar-save-btn.saved .saved-icon-svg { display: block; }
 
 
 /* --- New Game Modal --- */

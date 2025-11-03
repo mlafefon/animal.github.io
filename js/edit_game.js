@@ -3,17 +3,12 @@ import { showSetupScreenForGame } from './setup.js';
 
 // --- Elements ---
 const editGameScreen = document.getElementById('edit-game-screen');
-const startScreen = document.getElementById('start-screen');
 const createNewGameBtn = document.getElementById('create-new-game-btn');
-const deleteGameBtn = document.getElementById('delete-game-btn');
 const gameEditorForm = document.getElementById('game-editor-form');
 const gameNameInput = document.getElementById('game-name-input');
 const gameDescriptionInput = document.getElementById('game-description-input');
 const gameCategorySelect = document.getElementById('game-category-select');
 const questionsEditorContainer = document.getElementById('questions-editor-container');
-const addQuestionBtn = document.getElementById('add-question-btn');
-const saveGameBtn = document.getElementById('save-game-btn');
-const downloadGameBtn = document.getElementById('download-game-btn');
 const finalQuestionQInput = document.getElementById('final-question-q-input');
 const finalQuestionAInput = document.getElementById('final-question-a-input');
 const toggleAllQuestionsBtn = document.getElementById('toggle-all-questions-btn');
@@ -21,6 +16,12 @@ const playSelectedGameBtn = document.getElementById('play-selected-game-btn');
 const categoryListContainer = document.getElementById('category-list-container');
 const gameListUl = document.getElementById('game-list-ul');
 
+// New Toolbar Elements
+const editorToolbar = document.getElementById('editor-toolbar');
+const toolbarAddQuestionBtn = document.getElementById('toolbar-add-question-btn');
+const toolbarDownloadBtn = document.getElementById('toolbar-download-btn');
+const toolbarSaveBtn = document.getElementById('toolbar-save-btn');
+const toolbarDeleteBtn = document.getElementById('toolbar-delete-btn');
 
 // Modal Elements
 const newGameModalOverlay = document.getElementById('new-game-modal-overlay');
@@ -42,16 +43,16 @@ let gameDocumentsCache = {}; // Cache for all fetched game documents
 function setUnsavedState(isUnsaved) {
     if (saveStateTimeout) {
         clearTimeout(saveStateTimeout);
-        saveGameBtn.textContent = 'שמור שינויים';
-        saveGameBtn.classList.remove('saved');
-        saveGameBtn.disabled = false;
+        toolbarSaveBtn.title = 'שמור שינויים';
+        toolbarSaveBtn.classList.remove('saved');
+        toolbarSaveBtn.disabled = false;
         saveStateTimeout = null;
     }
 
     if (isUnsaved) {
-        saveGameBtn.classList.add('unsaved');
+        toolbarSaveBtn.classList.add('unsaved');
     } else {
-        saveGameBtn.classList.remove('unsaved');
+        toolbarSaveBtn.classList.remove('unsaved');
     }
 }
 
@@ -60,14 +61,14 @@ function setUnsavedState(isUnsaved) {
  */
 function showSavedState() {
     setUnsavedState(false);
-    saveGameBtn.classList.add('saved');
-    saveGameBtn.textContent = 'נשמר!';
-    saveGameBtn.disabled = true;
+    toolbarSaveBtn.classList.add('saved');
+    toolbarSaveBtn.title = 'נשמר!';
+    toolbarSaveBtn.disabled = true;
 
     saveStateTimeout = setTimeout(() => {
-        saveGameBtn.classList.remove('saved');
-        saveGameBtn.textContent = 'שמור שינויים';
-        saveGameBtn.disabled = false;
+        toolbarSaveBtn.classList.remove('saved');
+        toolbarSaveBtn.title = 'שמור שינויים';
+        toolbarSaveBtn.disabled = false;
         saveStateTimeout = null;
     }, 2000);
 }
@@ -309,7 +310,8 @@ function renderAllQuestions(questions) {
 async function loadGameForEditing(gameDocument) {
     if (!gameDocument) {
         gameEditorForm.classList.add('hidden');
-        deleteGameBtn.classList.add('hidden');
+        editorToolbar.classList.add('hidden');
+        toolbarDeleteBtn.classList.add('hidden');
         playSelectedGameBtn.disabled = true;
         setUnsavedState(false);
         return;
@@ -337,7 +339,8 @@ async function loadGameForEditing(gameDocument) {
 
         gameEditorForm.dataset.documentId = gameDocument.$id;
         gameEditorForm.classList.remove('hidden');
-        deleteGameBtn.classList.remove('hidden');
+        editorToolbar.classList.remove('hidden');
+        toolbarDeleteBtn.classList.remove('hidden');
         playSelectedGameBtn.disabled = false;
         setUnsavedState(false);
     } catch (error) {
@@ -494,7 +497,8 @@ async function renderCategories() {
 export async function showEditScreen() {
     editGameScreen.classList.remove('hidden');
     gameEditorForm.classList.add('hidden');
-    deleteGameBtn.classList.add('hidden');
+    editorToolbar.classList.add('hidden');
+    toolbarDeleteBtn.classList.add('hidden');
     playSelectedGameBtn.disabled = true;
     document.getElementById('global-home-btn').classList.remove('hidden');
     delete gameEditorForm.dataset.documentId;
@@ -544,7 +548,7 @@ export function initializeEditGameScreen() {
 
     gameEditorForm.addEventListener('input', () => setUnsavedState(true));
 
-    addQuestionBtn.addEventListener('click', () => {
+    toolbarAddQuestionBtn.addEventListener('click', () => {
         if (gameEditorForm.classList.contains('hidden')) {
             alert('יש לבחור משחק לפני הוספת שאלה.');
             return;
@@ -556,7 +560,7 @@ export function initializeEditGameScreen() {
         setUnsavedState(true);
     });
 
-    saveGameBtn.addEventListener('click', async () => {
+    toolbarSaveBtn.addEventListener('click', async () => {
         const documentId = gameEditorForm.dataset.documentId;
         if (!documentId) {
             alert('לא נבחר משחק לשמירה.');
@@ -585,7 +589,7 @@ export function initializeEditGameScreen() {
         }
     });
 
-    deleteGameBtn.addEventListener('click', async () => {
+    toolbarDeleteBtn.addEventListener('click', async () => {
         const documentId = gameEditorForm.dataset.documentId;
         const gameName = gameNameInput.value.trim();
 
@@ -605,7 +609,7 @@ export function initializeEditGameScreen() {
         }
     });
 
-    downloadGameBtn.addEventListener('click', () => {
+    toolbarDownloadBtn.addEventListener('click', () => {
         if (gameEditorForm.classList.contains('hidden')) {
             alert('לא נבחר משחק להורדה. אנא בחר משחק קיים.');
             return;
