@@ -186,6 +186,7 @@ function updateReorderButtons() {
  * Renders a single question card in the editor.
  * @param {object} question - The question object {q, a, timer}.
  * @param {number} index - The index of the question.
+ * @returns {HTMLDivElement} The created card element.
  */
 function renderQuestionCard(question, index) {
     const card = document.createElement('div');
@@ -289,7 +290,7 @@ function renderQuestionCard(question, index) {
     });
     
     updateCollapsedTitle(card);
-    questionsEditorContainer.appendChild(card);
+    return card;
 }
 
 /**
@@ -298,7 +299,10 @@ function renderQuestionCard(question, index) {
  */
 function renderAllQuestions(questions) {
     questionsEditorContainer.innerHTML = '';
-    questions.forEach(renderQuestionCard);
+    questions.forEach((q, i) => {
+        const card = renderQuestionCard(q, i);
+        questionsEditorContainer.appendChild(card);
+    });
     updateReorderButtons();
     updateToggleAllButtonState();
 }
@@ -554,10 +558,20 @@ export function initializeEditGameScreen() {
             return;
         }
         const questionCount = questionsEditorContainer.children.length;
-        renderQuestionCard({ q: '', a: '', timer: 30 }, questionCount);
+        const newCard = renderQuestionCard({ q: '', a: '', timer: 30 }, questionCount);
+        questionsEditorContainer.appendChild(newCard);
+    
         updateReorderButtons();
         updateToggleAllButtonState();
         setUnsavedState(true);
+    
+        // Expand, scroll to, and focus the new card
+        expandCard(newCard);
+        newCard.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        const questionInput = newCard.querySelector('.question-input');
+        if (questionInput) {
+            questionInput.focus({ preventScroll: true });
+        }
     });
 
     toolbarSaveBtn.addEventListener('click', async () => {
