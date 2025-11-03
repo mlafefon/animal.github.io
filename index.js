@@ -1,7 +1,7 @@
 
 
 import { initializeStartScreen } from './js/start.js';
-import { initializeSetupScreen } from './js/setup.js';
+import { initializeSetupScreen, showSetupScreenForGame } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
 import { initializePreQuestionScreen } from './js/preq.js';
 import { initializeQuestionScreen, showQuestionScreen, stopTimer } from './js/question.js';
@@ -106,7 +106,7 @@ export function initializeApp() {
 
     /**
      * Callback function that is passed to the setup module.
-     * It's called when the user clicks the "Start" button.
+     * It's called when the user clicks the "Start" button on the simplified setup screen.
      * @param {object} options - The game options selected by the user.
      */
     const onGameStart = (options) => {

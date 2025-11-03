@@ -271,11 +271,19 @@ h1, h2, h3, h4, h5, h6 {
     text-align: center;
     text-transform: uppercase;
     letter-spacing: 0.0625rem;
-    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, background-color 0.2s;
     -webkit-user-select: none;
     user-select: none;
 }
-.btn:active {
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #9E9E9E; /* Grey */
+    border-bottom-color: #616161;
+    box-shadow: none;
+    transform: translateY(0);
+}
+.btn:active:not(:disabled) {
     transform: translateY(0.125rem);
 }
 .btn-large {
@@ -297,12 +305,12 @@ h1, h2, h3, h4, h5, h6 {
     border-bottom: 0.3125rem solid #fbc02d; /* Darker yellow for 3D effect */
     box-shadow: 0 0.3125rem 0.9375rem rgba(0,0,0,0.2);
 }
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
     background-color: #fdd835;
     transform: translateY(-0.125rem);
     box-shadow: 0 0.5rem 1.25rem rgba(0,0,0,0.3);
 }
-.btn-primary:active {
+.btn-primary:active:not(:disabled) {
     border-bottom-width: 0.125rem;
     box-shadow: 0 0.125rem 0.625rem rgba(0,0,0,0.2);
 }
@@ -315,13 +323,13 @@ h1, h2, h3, h4, h5, h6 {
     padding-bottom: 0.75rem;
     box-shadow: 0 0.3125rem 0.9375rem rgba(0,0,0,0.2);
 }
-.btn-secondary:hover {
+.btn-secondary:hover:not(:disabled) {
     background-color: #ffeb3b;
     color: #3f51b5;
     transform: translateY(-0.125rem);
     box-shadow: 0 0.5rem 1.25rem rgba(0,0,0,0.3);
 }
-.btn-secondary:active {
+.btn-secondary:active:not(:disabled) {
     transform: translateY(0.0625rem);
     box-shadow: 0 0.125rem 0.625rem rgba(0,0,0,0.2);
 }
@@ -332,12 +340,12 @@ h1, h2, h3, h4, h5, h6 {
     border-bottom: 0.3125rem solid #c0392b; /* Darker red */
     box-shadow: 0 0.3125rem 0.9375rem rgba(0,0,0,0.2);
 }
-.btn-danger:hover {
+.btn-danger:hover:not(:disabled) {
     background-color: #c0392b;
     transform: translateY(-0.125rem);
     box-shadow: 0 0.5rem 1.25rem rgba(0,0,0,0.3);
 }
-.btn-danger:active {
+.btn-danger:active:not(:disabled) {
     border-bottom-width: 0.125rem;
     box-shadow: 0 0.125rem 0.625rem rgba(0,0,0,0.2);
 }
@@ -456,6 +464,14 @@ h1, h2, h3, h4, h5, h6 {
     border-bottom: 0.0625rem solid rgba(255, 255, 255, 0.2);
     color: #ffeb3b;
 }
+
+.rules-box h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1.25rem;
+    color: white;
+    font-weight: normal;
+}
+
 
 .rules-box ul {
     list-style: none;
@@ -1382,11 +1398,12 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    padding: 1.25rem 2.5rem 2.5rem;
-    overflow-y: auto;
-    max-width: 75rem;
+    padding: 1.25rem;
+    max-width: 112.5rem; /* Increased max-width for 3 columns */
     margin: 0 auto;
+    width: 100%;
 }
+
 
 .edit-header {
     display: flex;
@@ -1404,7 +1421,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .edit-sticky-actions {
     position: sticky;
-    top: -0.0625rem; /* Stick perfectly to the top of the scroll area */
+    top: 1.25rem;
     z-index: 500;
     display: flex;
     justify-content: space-between;
@@ -1426,18 +1443,115 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
 }
 
-.edit-controls {
+/* --- New Edit Screen Layout --- */
+.edit-game-layout {
     display: flex;
-    gap: 1.25rem;
-    align-items: center;
-    flex-wrap: wrap;
-    margin-bottom: 1.25rem;
+    flex-direction: row-reverse; /* For RTL: Cat -> Game -> Editor */
+    gap: 1.5rem;
+    flex-grow: 1;
+    overflow: hidden; /* Prevent parent from scrolling */
 }
 
-.edit-controls-actions {
+#category-panel, #game-list-panel {
     display: flex;
-    gap: 0.625rem;
+    flex-direction: column;
+    gap: 1rem;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    overflow-y: auto;
+}
+
+#category-panel {
+    flex: 0 0 20rem; /* Fixed width for categories */
+}
+
+#game-list-panel {
+    flex: 0 0 22rem; /* Fixed width for games */
+}
+
+#game-list-panel h2, #category-panel h2 {
+    font-size: 1.5rem;
+    color: #ffeb3b;
+    margin-bottom: 0;
+}
+
+#editor-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Allow editor panel to scroll independently */
+    padding-left: 0.625rem;
+}
+
+/* --- Redesigned Category List in Edit Screen --- */
+#category-panel .category-list-container {
+    justify-content: flex-start;
+    flex-direction: column; /* Arrange items in a single column */
+    gap: 0.5rem; /* Tighter gap for list items */
+    flex-wrap: nowrap; /* Prevent wrapping */
+}
+
+#category-panel .category-card {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    flex-direction: row-reverse; /* Icon on right, text on left for RTL */
+    justify-content: flex-start;
     align-items: center;
+    gap: 0.75rem;
+    height: auto;
+}
+
+#category-panel .category-card:hover {
+    transform: none; /* Disable 3D hover effect */
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+#category-panel .category-card.selected {
+    transform: none; /* Disable selected scaling */
+    background-color: rgba(255, 235, 59, 0.2);
+}
+
+#category-panel .category-card img {
+    width: 2.25rem; /* Smaller icon */
+    height: 2.25rem;
+    border-radius: 0.375rem; /* Softly rounded corners */
+    padding: 0;
+    border: none;
+}
+
+#category-panel .category-card.selected img {
+     border: 2px solid #ffeb3b;
+}
+
+#category-panel .category-card span {
+    font-size: 1.1rem;
+}
+
+/* --- Game List in Edit Screen --- */
+#game-list-panel #game-list-ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+#game-list-panel li {
+    padding: 0.9375rem;
+    margin-bottom: 0.625rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 0.0625rem solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+    font-size: 1.1rem;
+}
+#game-list-panel li:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+#game-list-panel li.selected {
+    background-color: rgba(255, 235, 59, 0.2);
+    border-color: #ffeb3b;
+    font-weight: bold;
 }
 
 .form-group {

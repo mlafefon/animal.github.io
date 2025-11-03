@@ -1,5 +1,6 @@
 
 
+
 import { refreshSetupScreenState } from './setup.js';
 import { IMAGE_URLS } from './assets.js';
 
@@ -24,25 +25,15 @@ export function initializeStartScreen(onGoToSettings) {
         startImage.src = IMAGE_URLS.START_SCREEN;
     }
 
-    goToSetupBtn.addEventListener('click', async () => {
-        startScreen.classList.add('hidden');
-        
-        // This function now handles loading categories and games.
-        await refreshSetupScreenState();
-
-        setupScreen.classList.remove('hidden');
-        document.getElementById('global-home-btn').classList.remove('hidden');
-
-        // Set initial focus on the selected group button for accessibility
-        const selectedGroup = setupScreen.querySelector('#group-list li.selected');
-        if (selectedGroup) {
-            // Use a minimal timeout to ensure the element is visible and focusable
-            setTimeout(() => selectedGroup.focus(), 0);
+    goToSetupBtn.addEventListener('click', () => {
+        // This button now behaves identically to the settings button, taking the user
+        // to the new game selection/editing hub.
+        if (onGoToSettings) {
+            onGoToSettings();
         }
     });
 
     settingsBtn.addEventListener('click', () => {
-        // Instead of an alert, we now call the callback to navigate to the edit screen.
         if (onGoToSettings) {
             onGoToSettings();
         }

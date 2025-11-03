@@ -63,15 +63,10 @@
     </div>
 
     <div id="setup-screen" class="container hidden">
-        <div class="category-selection-container">
-            <h2>בחר קטגוריה</h2>
-            <div id="category-list-container" class="category-list-container">
-                <!-- Categories will be loaded here dynamically -->
-            </div>
-        </div>
         <main class="setup-grid">
             <div class="setup-box rules-box">
                 <h2>משחק החיות - הנחיות:</h2>
+                <h3 id="selected-game-title"></h3>
                 <ul>
                     <li>* כל קבוצה עונה על שאלה בתורה.</li>
                     <li>* בתשובה נכונה מגרילים ניקוד חיובי</li>
@@ -93,13 +88,6 @@
                     <li>3</li>
                     <li class="selected">4</li>
                     <li>5</li>
-                </ul>
-            </div>
-
-            <div class="setup-box">
-                <h2>בחר משחק</h2>
-                <ul id="game-list" class="selection-list">
-                    <!-- Games will be loaded here dynamically -->
                 </ul>
             </div>
         </main>
@@ -234,71 +222,79 @@
 
     <div id="edit-game-screen" class="container hidden">
         <div class="edit-header">
-            <h1>עריכת משחקים</h1>
+            <h1>בחר או ערוך משחק</h1>
         </div>
 
         <div class="edit-sticky-actions">
-            <button type="button" id="back-to-home-from-edit-btn" class="btn btn-secondary btn-medium">חזור</button>
+             <div class="edit-controls-actions">
+                <button type="button" id="back-to-home-from-edit-btn" class="btn btn-secondary btn-medium">חזור</button>
+                <button id="create-new-game-btn" class="btn btn-primary">צור משחק חדש</button>
+            </div>
             <div class="main-edit-actions">
+                <button type="button" id="play-selected-game-btn" class="btn btn-primary btn-medium" disabled>שחק במשחק</button>
                 <button type="button" id="add-question-btn" class="btn btn-secondary btn-medium">הוסף שאלה</button>
                 <button type="button" id="download-game-btn" class="btn btn-secondary btn-medium">הורד קובץ</button>
                 <button type="button" id="save-game-btn" class="btn btn-primary btn-medium">שמור שינויים</button>
-            </div>
-        </div>
-
-        <div class="edit-controls">
-            <div class="form-group">
-                <label for="game-editor-select">בחר משחק לעריכה:</label>
-                <select id="game-editor-select">
-                    <option value="">-- בחר משחק --</option>
-                </select>
-            </div>
-             <div class="edit-controls-actions">
-                <button id="create-new-game-btn" class="btn btn-primary">צור משחק חדש</button>
                 <button id="delete-game-btn" class="btn btn-danger hidden">מחק משחק</button>
             </div>
         </div>
 
-        <form id="game-editor-form" class="hidden">
-            <div class="form-group">
-                <label for="game-name-input">שם המשחק:</label>
-                <input type="text" id="game-name-input" placeholder="הכנס שם למשחק">
-            </div>
-            <div class="form-group">
-                <label for="game-category-select">קטגוריה:</label>
-                <select id="game-category-select">
-                    <!-- Options populated by JS -->
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="game-description-input">תיאור:</label>
-                <textarea id="game-description-input" rows="3" placeholder="הכנס תיאור קצר למשחק"></textarea>
+        <div class="edit-game-layout">
+            <div id="editor-panel">
+                <form id="game-editor-form" class="hidden">
+                    <div class="form-group">
+                        <label for="game-name-input">שם המשחק:</label>
+                        <input type="text" id="game-name-input" placeholder="הכנס שם למשחק">
+                    </div>
+                    <div class="form-group">
+                        <label for="game-category-select">קטגוריה:</label>
+                        <select id="game-category-select">
+                            <!-- Options populated by JS -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="game-description-input">תיאור:</label>
+                        <textarea id="game-description-input" rows="3" placeholder="הכנס תיאור קצר למשחק"></textarea>
+                    </div>
+                    <div class="questions-header">
+                        <h2>שאלות</h2>
+                        <div class="question-toggle-controls">
+                            <button type="button" id="toggle-all-questions-btn" class="btn-icon" title="כווץ/הרחב הכל">
+                                <svg class="expand-icon-svg" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 5.83L15.17 9l1.41-1.41L12 3 7.41 7.59 8.83 9 12 5.83zm0 12.34L8.83 15l-1.41 1.41L12 21l4.59-4.59L15.17 15 12 18.17z"/></svg>
+                                <svg class="collapse-icon-svg" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M7.41 18.59L8.83 20 12 16.83 15.17 20l1.41-1.41L12 14l-4.59 4.59zm9.18-13.18L15.17 4 12 7.17 8.83 4 7.41 5.41 12 10l4.59-4.59z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="questions-editor-container">
+                        <!-- Questions will be dynamically inserted here -->
+                    </div>
+                    <h2>שאלת הסיכום</h2>
+                    <div class="form-group">
+                        <label for="final-question-q-input">שאלה:</label>
+                        <textarea id="final-question-q-input" rows="1" placeholder="הכנס את שאלת הסיכום"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="final-question-a-input">תשובה:</label>
+                        <textarea id="final-question-a-input" rows="1" placeholder="הכנס את תשובת הסיכום"></textarea>
+                    </div>
+                </form>
             </div>
 
+            <div id="game-list-panel">
+                <h2>בחר משחק</h2>
+                <ul id="game-list-ul">
+                    <!-- Game list will be loaded here dynamically -->
+                </ul>
+            </div>
 
-            <div class="questions-header">
-                <h2>שאלות</h2>
-                <div class="question-toggle-controls">
-                    <button type="button" id="toggle-all-questions-btn" class="btn-icon" title="כווץ/הרחב הכל">
-                        <svg class="expand-icon-svg" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 5.83L15.17 9l1.41-1.41L12 3 7.41 7.59 8.83 9 12 5.83zm0 12.34L8.83 15l-1.41 1.41L12 21l4.59-4.59L15.17 15 12 18.17z"/></svg>
-                        <svg class="collapse-icon-svg" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M7.41 18.59L8.83 20 12 16.83 15.17 20l1.41-1.41L12 14l-4.59 4.59zm9.18-13.18L15.17 4 12 7.17 8.83 4 7.41 5.41 12 10l4.59-4.59z"/></svg>
-                    </button>
-                </div>
+            <div id="category-panel">
+                 <h2>בחר קטגוריה</h2>
+                 <div id="category-list-container" class="category-list-container">
+                    <!-- Categories will be loaded here dynamically -->
+                 </div>
             </div>
-            <div id="questions-editor-container">
-                <!-- Questions will be dynamically inserted here -->
-            </div>
-            
-            <h2>שאלת הסיכום</h2>
-            <div class="form-group">
-                <label for="final-question-q-input">שאלה:</label>
-                <textarea id="final-question-q-input" rows="1" placeholder="הכנס את שאלת הסיכום"></textarea>
-            </div>
-            <div class="form-group">
-                <label for="final-question-a-input">תשובה:</label>
-                <textarea id="final-question-a-input" rows="1" placeholder="הכנס את תשובת הסיכום"></textarea>
-            </div>
-        </form>
+        </div>
+
 
         <div id="new-game-modal-overlay" class="hidden">
             <div id="new-game-modal">
