@@ -647,6 +647,20 @@ export function initializeEditGameScreen() {
     });
 
     createNewGameBtn.addEventListener('click', () => {
+        // Find the currently selected category in the main panel
+        const selectedCategoryCard = categoryListContainer.querySelector('.category-card.selected');
+        const selectedCategoryId = selectedCategoryCard ? selectedCategoryCard.dataset.categoryId : null;
+
+        // Pre-select the category in the modal's dropdown
+        if (selectedCategoryId && selectedCategoryId !== 'all') {
+            newGameCategorySelect.value = selectedCategoryId;
+        } else {
+            // If 'All' is selected or nothing is selected, default to the first actual category
+            if (newGameCategorySelect.options.length > 0) {
+                newGameCategorySelect.selectedIndex = 0;
+            }
+        }
+
         newGameModalOverlay.classList.remove('hidden');
         newGameNameInput.focus();
     });
