@@ -59,19 +59,43 @@ export function getAccount() {
 }
 
 
+// --- Caching Helper Functions ---
+
+/**
+ * Clears all game-related caches from session storage.
+ * This should be called after any mutation (create, update, delete) to game data.
+ */
+function clearGameCaches() {
+    for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const key = sessionStorage.key(i);
+        if (key && key.startsWith('gamesCache_')) {
+            sessionStorage.removeItem(key);
+        }
+    }
+}
+
+
 // --- Database (Game Templates) Functions ---
 
 /**
- * Fetches all category documents from the database.
+ * Fetches all category documents from the database, using a session cache.
  * @returns {Promise<Array<object>>} A list of category documents.
  */
 export async function listCategories() {
+    const cacheKey = 'categoriesCache';
     try {
+        const cachedData = sessionStorage.getItem(cacheKey);
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
+
         const response = await database.listDocuments(
             AppwriteConfig.databaseId,
-            'categories', // The new collection for categories
+            'categories', // The collection for categories
             [Query.limit(50)]
         );
+        
+        sessionStorage.setItem(cacheKey, JSON.stringify(response.documents));
         return response.documents;
     } catch (error) {
         console.error("Failed to list categories:", error);
@@ -81,12 +105,19 @@ export async function listCategories() {
 
 
 /**
- * Fetches all non-deleted game templates from the database for the current user, optionally filtered by category.
+ * Fetches all non-deleted game templates from the database for the current user, 
+ * optionally filtered by category, using a session cache.
  * @param {string|null} categoryId - The ID of the category to filter by. If null, returns all games.
  * @returns {Promise<Array<object>>} A list of game documents.
  */
 export async function listGames(categoryId = null) {
+    const cacheKey = categoryId ? `gamesCache_${categoryId}` : 'gamesCache_all';
     try {
+        const cachedData = sessionStorage.getItem(cacheKey);
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
+
         const user = await getAccount();
         if (!user) {
             return [];
@@ -107,6 +138,8 @@ export async function listGames(categoryId = null) {
             AppwriteConfig.collectionId,
             queries
         );
+        
+        sessionStorage.setItem(cacheKey, JSON.stringify(response.documents));
         return response.documents;
     } catch (error) {
         console.error("Failed to list games:", error);
@@ -115,7 +148,7 @@ export async function listGames(categoryId = null) {
 }
 
 /**
- * Creates a new game template document in the database.
+ * Creates a new game template document in the database and invalidates the cache.
  * @param {string} gameName - The name of the game.
  * @param {string} description - The game's description.
  * @param {string} categoryId - The document ID of the game's category.
@@ -129,7 +162,7 @@ export async function createGame(gameName, description, categoryId, gameData) {
             throw new Error("User not authenticated");
         }
 
-        return database.createDocument(
+        const newDocument = await database.createDocument(
             AppwriteConfig.databaseId,
             AppwriteConfig.collectionId,
             ID.unique(),
@@ -143,6 +176,10 @@ export async function createGame(gameName, description, categoryId, gameData) {
                 is_public: false
             }
         );
+
+        clearGameCaches(); // Invalidate cache after successful creation
+        return newDocument;
+
     } catch (error) {
         console.error("Error creating new game:", error);
         throw error;
@@ -151,7 +188,7 @@ export async function createGame(gameName, description, categoryId, gameData) {
 
 
 /**
- * Updates an existing game template document.
+ * Updates an existing game template document and invalidates the cache.
  * @param {string} documentId - The ID of the document to update.
  * @param {string} gameName - The updated name of the game.
  * @param {string} description - The updated description of the game.
@@ -159,8 +196,8 @@ export async function createGame(gameName, description, categoryId, gameData) {
  * @param {object} gameData - The updated full game object.
  * @returns {Promise<object>} The updated document.
  */
-export function updateGame(documentId, gameName, description, categoryId, gameData) {
-    return database.updateDocument(
+export async function updateGame(documentId, gameName, description, categoryId, gameData) {
+    const updatedDocument = await database.updateDocument(
         AppwriteConfig.databaseId,
         AppwriteConfig.collectionId,
         documentId,
@@ -171,15 +208,17 @@ export function updateGame(documentId, gameName, description, categoryId, gameDa
             game_data: JSON.stringify(gameData)
         }
     );
+    clearGameCaches(); // Invalidate cache after successful update
+    return updatedDocument;
 }
 
 /**
- * Performs a "soft delete" on a game template by setting its `is_deleted` flag to true.
+ * Performs a "soft delete" on a game template and invalidates the cache.
  * @param {string} documentId - The ID of the document to soft delete.
  * @returns {Promise<object>} The updated document.
  */
-export function deleteGame(documentId) {
-    return database.updateDocument(
+export async function deleteGame(documentId) {
+    const updatedDocument = await database.updateDocument(
         AppwriteConfig.databaseId,
         AppwriteConfig.collectionId,
         documentId,
@@ -187,6 +226,8 @@ export function deleteGame(documentId) {
             is_deleted: true
         }
     );
+    clearGameCaches(); // Invalidate cache after successful delete
+    return updatedDocument;
 }
 
 
