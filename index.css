@@ -359,6 +359,13 @@ h1, h2, h3, h4, h5, h6 {
     position: relative;
 }
 
+.setup-main-title {
+    text-align: center;
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    color: #ffeb3b;
+}
+
 /* --- New Category Selection on Setup Screen --- */
 .category-selection-container {
     width: 100%;

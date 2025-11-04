@@ -1,8 +1,9 @@
 
+
 const groupList = document.getElementById('group-list');
 const startButton = document.getElementById('start-btn');
 const setupScreen = document.getElementById('setup-screen');
-const selectedGameTitle = document.getElementById('selected-game-title');
+const setupGameTitle = document.getElementById('setup-game-title');
 
 
 let selectedGameDocument = null;
@@ -116,7 +117,9 @@ export function showSetupScreenForGame(gameDoc) {
         return;
     }
 
-    selectedGameTitle.textContent = selectedGameDocument.game_name;
+    if (setupGameTitle) {
+        setupGameTitle.textContent = selectedGameDocument.game_name;
+    }
     refreshSetupScreenState(); // Handles the "continue" checkbox state
     setupScreen.classList.remove('hidden');
     updateQuestionStats();
