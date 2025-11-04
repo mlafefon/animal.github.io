@@ -8,6 +8,7 @@ const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
 const googleLoginBtn = document.getElementById('google-login-btn');
 const logoutBtn = document.getElementById('logout-btn');
+const editScreenLogoutBtn = document.getElementById('edit-screen-logout-btn');
 const authError = document.getElementById('auth-error');
 const userGreeting = document.getElementById('user-greeting');
 
@@ -98,6 +99,9 @@ export async function initializeAuth() {
     loginForm.addEventListener('submit', handleLogin);
     googleLoginBtn.addEventListener('click', loginWithGoogle);
     logoutBtn.addEventListener('click', handleLogout);
+    if (editScreenLogoutBtn) {
+        editScreenLogoutBtn.addEventListener('click', handleLogout);
+    }
 
     try {
         const user = await getAccount();
