@@ -8,6 +8,7 @@ const gameEditorForm = document.getElementById('game-editor-form');
 const gameNameInput = document.getElementById('game-name-input');
 const gameDescriptionInput = document.getElementById('game-description-input');
 const gameCategorySelect = document.getElementById('game-category-select');
+const gamePublicCheckbox = document.getElementById('game-public-checkbox');
 const questionsEditorContainer = document.getElementById('questions-editor-container');
 const finalQuestionQInput = document.getElementById('final-question-q-input');
 const finalQuestionAInput = document.getElementById('final-question-a-input');
@@ -28,6 +29,7 @@ const newGameModalOverlay = document.getElementById('new-game-modal-overlay');
 const newGameNameInput = document.getElementById('new-game-name');
 const newGameDescriptionInput = document.getElementById('new-game-description');
 const newGameCategorySelect = document.getElementById('new-game-category');
+const newGamePublicCheckbox = document.getElementById('new-game-public');
 const confirmNewGameBtn = document.getElementById('confirm-new-game-btn');
 const cancelNewGameBtn = document.getElementById('cancel-new-game-btn');
 
@@ -243,6 +245,9 @@ function renderQuestionCard(question, index) {
 
     const header = card.querySelector('.question-card-header');
     header.addEventListener('click', (e) => {
+        // Prevent toggling if the game is in read-only mode
+        if (gameEditorForm.hasAttribute('data-readonly')) return;
+
         if (!e.target.closest('button')) {
             card.classList.contains('collapsed') ? expandCard(card) : collapseCard(card);
         }
@@ -308,6 +313,45 @@ function renderAllQuestions(questions) {
 }
 
 /**
+ * Sets the entire editor form to a read-only or editable state.
+ * @param {boolean} isReadOnly - True to make the form read-only, false for editable.
+ */
+function setEditorReadOnly(isReadOnly) {
+    gameEditorForm.toggleAttribute('data-readonly', isReadOnly);
+
+    // Disable main form fields
+    gameNameInput.disabled = isReadOnly;
+    gameDescriptionInput.disabled = isReadOnly;
+    gameCategorySelect.disabled = isReadOnly;
+    gamePublicCheckbox.disabled = isReadOnly;
+    finalQuestionQInput.disabled = isReadOnly;
+    finalQuestionAInput.disabled = isReadOnly;
+
+    // Disable inputs and hide action buttons in each question card
+    questionsEditorContainer.querySelectorAll('.question-card').forEach(card => {
+        card.querySelector('.question-input').disabled = isReadOnly;
+        card.querySelector('.answer-input').disabled = isReadOnly;
+        card.querySelector('.timer-input').disabled = isReadOnly;
+        
+        card.querySelector('.delete-question-btn').style.display = isReadOnly ? 'none' : '';
+        card.querySelector('.reorder-controls').style.display = isReadOnly ? 'none' : '';
+        card.querySelector('.question-card-header').style.cursor = isReadOnly ? 'default' : 'pointer';
+    });
+
+    // Disable editing-related toolbar buttons
+    toolbarAddQuestionBtn.disabled = isReadOnly;
+    toolbarSaveBtn.disabled = isReadOnly;
+    
+    if (isReadOnly) {
+        toolbarSaveBtn.classList.remove('unsaved'); // Ensure no unsaved pulse on read-only view
+    }
+
+    // A visual cue for the whole form
+    gameEditorForm.style.opacity = isReadOnly ? 0.85 : 1;
+}
+
+
+/**
  * Fetches and loads a game's data into the editor form from Appwrite.
  * @param {object} gameDocument - The game document from Appwrite.
  */
@@ -315,7 +359,6 @@ async function loadGameForEditing(gameDocument) {
     if (!gameDocument) {
         gameEditorForm.classList.add('hidden');
         editorToolbar.classList.add('hidden');
-        toolbarDeleteBtn.classList.add('hidden');
         playSelectedGameBtn.disabled = true;
         setUnsavedState(false);
         return;
@@ -325,6 +368,7 @@ async function loadGameForEditing(gameDocument) {
         gameNameInput.value = gameDocument.game_name || '';
         gameDescriptionInput.value = gameDocument.description || '';
         gameCategorySelect.value = gameDocument.categoryId || '';
+        gamePublicCheckbox.checked = gameDocument.is_public || false;
         renderAllQuestions(gameData.questions);
         
         if (gameData.final_question) {
@@ -340,11 +384,16 @@ async function loadGameForEditing(gameDocument) {
             autoResizeTextarea(finalQuestionQInput);
             autoResizeTextarea(finalQuestionAInput);
         }, 0);
+        
+        const isOwned = gameDocument.isOwned;
+        setEditorReadOnly(!isOwned);
+        
+        // Hide delete button completely if not owned
+        toolbarDeleteBtn.style.display = isOwned ? 'block' : 'none';
 
         gameEditorForm.dataset.documentId = gameDocument.$id;
         gameEditorForm.classList.remove('hidden');
         editorToolbar.classList.remove('hidden');
-        toolbarDeleteBtn.classList.remove('hidden');
         playSelectedGameBtn.disabled = false;
         setUnsavedState(false);
     } catch (error) {
@@ -372,8 +421,17 @@ async function populateGameList(categoryId) {
         games.forEach(game => {
             gameDocumentsCache[game.$id] = game;
             const li = document.createElement('li');
-            li.textContent = game.game_name;
             li.dataset.documentId = game.$id;
+            
+            let content = `<span>${game.game_name}</span>`;
+            
+            // Add a visual indicator for public games not owned by the user
+            if (!game.isOwned) {
+                const publicIconSVG = `<svg class="public-game-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF" title="משחק ציבורי"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>`;
+                content = publicIconSVG + content;
+            }
+            
+            li.innerHTML = content;
             gameListUl.appendChild(li);
         });
     } catch (error) {
@@ -502,7 +560,6 @@ export async function showEditScreen() {
     editGameScreen.classList.remove('hidden');
     gameEditorForm.classList.add('hidden');
     editorToolbar.classList.add('hidden');
-    toolbarDeleteBtn.classList.add('hidden');
     playSelectedGameBtn.disabled = true;
     document.getElementById('global-home-btn').classList.remove('hidden');
     delete gameEditorForm.dataset.documentId;
@@ -587,10 +644,11 @@ export function initializeEditGameScreen() {
         }
         const description = gameDescriptionInput.value.trim();
         const categoryId = gameCategorySelect.value;
+        const isPublic = gamePublicCheckbox.checked;
         const gameData = compileGameData();
         
         try {
-            await updateGame(documentId, gameName, description, categoryId, gameData);
+            await updateGame(documentId, gameName, description, categoryId, gameData, isPublic);
             showSavedState();
             const currentCategoryId = categoryListContainer.querySelector('.selected')?.dataset.categoryId;
             await populateGameList(currentCategoryId === 'all' ? null : currentCategoryId);
@@ -673,6 +731,7 @@ export function initializeEditGameScreen() {
         const newName = newGameNameInput.value.trim();
         const newDescription = newGameDescriptionInput.value.trim();
         const newCategoryId = newGameCategorySelect.value;
+        const isPublic = newGamePublicCheckbox.checked;
 
         if (!newName || !newCategoryId) {
             alert('יש למלא שם וקטגוריה למשחק.');
@@ -682,10 +741,11 @@ export function initializeEditGameScreen() {
         const newGameData = { questions: [], final_question: { q: "", a: "" } };
     
         try {
-            const newDocument = await createGame(newName, newDescription, newCategoryId, newGameData);
+            const newDocument = await createGame(newName, newDescription, newCategoryId, newGameData, isPublic);
             newGameModalOverlay.classList.add('hidden');
             newGameNameInput.value = '';
             newGameDescriptionInput.value = '';
+            newGamePublicCheckbox.checked = false;
     
             const currentCategoryId = categoryListContainer.querySelector('.selected')?.dataset.categoryId;
             await populateGameList(currentCategoryId === 'all' ? null : currentCategoryId);

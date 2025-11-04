@@ -8,7 +8,7 @@ const AppwriteConfig = {
 };
 
 // --- Appwrite SDK Initialization ---
-const { Client, Account, Databases, ID, Query, Storage } = window.Appwrite;
+const { Client, Account, Databases, ID, Query, Storage, Permission, Role } = window.Appwrite;
 
 const client = new Client();
 client
@@ -106,10 +106,10 @@ export async function listCategories() {
 
 
 /**
- * Fetches all non-deleted game templates from the database for the current user, 
- * optionally filtered by category, using a session cache.
+ * Fetches the user's own games PLUS any public games from other users.
+ * The resulting list includes an `isOwned` flag on each document.
  * @param {string|null} categoryId - The ID of the category to filter by. If null, returns all games.
- * @returns {Promise<Array<object>>} A list of game documents.
+ * @returns {Promise<Array<object>>} A merged and sorted list of game documents.
  */
 export async function listGames(categoryId = null) {
     const cacheKey = categoryId ? `gamesCache_${categoryId}` : 'gamesCache_all';
@@ -124,29 +124,67 @@ export async function listGames(categoryId = null) {
             return [];
         }
 
-        const queries = [
-            Query.equal('is_deleted', false),
+        // --- Query 1: User's own games (not deleted) ---
+        const myGamesQueries = [
             Query.equal('ownerId', user.$id),
+            Query.equal('is_deleted', false),
             Query.limit(100)
         ];
-
         if (categoryId) {
-            queries.push(Query.equal('categoryId', categoryId));
+            myGamesQueries.push(Query.equal('categoryId', categoryId));
         }
 
-        const response = await database.listDocuments(
-            AppwriteConfig.databaseId,
-            AppwriteConfig.collectionId,
-            queries
-        );
+        // --- Query 2: Public games from anyone (not deleted) ---
+        const publicGamesQueries = [
+            Query.equal('is_public', true),
+            Query.equal('is_deleted', false),
+            Query.limit(100)
+        ];
+        if (categoryId) {
+            publicGamesQueries.push(Query.equal('categoryId', categoryId));
+        }
+
+        // --- Fetch both sets of games in parallel ---
+        const [myGamesResponse, publicGamesResponse] = await Promise.all([
+            database.listDocuments(AppwriteConfig.databaseId, AppwriteConfig.collectionId, myGamesQueries),
+            database.listDocuments(AppwriteConfig.databaseId, AppwriteConfig.collectionId, publicGamesQueries)
+        ]);
+
+        // --- Merge and de-duplicate results ---
+        const allGamesMap = new Map();
+
+        // Add user's own games first and mark them as owned.
+        myGamesResponse.documents.forEach(doc => {
+            doc.isOwned = true;
+            allGamesMap.set(doc.$id, doc);
+        });
+
+        // Add public games, but don't overwrite if it's the user's own game.
+        publicGamesResponse.documents.forEach(doc => {
+            if (!allGamesMap.has(doc.$id)) {
+                doc.isOwned = false;
+                allGamesMap.set(doc.$id, doc);
+            }
+        });
         
-        sessionStorage.setItem(cacheKey, JSON.stringify(response.documents));
-        return response.documents;
+        const finalGames = Array.from(allGamesMap.values());
+        
+        // Sort the list to show owned games first, then by name.
+        finalGames.sort((a, b) => {
+            if (a.isOwned && !b.isOwned) return -1;
+            if (!a.isOwned && b.isOwned) return 1;
+            return a.game_name.localeCompare(b.game_name);
+        });
+        
+        sessionStorage.setItem(cacheKey, JSON.stringify(finalGames));
+        return finalGames;
+
     } catch (error) {
         console.error("Failed to list games:", error);
         return [];
     }
 }
+
 
 /**
  * Creates a new game template document in the database and invalidates the cache.
@@ -154,13 +192,24 @@ export async function listGames(categoryId = null) {
  * @param {string} description - The game's description.
  * @param {string} categoryId - The document ID of the game's category.
  * @param {object} gameData - The full game object (questions, final_question).
+ * @param {boolean} isPublic - Whether the game should be publicly readable.
  * @returns {Promise<object>} The newly created document.
  */
-export async function createGame(gameName, description, categoryId, gameData) {
+export async function createGame(gameName, description, categoryId, gameData, isPublic) {
     try {
         const user = await getAccount();
         if (!user) {
             throw new Error("User not authenticated");
+        }
+
+        const permissions = [
+            Permission.read(Role.user(user.$id)),
+            Permission.update(Role.user(user.$id)),
+            Permission.delete(Role.user(user.$id)),
+        ];
+
+        if (isPublic) {
+            permissions.push(Permission.read(Role.users()));
         }
 
         const newDocument = await database.createDocument(
@@ -174,8 +223,9 @@ export async function createGame(gameName, description, categoryId, gameData) {
                 game_data: JSON.stringify(gameData),
                 is_deleted: false,
                 ownerId: user.$id,
-                is_public: false
-            }
+                is_public: isPublic
+            },
+            permissions
         );
 
         clearAllCaches(); // Invalidate cache after successful creation
@@ -195,9 +245,25 @@ export async function createGame(gameName, description, categoryId, gameData) {
  * @param {string} description - The updated description of the game.
  * @param {string} categoryId - The updated category document ID for the game.
  * @param {object} gameData - The updated full game object.
+ * @param {boolean} isPublic - The updated public status of the game.
  * @returns {Promise<object>} The updated document.
  */
-export async function updateGame(documentId, gameName, description, categoryId, gameData) {
+export async function updateGame(documentId, gameName, description, categoryId, gameData, isPublic) {
+    const user = await getAccount();
+    if (!user) {
+        throw new Error("User not authenticated for update");
+    }
+
+    const permissions = [
+        Permission.read(Role.user(user.$id)),
+        Permission.update(Role.user(user.$id)),
+        Permission.delete(Role.user(user.$id)),
+    ];
+
+    if (isPublic) {
+        permissions.push(Permission.read(Role.users()));
+    }
+
     const updatedDocument = await database.updateDocument(
         AppwriteConfig.databaseId,
         AppwriteConfig.collectionId,
@@ -206,8 +272,10 @@ export async function updateGame(documentId, gameName, description, categoryId, 
             game_name: gameName,
             description: description,
             categoryId: categoryId,
-            game_data: JSON.stringify(gameData)
-        }
+            game_data: JSON.stringify(gameData),
+            is_public: isPublic
+        },
+        permissions
     );
     clearAllCaches(); // Invalidate cache after successful update
     return updatedDocument;
