@@ -1907,7 +1907,7 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+    transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s, opacity 0.2s;
     position: relative;
     box-shadow: 0 0.125rem 0.3125rem rgba(0,0,0,0.2), inset 0 0.0625rem 0.125rem rgba(255,255,255,0.2);
 }
@@ -1961,9 +1961,22 @@ h1, h2, h3, h4, h5, h6 {
 #toolbar-save-btn .save-icon-svg { display: block; }
 #toolbar-save-btn .saved-icon-svg { display: none; }
 
+/* Default disabled state: transparent/dimmed */
+#toolbar-save-btn:disabled:not(.saved) {
+    background-color: #f39c12; /* Keep base color for consistency */
+    opacity: 0.5;
+    animation: none;
+    cursor: not-allowed;
+}
+#toolbar-save-btn:disabled:not(.saved):hover {
+    transform: none; /* Disable hover effect */
+    box-shadow: 0 0.125rem 0.3125rem rgba(0,0,0,0.2), inset 0 0.0625rem 0.125rem rgba(255,255,255,0.2);
+}
+
 #toolbar-save-btn.unsaved {
     background-color: #f1c40f; /* Sun Flower yellow */
     animation: pulse-unsaved-icon 1.5s infinite;
+    opacity: 1; /* Ensure it's fully opaque when active */
 }
 #toolbar-save-btn.unsaved:hover:not(:disabled) {
     background-color: #f39c12; /* Orange on hover */
@@ -1978,6 +1991,7 @@ h1, h2, h3, h4, h5, h6 {
     background-color: #2ecc71; /* Emerald, same as add button */
     animation: none;
     cursor: default;
+    opacity: 1;
 }
 #toolbar-save-btn.saved .save-icon-svg { display: none; }
 #toolbar-save-btn.saved .saved-icon-svg { display: block; }

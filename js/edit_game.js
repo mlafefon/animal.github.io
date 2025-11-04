@@ -39,38 +39,51 @@ let saveStateTimeout = null;
 let gameDocumentsCache = {}; // Cache for all fetched game documents
 
 /**
- * Sets the visual state of the save button to indicate unsaved changes.
- * @param {boolean} isUnsaved - True to show unsaved state, false to reset.
+ * Sets the visual and functional state of the save button.
+ * It's enabled and pulsing when there are unsaved changes, and disabled otherwise.
+ * @param {boolean} isUnsaved - True to show unsaved state, false to reset to disabled.
  */
 function setUnsavedState(isUnsaved) {
+    // If the form is read-only, the save button should always be disabled and not pulsing.
+    if (gameEditorForm.hasAttribute('data-readonly')) {
+        toolbarSaveBtn.disabled = true;
+        toolbarSaveBtn.classList.remove('unsaved');
+        return;
+    }
+
+    // Clear any pending 'saved' state timeout if a change is made.
     if (saveStateTimeout) {
         clearTimeout(saveStateTimeout);
-        toolbarSaveBtn.title = 'שמור שינויים';
         toolbarSaveBtn.classList.remove('saved');
-        toolbarSaveBtn.disabled = false;
+        toolbarSaveBtn.title = 'שמור שינויים';
         saveStateTimeout = null;
     }
 
     if (isUnsaved) {
         toolbarSaveBtn.classList.add('unsaved');
+        toolbarSaveBtn.disabled = false; // Enable on change
     } else {
         toolbarSaveBtn.classList.remove('unsaved');
+        toolbarSaveBtn.disabled = true; // Disable on load or after save
     }
 }
 
 /**
  * Shows a visual confirmation that the game has been saved successfully.
+ * The button becomes green, then reverts to its default disabled state.
  */
 function showSavedState() {
-    setUnsavedState(false);
-    toolbarSaveBtn.classList.add('saved');
+    // When called, the button has been clicked, so unsaved changes existed.
+    toolbarSaveBtn.classList.remove('unsaved'); // Stop the pulse
+    toolbarSaveBtn.classList.add('saved'); // Show the green checkmark
     toolbarSaveBtn.title = 'נשמר!';
-    toolbarSaveBtn.disabled = true;
+    toolbarSaveBtn.disabled = true; // Keep it disabled
 
+    // Set a timeout to remove the 'saved' visual, reverting to the default disabled state.
     saveStateTimeout = setTimeout(() => {
         toolbarSaveBtn.classList.remove('saved');
         toolbarSaveBtn.title = 'שמור שינויים';
-        toolbarSaveBtn.disabled = false;
+        // The button remains disabled. The next user edit will enable it via setUnsavedState(true).
         saveStateTimeout = null;
     }, 2000);
 }
@@ -648,6 +661,7 @@ export function initializeEditGameScreen() {
         const gameData = compileGameData();
         
         try {
+            toolbarSaveBtn.disabled = true; // Disable button during save operation
             await updateGame(documentId, gameName, description, categoryId, gameData, isPublic);
             showSavedState();
             const currentCategoryId = categoryListContainer.querySelector('.selected')?.dataset.categoryId;
@@ -658,6 +672,7 @@ export function initializeEditGameScreen() {
         } catch (e) {
             console.error("Error saving game to Appwrite", e);
             alert("שגיאה בשמירת המשחק.");
+            toolbarSaveBtn.disabled = false; // Re-enable button on failure
         }
     });
 
