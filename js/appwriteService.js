@@ -63,12 +63,13 @@ export function getAccount() {
 
 /**
  * Clears all game-related caches from session storage.
- * This should be called after any mutation (create, update, delete) to game data.
+ * This should be called after any mutation (create, update, delete) to game data,
+ * and on page load to ensure fresh data.
  */
-function clearGameCaches() {
+export function clearAllCaches() {
     for (let i = sessionStorage.length - 1; i >= 0; i--) {
         const key = sessionStorage.key(i);
-        if (key && key.startsWith('gamesCache_')) {
+        if (key && (key.startsWith('gamesCache_') || key === 'categoriesCache')) {
             sessionStorage.removeItem(key);
         }
     }
@@ -177,7 +178,7 @@ export async function createGame(gameName, description, categoryId, gameData) {
             }
         );
 
-        clearGameCaches(); // Invalidate cache after successful creation
+        clearAllCaches(); // Invalidate cache after successful creation
         return newDocument;
 
     } catch (error) {
@@ -208,7 +209,7 @@ export async function updateGame(documentId, gameName, description, categoryId, 
             game_data: JSON.stringify(gameData)
         }
     );
-    clearGameCaches(); // Invalidate cache after successful update
+    clearAllCaches(); // Invalidate cache after successful update
     return updatedDocument;
 }
 
@@ -226,7 +227,7 @@ export async function deleteGame(documentId) {
             is_deleted: true
         }
     );
-    clearGameCaches(); // Invalidate cache after successful delete
+    clearAllCaches(); // Invalidate cache after successful delete
     return updatedDocument;
 }
 

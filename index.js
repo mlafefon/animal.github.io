@@ -1,5 +1,6 @@
 
 
+
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen, showSetupScreenForGame } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
@@ -11,6 +12,7 @@ import { initializeFinalRound, showBettingScreen } from './js/final.js';
 import { initKeyboardNav } from './js/keyboardNav.js';
 import { preloadGameAssets } from './js/assets.js';
 import { initializeAuth } from './js/auth.js';
+import { clearAllCaches } from './js/appwriteService.js';
 
 
 /**
@@ -182,6 +184,9 @@ export function initializeApp() {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    // On every page refresh, clear the session cache to get the latest data.
+    clearAllCaches();
+    
     // The very first thing we do is initialize the authentication flow.
     // The rest of the app will be initialized via a callback from the auth module
     // upon successful login.
