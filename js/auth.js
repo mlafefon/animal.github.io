@@ -26,7 +26,7 @@ async function showApp() {
         const user = await getAccount();
         if (user && userGreeting) {
             const displayName = user.name || user.email;
-            userGreeting.textContent = `שלום, ${displayName}`;
+            userGreeting.textContent = `${displayName}`;
         }
     } catch (error) {
         console.warn("Could not fetch user account to display name.", error);
