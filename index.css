@@ -532,35 +532,6 @@ h1, h2, h3, h4, h5, h6 {
     margin: 0 auto;
 }
 
-#global-home-btn {
-    position: fixed;
-    bottom: 1.25rem; /* Position at the bottom */
-    left: 1.25rem;
-    z-index: 9998; /* Below fullscreen button */
-    background: rgba(0, 0, 0, 0.3);
-    border: 0.125rem solid white;
-    border-radius: 50%;
-    width: 3.125rem;
-    height: 3.125rem;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0.625rem;
-    opacity: 0.5;
-    transition: background-color 0.2s, transform 0.2s, opacity 0.2s;
-}
-#global-home-btn:hover {
-    background-color: rgba(0, 0, 0, 0.5);
-    transform: scale(1.1);
-    opacity: 1;
-}
-#global-home-btn svg {
-    width: 100%;
-    height: 100%;
-}
-
-
 /* --- Pre-Question Screen --- */
 #pre-question-screen {
     width: 100vw;
@@ -2116,12 +2087,17 @@ h1, h2, h3, h4, h5, h6 {
     margin: 1.25rem auto 0; /* Add top margin, center it */
 }
 
-/* --- Fullscreen Controls --- */
-#fullscreen-toggle-btn {
+/* --- Global Top-Left Controls (Fullscreen, Home) --- */
+.global-top-left-controls {
     position: fixed;
     top: 1.25rem;
-    left: 1.25rem; /* Top-left corner, opposite to settings btn in RTL */
+    left: 1.25rem;
     z-index: 9999;
+    display: flex;
+    gap: 0.625rem;
+}
+
+.global-control-btn {
     background: rgba(0, 0, 0, 0.3);
     border: 0.125rem solid white;
     border-radius: 50%;
@@ -2132,20 +2108,21 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: center;
     align-items: center;
     padding: 0.625rem;
-    opacity: 0.5; /* Make it semi-transparent */
+    opacity: 0.5;
     transition: background-color 0.2s, transform 0.2s, opacity 0.2s;
 }
 
-#fullscreen-toggle-btn:hover {
+.global-control-btn:hover {
     background-color: rgba(0, 0, 0, 0.5);
     transform: scale(1.1);
-    opacity: 1; /* Make it fully visible on hover */
+    opacity: 1;
 }
 
-#fullscreen-toggle-btn svg {
+.global-control-btn svg {
     width: 100%;
     height: 100%;
 }
+
 
 /* --- Responsive Overrides --- */
 
