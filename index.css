@@ -2187,6 +2187,46 @@ input:disabled + .slider:before {
     margin-top: 0.625rem;
 }
 
+/* --- Confirmation Modal --- */
+#confirm-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9000; /* Very high z-index */
+}
+
+#confirm-modal {
+    background: #6a85b6;
+    border: 0.125rem solid rgba(255, 255, 255, 0.5);
+    border-radius: 0.9375rem;
+    padding: 2.5rem;
+    width: 90%;
+    max-width: 28.125rem;
+    box-shadow: 0 0.625rem 1.875rem rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    text-align: center;
+}
+
+#confirm-modal h2 {
+    font-size: 1.8rem;
+    color: #ffeb3b;
+    margin: 0;
+}
+
+#confirm-modal p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #f0f8ff;
+}
+
 /* --- Pass Question Modal --- */
 #pass-question-modal-overlay {
     position: fixed;

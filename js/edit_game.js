@@ -1,3 +1,4 @@
+
 import { listGames, createGame, updateGame, deleteGame, listCategories, getFileUrl } from './appwriteService.js';
 import { showSetupScreenForGame } from './setup.js';
 
@@ -258,9 +259,7 @@ function renderQuestionCard(question, index) {
 
     const header = card.querySelector('.question-card-header');
     header.addEventListener('click', (e) => {
-        // Prevent toggling if the game is in read-only mode
-        if (gameEditorForm.hasAttribute('data-readonly')) return;
-
+        // Allow toggling even in read-only to view questions/answers
         if (!e.target.closest('button')) {
             card.classList.contains('collapsed') ? expandCard(card) : collapseCard(card);
         }
@@ -359,7 +358,7 @@ function setEditorReadOnly(isReadOnly) {
         // Correctly set display property based on CSS. A standard button's default is 'inline-block'.
         card.querySelector('.delete-question-btn').style.display = isReadOnly ? 'none' : 'flex';
         card.querySelector('.reorder-controls').style.display = isReadOnly ? 'none' : 'flex';
-        card.querySelector('.question-card-header').style.cursor = isReadOnly ? 'default' : 'pointer';
+        // The cursor is handled by CSS, no need to override it here.
     });
 
     // Hide editing-related toolbar buttons for read-only mode, as requested.
@@ -599,9 +598,22 @@ export async function showEditScreen() {
  * Initializes all event listeners for the edit game screen.
  */
 export function initializeEditGameScreen() {
-    categoryListContainer.addEventListener('click', (e) => {
+    categoryListContainer.addEventListener('click', async (e) => {
         const selectedCard = e.target.closest('.category-card');
         if (!selectedCard) return;
+
+        // Prevent re-triggering if the same category is clicked again
+        if (selectedCard.classList.contains('selected')) {
+            return;
+        }
+
+        if (toolbarSaveBtn.classList.contains('unsaved')) {
+            const userConfirmed = await window.showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך להחליף קטגוריה? השינויים יאבדו.');
+            if (!userConfirmed) {
+                return; // User cancelled, do nothing
+            }
+        }
+
         categoryListContainer.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
         selectedCard.classList.add('selected');
         const categoryId = selectedCard.dataset.categoryId;
@@ -609,10 +621,24 @@ export function initializeEditGameScreen() {
         loadGameForEditing(null);
     });
 
-    gameListUl.addEventListener('click', (e) => {
+    gameListUl.addEventListener('click', async (e) => {
         const selectedLi = e.target.closest('li');
-        if(!selectedLi || !selectedLi.dataset.documentId) return;
+        if (!selectedLi || !selectedLi.dataset.documentId) return;
 
+        // Prevent re-loading the same game, which could discard unsaved changes without warning.
+        if (selectedLi.classList.contains('selected')) {
+            return;
+        }
+
+        // Check if the save button indicates unsaved changes
+        if (toolbarSaveBtn.classList.contains('unsaved')) {
+            const userConfirmed = await window.showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לטעון משחק אחר? השינויים יאבדו.');
+            if (!userConfirmed) {
+                return; // User cancelled, do nothing
+            }
+        }
+
+        // If no unsaved changes or user confirmed, proceed
         gameListUl.querySelectorAll('li').forEach(li => li.classList.remove('selected'));
         selectedLi.classList.add('selected');
 
@@ -620,7 +646,13 @@ export function initializeEditGameScreen() {
         loadGameForEditing(gameDoc);
     });
 
-    playSelectedGameBtn.addEventListener('click', () => {
+    playSelectedGameBtn.addEventListener('click', async () => {
+        if (toolbarSaveBtn.classList.contains('unsaved')) {
+            const userConfirmed = await window.showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לשחק במשחק? השינויים בעורך יאבדו.');
+            if (!userConfirmed) {
+                return;
+            }
+        }
         const selectedLi = gameListUl.querySelector('li.selected');
         if(!selectedLi) {
             alert('יש לבחור משחק תחילה.');
@@ -692,8 +724,9 @@ export function initializeEditGameScreen() {
         const gameName = gameNameInput.value.trim();
 
         if (!documentId) return;
-
-        if (confirm(`האם אתה בטוח שברצונך למחוק את המשחק "${gameName}"? לא ניתן לשחזר פעולה זו.`)) {
+        
+        const userConfirmed = await window.showConfirmModal(`האם אתה בטוח שברצונך למחוק את המשחק "${gameName}"? לא ניתן לשחזר פעולה זו.`);
+        if (userConfirmed) {
             try {
                 await deleteGame(documentId);
                 alert(`המשחק "${gameName}" נמחק בהצלחה.`);
@@ -730,7 +763,13 @@ export function initializeEditGameScreen() {
         }
     });
 
-    createNewGameBtn.addEventListener('click', () => {
+    createNewGameBtn.addEventListener('click', async () => {
+        if (toolbarSaveBtn.classList.contains('unsaved')) {
+            const userConfirmed = await window.showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך ליצור משחק חדש? השינויים הנוכחיים יאבדו.');
+            if (!userConfirmed) {
+                return;
+            }
+        }
         // Find the currently selected category in the main panel
         const selectedCategoryCard = categoryListContainer.querySelector('.category-card.selected');
         const selectedCategoryId = selectedCategoryCard ? selectedCategoryCard.dataset.categoryId : null;

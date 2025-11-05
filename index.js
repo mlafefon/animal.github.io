@@ -1,6 +1,9 @@
 
 
 
+
+
+
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen, showSetupScreenForGame } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
@@ -61,6 +64,52 @@ function initializeFullscreenControls() {
 }
 
 /**
+ * --- Global Confirmation Modal ---
+ * A promise-based confirmation modal to replace the native `confirm()`.
+ */
+let confirmModalResolve = null;
+function initializeConfirmModal() {
+    const overlay = document.getElementById('confirm-modal-overlay');
+    const modalText = document.getElementById('confirm-modal-text');
+    const confirmBtn = document.getElementById('confirm-modal-yes-btn');
+    const cancelBtn = document.getElementById('confirm-modal-no-btn');
+    
+    if (!overlay || !modalText || !confirmBtn || !cancelBtn) return;
+
+    const hide = () => overlay.classList.add('hidden');
+    
+    const resolve = (value) => {
+        hide();
+        if (confirmModalResolve) {
+            confirmModalResolve(value);
+            confirmModalResolve = null;
+        }
+    };
+
+    confirmBtn.addEventListener('click', () => resolve(true));
+    cancelBtn.addEventListener('click', () => resolve(false));
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) resolve(false);
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !overlay.classList.contains('hidden')) {
+            resolve(false);
+        }
+    });
+    
+    // Expose the show function globally for other modules to use
+    window.showConfirmModal = (message) => {
+        modalText.textContent = message;
+        overlay.classList.remove('hidden');
+        confirmBtn.focus();
+        return new Promise((resolve) => {
+            confirmModalResolve = resolve;
+        });
+    };
+}
+
+
+/**
  * Initializes the global home button to be available on all screens.
  * Clicking it returns to the start screen, allowing the game to be resumed later.
  */
@@ -80,7 +129,16 @@ function initializeGlobalHomeButton() {
 
     if (!homeBtn) return;
 
-    homeBtn.addEventListener('click', () => {
+    homeBtn.addEventListener('click', async () => {
+        // Check for unsaved changes in the editor before navigating away
+        const saveBtn = document.getElementById('toolbar-save-btn');
+        if (saveBtn && saveBtn.classList.contains('unsaved')) {
+            const userConfirmed = await window.showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לחזור למסך הראשי? השינויים יאבדו.');
+            if (!userConfirmed) {
+                return; // User cancelled the action
+            }
+        }
+        
         // Stop the question timer and its sound if it's running
         stopTimer();
 
@@ -179,6 +237,7 @@ export function initializeApp() {
     initializeFinalRound();
     initializeFullscreenControls();
     initializeGlobalHomeButton();
+    initializeConfirmModal();
     initKeyboardNav(document.body); // Initialize keyboard navigation for the whole app
 }
 

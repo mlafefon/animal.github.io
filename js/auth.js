@@ -83,6 +83,15 @@ async function handleLogin(e) {
  * Handles the logout process.
  */
 async function handleLogout() {
+    // Check for unsaved changes in the editor before logging out
+    const saveBtn = document.getElementById('toolbar-save-btn');
+    if (saveBtn && saveBtn.classList.contains('unsaved')) {
+        const userConfirmed = await window.showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך להתנתק? השינויים יאבדו.');
+         if (!userConfirmed) {
+            return; // User cancelled the action
+        }
+    }
+
     try {
         await logout();
         window.location.reload(); // Easiest way to reset all state
