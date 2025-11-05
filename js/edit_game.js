@@ -222,7 +222,7 @@ function renderQuestionCard(question, index) {
                 <h3>שאלה ${index + 1}</h3>
             </div>
             <div class="header-right">
-                <button type="button" class="delete-question-btn">מחק</button>
+                <button type="button" class="delete-question-btn" title="מחק שאלה"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
                 <svg class="collapse-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
             </div>
         </div>
@@ -347,7 +347,7 @@ function setEditorReadOnly(isReadOnly) {
         card.querySelector('.timer-input').disabled = isReadOnly;
         
         // Correctly set display property based on CSS. A standard button's default is 'inline-block'.
-        card.querySelector('.delete-question-btn').style.display = isReadOnly ? 'none' : 'inline-block';
+        card.querySelector('.delete-question-btn').style.display = isReadOnly ? 'none' : 'flex';
         card.querySelector('.reorder-controls').style.display = isReadOnly ? 'none' : 'flex';
         card.querySelector('.question-card-header').style.cursor = isReadOnly ? 'default' : 'pointer';
     });
