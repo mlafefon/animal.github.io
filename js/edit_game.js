@@ -216,7 +216,7 @@ function renderQuestionCard(question, index) {
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/></svg>
                     </button>
                     <button type="button" class="reorder-btn reorder-down-btn" title="העבר למטה">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6 6 1.41-1.41z"/></svg>
                     </button>
                 </div>
                 <h3>שאלה ${index + 1}</h3>
@@ -346,14 +346,15 @@ function setEditorReadOnly(isReadOnly) {
         card.querySelector('.answer-input').disabled = isReadOnly;
         card.querySelector('.timer-input').disabled = isReadOnly;
         
-        card.querySelector('.delete-question-btn').style.display = isReadOnly ? 'none' : '';
-        card.querySelector('.reorder-controls').style.display = isReadOnly ? 'none' : '';
+        // Correctly set display property based on CSS. A standard button's default is 'inline-block'.
+        card.querySelector('.delete-question-btn').style.display = isReadOnly ? 'none' : 'inline-block';
+        card.querySelector('.reorder-controls').style.display = isReadOnly ? 'none' : 'flex';
         card.querySelector('.question-card-header').style.cursor = isReadOnly ? 'default' : 'pointer';
     });
 
-    // Disable editing-related toolbar buttons
-    toolbarAddQuestionBtn.disabled = isReadOnly;
-    toolbarSaveBtn.disabled = isReadOnly;
+    // Hide editing-related toolbar buttons for read-only mode, as requested.
+    toolbarAddQuestionBtn.style.display = isReadOnly ? 'none' : 'flex';
+    toolbarSaveBtn.style.display = isReadOnly ? 'none' : 'flex';
     
     if (isReadOnly) {
         toolbarSaveBtn.classList.remove('unsaved'); // Ensure no unsaved pulse on read-only view
@@ -401,8 +402,8 @@ async function loadGameForEditing(gameDocument) {
         const isOwned = gameDocument.isOwned;
         setEditorReadOnly(!isOwned);
         
-        // Hide delete button completely if not owned
-        toolbarDeleteBtn.style.display = isOwned ? 'block' : 'none';
+        // Hide delete button completely if not owned, using the correct display property ('flex')
+        toolbarDeleteBtn.style.display = isOwned ? 'flex' : 'none';
 
         gameEditorForm.dataset.documentId = gameDocument.$id;
         gameEditorForm.classList.remove('hidden');
