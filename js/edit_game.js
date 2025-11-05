@@ -267,11 +267,21 @@ function renderQuestionCard(question, index) {
     });
 
     card.querySelector('.delete-question-btn').addEventListener('click', (e) => {
-        e.currentTarget.closest('.question-card').remove();
-        renumberQuestionCards();
-        updateReorderButtons();
-        updateToggleAllButtonState();
+        const cardToDelete = e.currentTarget.closest('.question-card');
+        
+        // Add animation class
+        cardToDelete.classList.add('deleting');
+        
+        // Set unsaved state immediately
         setUnsavedState(true);
+    
+        // Wait for the animation to end before removing the element and re-calculating
+        cardToDelete.addEventListener('animationend', () => {
+            cardToDelete.remove();
+            renumberQuestionCards();
+            updateReorderButtons();
+            updateToggleAllButtonState();
+        }, { once: true });
     });
     
     const moveUpBtn = card.querySelector('.reorder-up-btn');

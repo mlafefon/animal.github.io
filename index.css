@@ -1835,11 +1835,36 @@ input:disabled + .slider:before {
     flex-direction: column;
     gap: 0;
     overflow: hidden; /* Important for collapse animation */
-    transition: box-shadow 0.2s;
+    transition: box-shadow 0.2s ease-in-out, max-height 0.4s ease-out;
 }
 
 .question-card:hover {
     box-shadow: 0 0 0.5rem rgba(255, 235, 59, 0.3);
+}
+
+@keyframes exciting-delete {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.05) rotate(-1deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5) rotate(5deg) translateX(-100px);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: -1.25rem;
+    border-width: 0;
+  }
+}
+
+.question-card.deleting {
+    transform-origin: center right; /* Animate from the side */
+    animation: exciting-delete 1.5s forwards cubic-bezier(0.55, 0.055, 0.675, 0.19);
 }
 
 .question-card-header {
