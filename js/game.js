@@ -382,7 +382,7 @@ export async function startGame(options) {
     isQuestionPassed = false;
     currentGameOptions = options; // Store options for the new game
     
-    const { documentId, gameDataString } = options;
+    const { documentId, gameDataString, gameName: gameNameFromOptions } = options;
     if (!documentId || !gameDataString) {
         alert('משחק לא תקין נבחר.');
         return;
@@ -392,7 +392,7 @@ export async function startGame(options) {
         const gameData = JSON.parse(gameDataString);
         loadedQuestions = gameData.questions;
         finalQuestionData = gameData.final_question;
-        gameName = gameData.game_name;
+        gameName = gameNameFromOptions || gameData.game_name;
     } catch (error) {
         console.error("שגיאה בפענוח נתוני המשחק:", error);
         alert("שגיאה בטעינת השאלות. אנא נסה שוב.");

@@ -121,14 +121,19 @@
 
     <div id="game-screen" class="hidden">
         <div class="game-header">
-            <div id="timer-container">
-                <svg class="timer-svg" viewBox="0 0 100 100">
-                    <!-- Background track -->
-                    <circle class="timer-bg-track" cx="50" cy="50" r="42" />
-                    <!-- Progress ring -->
-                    <circle id="timer-progress-ring" cx="50" cy="50" r="42" />
-                </svg>
-                <span id="timer-value">30</span>
+            <div class="timer-area">
+                <div id="timer-container">
+                    <svg class="timer-svg" viewBox="0 0 100 100">
+                        <!-- Background track -->
+                        <circle class="timer-bg-track" cx="50" cy="50" r="42" />
+                        <!-- Progress ring -->
+                        <circle id="timer-progress-ring" cx="50" cy="50" r="42" />
+                    </svg>
+                    <span id="timer-value">30</span>
+                </div>
+                <button id="answer-link-btn" class="btn-icon-round hidden" title="מידע נוסף">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2zm-3-4h8v2H8v-2z"/></svg>
+                </button>
             </div>
             <div id="q-a-wrapper">
                 <div id="question-container">
@@ -206,6 +211,9 @@
                 </div>
                 <div id="final-answer-container" class="hidden">
                     <p id="final-answer-text"></p>
+                     <button id="final-answer-link-btn" class="btn-icon-round hidden" title="מידע נוסף">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2zm-3-4h8v2H8v-2z"/></svg>
+                    </button>
                 </div>
             </div>
             <button id="show-final-answer-btn" class="btn btn-secondary">הצג תשובה</button>
@@ -299,6 +307,10 @@
                         <label for="final-question-a-input">תשובה:</label>
                         <textarea id="final-question-a-input" rows="1" placeholder="הכנס את תשובת הסיכום"></textarea>
                     </div>
+                    <div class="form-group">
+                        <label for="final-question-url-input">קישור להרחבה:</label>
+                        <input type="url" id="final-question-url-input" placeholder="הכנס קישור (אופציונלי)">
+                    </div>
                 </form>
             </div>
 
@@ -372,6 +384,20 @@
             <button id="cancel-pass-question-btn" class="btn btn-secondary btn-small">בטל</button>
         </div>
     </div>
+
+    <!-- Link Modal -->
+    <div id="link-modal-overlay" class="hidden">
+        <div id="link-modal">
+            <button id="close-link-modal-btn" title="סגור">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+            <div class="link-modal-content">
+                <div id="link-modal-loader"></div>
+                <iframe id="link-modal-iframe" src="about:blank" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
 
     <div class="global-top-left-controls">
         <button id="fullscreen-toggle-btn" class="global-control-btn">

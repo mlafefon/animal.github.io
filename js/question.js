@@ -1,6 +1,7 @@
 
 
 
+
 import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTeam } from './game.js';
 import { showBoxesScreen } from './boxes.js';
 import { playSound, stopSound } from './audio.js';
@@ -18,6 +19,7 @@ const questionContainer = document.getElementById('question-container');
 const questionText = document.getElementById('question-text');
 const answerContainer = document.getElementById('answer-container');
 const answerText = document.getElementById('answer-text');
+const answerLinkBtn = document.getElementById('answer-link-btn');
 const victoryBoxBtn = document.getElementById('victory-box-btn');
 const failureControls = document.getElementById('failure-controls');
 const failureBoxBtn = document.getElementById('failure-box-btn');
@@ -146,6 +148,7 @@ export function showQuestionScreen(startTime = 30) {
     answerControls.classList.add('hidden');
     failureControls.classList.add('hidden');
     answerContainer.classList.add('hidden');
+    answerLinkBtn.classList.add('hidden');
     victoryBoxBtn.classList.add('hidden');
     passQuestionModalOverlay.classList.add('hidden');
     undoAnswerChoiceBtn.classList.add('hidden');
@@ -230,6 +233,7 @@ export function initializeQuestionScreen(onComplete) {
         const currentQuestion = getCurrentQuestion();
         answerText.textContent = currentQuestion.a;
         answerContainer.classList.remove('hidden');
+        answerLinkBtn.classList.toggle('hidden', !currentQuestion.url);
 
         answerControls.classList.add('hidden');
         victoryBoxBtn.classList.remove('hidden');
@@ -281,6 +285,7 @@ export function initializeQuestionScreen(onComplete) {
         failureControls.classList.add('hidden');
         undoAnswerChoiceBtn.classList.add('hidden');
         answerContainer.classList.add('hidden');
+        answerLinkBtn.classList.add('hidden');
 
         // Clear the cramped state flag
         delete gameScreen.dataset.isCramped;
@@ -342,6 +347,7 @@ export function initializeQuestionScreen(onComplete) {
             const currentQuestion = getCurrentQuestion();
             answerText.textContent = currentQuestion.a;
             answerContainer.classList.remove('hidden');
+            answerLinkBtn.classList.toggle('hidden', !currentQuestion.url);
             passQuestionBtn.classList.add('hidden');
 
             // Store original text for hover/shrink logic
@@ -424,6 +430,13 @@ export function initializeQuestionScreen(onComplete) {
             showBoxesScreen({ mode: 'half-victory' });
         } else {
             showBoxesScreen({ mode: 'victory' });
+        }
+    });
+
+    answerLinkBtn.addEventListener('click', () => {
+        const url = getCurrentQuestion().url;
+        if (url && window.showLinkModal) {
+            window.showLinkModal(url);
         }
     });
 }

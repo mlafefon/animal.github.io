@@ -173,9 +173,10 @@ export function initializeSetupScreen(onStart) {
         
         const documentId = selectedGameDocument ? selectedGameDocument.$id : null;
         const gameDataString = selectedGameDocument ? selectedGameDocument.game_data : '{}';
+        const gameName = selectedGameDocument ? selectedGameDocument.game_name : '';
 
         const shuffleQuestions = document.getElementById('shuffle-questions').checked;
         
-        onStart({ numberOfGroups, documentId, gameDataString, shuffleQuestions, actualQuestions, continueLastPoint });
+        onStart({ numberOfGroups, documentId, gameDataString, shuffleQuestions, actualQuestions, continueLastPoint, gameName });
     });
 }

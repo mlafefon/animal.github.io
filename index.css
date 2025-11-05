@@ -1,6 +1,9 @@
 
 
 
+
+
+
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -601,6 +604,13 @@ h1, h2, h3, h4, h5, h6 {
     flex: 1;
 }
 
+.timer-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
 #timer-container {
     position: relative;
     width: 9.375rem;
@@ -702,7 +712,8 @@ h1, h2, h3, h4, h5, h6 {
     gap: 1.25rem;
 }
 
-#question-container, #answer-container {
+#question-container, #answer-container,
+#final-question-container, #final-answer-container {
     border: 0.125rem solid rgba(255, 255, 255, 0.3);
     background-color: rgba(0, 0, 0, 0.2);
     padding: 1.25rem;
@@ -712,6 +723,7 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: center;
     align-items: center;
     transition: min-height 0.3s ease-in-out, padding 0.3s ease-in-out;
+    position: relative; /* For positioning the link button */
 }
 
 #question-container.shrunk, #answer-container.shrunk {
@@ -729,17 +741,44 @@ h1, h2, h3, h4, h5, h6 {
     white-space: pre-wrap; /* Render newlines */
 }
 
-#answer-container {
+#answer-container, #final-answer-container {
     border: 0.125rem solid #ffeb3b;
 }
 
-#answer-text {
+#answer-text, #final-answer-text {
     font-size: 2.5rem;
     color: #ffeb3b;
     text-align: center;
     font-weight: bold;
     white-space: pre-wrap; /* Render newlines */
 }
+
+#answer-link-btn {
+    position: static; /* Position normally inside the new flex wrapper */
+    background-color: #3498db; /* Use a distinct color like the download button */
+}
+#answer-link-btn:hover {
+    background-color: #2980b9; /* Darker blue */
+}
+
+#final-answer-link-btn {
+    position: absolute;
+    top: 0.9375rem;
+    left: 0.9375rem; /* Positioned for RTL */
+    width: 2.5rem;
+    height: 2.5rem;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+#final-answer-link-btn:hover {
+    background-color: #3498db;
+}
+
+#answer-link-btn svg, #final-answer-link-btn svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
 
 #game-controls {
     /* Styles moved to .main-action-container */
@@ -1239,24 +1278,17 @@ h1, h2, h3, h4, h5, h6 {
     flex-direction: column;
     gap: 1.25rem;
 }
+
 #final-question-container, #final-answer-container {
-    border: 0.125rem solid rgba(255, 255, 255, 0.3);
-    background-color: rgba(0, 0, 0, 0.2);
     padding: 1.875rem;
-    border-radius: 0.5rem;
     min-height: 20vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 #final-question-text, #final-answer-text {
     font-size: 2rem;
     color: #f0f8ff;
     white-space: pre-wrap; /* Render newlines */
 }
-#final-answer-container {
-    border-color: #ffeb3b;
-}
+
 #final-answer-text {
     color: #ffeb3b;
     font-weight: bold;
@@ -1569,6 +1601,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Common styles for inputs, textareas, and selects */
 #game-editor-form input[type="text"],
 #game-editor-form input[type="number"],
+#game-editor-form input[type="url"],
 #game-editor-form textarea,
 #game-editor-form select,
 #game-editor-select {
@@ -1584,6 +1617,7 @@ h1, h2, h3, h4, h5, h6 {
 
 #game-editor-form input[type="text"]:focus,
 #game-editor-form input[type="number"]:focus,
+#game-editor-form input[type="url"]:focus,
 #game-editor-form textarea:focus,
 #game-editor-form select:focus,
 #game-editor-select:focus {
@@ -1635,8 +1669,17 @@ h1, h2, h3, h4, h5, h6 {
 #game-editor-form .form-row {
     display: flex;
     gap: 1.5625rem;
-    align-items: baseline;
+    align-items: flex-end; /* Align items to the bottom */
 }
+
+/* Vertical layout for top-level form groups */
+#game-editor-form > .form-group,
+#game-editor-form > .form-row > .form-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
 
 /* NEW STYLES: Horizontal layout for form groups inside question cards */
 #game-editor-form .question-card-body .form-group {
@@ -1669,6 +1712,7 @@ h1, h2, h3, h4, h5, h6 {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+    padding-bottom: 0.7rem; /* To align with input fields */
 }
 
 
@@ -1680,7 +1724,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .public-toggle-label {
-    font-weight: normal;
+    font-weight: bold;
     font-size: 1rem;
     color: #f0f8ff;
     cursor: pointer;
@@ -1721,7 +1765,7 @@ h1, h2, h3, h4, h5, h6 {
     content: "";
     height: 1.625rem; /* 26px */
     width: 1.625rem; /* 26px */
-    right: 0.25rem; /* 4px */
+    left: 0.25rem; /* 4px (start from left for RTL) */
     bottom: 0.25rem; /* 4px */
     background-color: white;
     -webkit-transition: .4s;
@@ -1742,9 +1786,9 @@ input:focus-visible + .slider {
 }
 
 input:checked + .slider:before {
-    -webkit-transform: translateX(-1.625rem); /* 26px */
-    -ms-transform: translateX(-1.625rem);
-    transform: translateX(-1.625rem);
+    -webkit-transform: translateX(1.625rem); /* 26px */
+    -ms-transform: translateX(1.625rem);
+    transform: translateX(1.625rem);
 }
 
 /* Rounded sliders */
@@ -2350,6 +2394,94 @@ input:disabled + .slider:before {
 .global-control-btn svg {
     width: 100%;
     height: 100%;
+}
+
+/* --- Link Modal --- */
+#link-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+#link-modal {
+    width: 90vw;
+    height: 90vh;
+    max-width: 87.5rem;
+    background-color: #333;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.75rem;
+    box-shadow: 0 0.625rem 2.5rem rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding: 0.625rem;
+}
+#close-link-modal-btn {
+    position: absolute;
+    top: -1.25rem;
+    right: -1.25rem; /* For RTL */
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 50%;
+    border: 2px solid white;
+    background-color: #e74c3c;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    padding: 0;
+    transition: transform 0.2s, background-color 0.2s;
+}
+#close-link-modal-btn:hover {
+    transform: scale(1.1) rotate(90deg);
+    background-color: #c0392b;
+}
+#close-link-modal-btn svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    fill: white;
+}
+.link-modal-content {
+    flex-grow: 1;
+    position: relative;
+    background-color: #000;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+#link-modal-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+#link-modal-loader {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #000;
+    z-index: 5;
+}
+#link-modal-loader::after {
+    content: '';
+    width: 3.75rem;
+    height: 3.75rem;
+    border: 0.3125rem solid rgba(255, 255, 255, 0.2);
+    border-top-color: #ffeb3b;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 

@@ -9,6 +9,7 @@ const showFinalQuestionBtn = document.getElementById('show-final-question-btn');
 const finalQuestionText = document.getElementById('final-question-text');
 const finalAnswerContainer = document.getElementById('final-answer-container');
 const finalAnswerText = document.getElementById('final-answer-text');
+const finalAnswerLinkBtn = document.getElementById('final-answer-link-btn');
 const showFinalAnswerBtn = document.getElementById('show-final-answer-btn');
 const finalScoringContainer = document.getElementById('final-scoring-container');
 const finalScoringTeams = document.getElementById('final-scoring-teams');
@@ -261,6 +262,9 @@ function showFinalQuestion() {
         finalAnswerText.textContent = '';
     }
 
+    // Always hide the link button initially
+    finalAnswerLinkBtn.classList.add('hidden');
+
     updateFooterWithBets(); // Show the bets in the footer
     finalQuestionScreen.classList.remove('hidden');
 }
@@ -323,8 +327,19 @@ export function initializeFinalRound() {
     showFinalAnswerBtn.addEventListener('click', () => {
         finalAnswerContainer.classList.remove('hidden');
         showFinalAnswerBtn.classList.add('hidden');
+
+        const finalQuestion = getFinalQuestionData();
+        finalAnswerLinkBtn.classList.toggle('hidden', !finalQuestion || !finalQuestion.url);
+        
         renderFinalScoringControls();
         finalScoringContainer.classList.remove('hidden');
+    });
+    
+    finalAnswerLinkBtn.addEventListener('click', () => {
+        const finalQuestion = getFinalQuestionData();
+        if (finalQuestion && finalQuestion.url && window.showLinkModal) {
+            window.showLinkModal(finalQuestion.url);
+        }
     });
 
     finalScoringTeams.addEventListener('click', (e) => {
@@ -374,6 +389,7 @@ export function initializeFinalRound() {
         finalScoringContainer.classList.add('hidden');
         showFinalAnswerBtn.classList.remove('hidden');
         endGameBtn.classList.add('hidden');
+        finalAnswerLinkBtn.classList.add('hidden');
         
         // Last action: clear the saved state for the completed game.
         clearGameState();

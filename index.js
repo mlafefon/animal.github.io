@@ -4,6 +4,7 @@
 
 
 
+
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen, showSetupScreenForGame } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
@@ -105,6 +106,52 @@ function initializeConfirmModal() {
         return new Promise((resolve) => {
             confirmModalResolve = resolve;
         });
+    };
+}
+
+/**
+ * --- Global Link Modal ---
+ * Initializes a modal for displaying embedded web content via an iframe.
+ */
+function initializeLinkModal() {
+    const overlay = document.getElementById('link-modal-overlay');
+    const iframe = document.getElementById('link-modal-iframe');
+    const closeBtn = document.getElementById('close-link-modal-btn');
+    const loader = document.getElementById('link-modal-loader');
+
+    if (!overlay || !iframe || !closeBtn || !loader) return;
+
+    const hide = () => {
+        overlay.classList.add('hidden');
+        iframe.src = 'about:blank'; // Clear content to stop videos/audio
+    };
+
+    closeBtn.addEventListener('click', hide);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) hide();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !overlay.classList.contains('hidden')) {
+            hide();
+        }
+    });
+
+    iframe.addEventListener('load', () => {
+        loader.style.display = 'none';
+    });
+
+    // Expose a global function to show the modal
+    window.showLinkModal = (url) => {
+        if (!url) return;
+        // Basic check to ensure it's a web URL
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            console.warn('Attempted to load invalid URL in modal:', url);
+            return;
+        }
+        loader.style.display = 'block';
+        iframe.src = url;
+        overlay.classList.remove('hidden');
+        closeBtn.focus();
     };
 }
 
@@ -238,6 +285,7 @@ export function initializeApp() {
     initializeFullscreenControls();
     initializeGlobalHomeButton();
     initializeConfirmModal();
+    initializeLinkModal(); // Initialize the new link modal
     initKeyboardNav(document.body); // Initialize keyboard navigation for the whole app
 }
 

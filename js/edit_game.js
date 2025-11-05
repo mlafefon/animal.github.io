@@ -1,4 +1,5 @@
 
+
 import { listGames, createGame, updateGame, deleteGame, listCategories, getFileUrl } from './appwriteService.js';
 import { showSetupScreenForGame } from './setup.js';
 
@@ -13,6 +14,7 @@ const gamePublicCheckbox = document.getElementById('game-public-checkbox');
 const questionsEditorContainer = document.getElementById('questions-editor-container');
 const finalQuestionQInput = document.getElementById('final-question-q-input');
 const finalQuestionAInput = document.getElementById('final-question-a-input');
+const finalQuestionUrlInput = document.getElementById('final-question-url-input');
 const toggleAllQuestionsBtn = document.getElementById('toggle-all-questions-btn');
 const playSelectedGameBtn = document.getElementById('play-selected-game-btn');
 const categoryListContainer = document.getElementById('category-list-container');
@@ -200,7 +202,7 @@ function updateReorderButtons() {
 
 /**
  * Renders a single question card in the editor.
- * @param {object} question - The question object {q, a, timer}.
+ * @param {object} question - The question object {q, a, timer, url}.
  * @param {number} index - The index of the question.
  * @returns {HTMLDivElement} The created card element.
  */
@@ -235,6 +237,10 @@ function renderQuestionCard(question, index) {
             <div class="form-group">
                 <label>תשובה:</label>
                 <textarea class="answer-input" rows="1">${question.a}</textarea>
+            </div>
+            <div class="form-group">
+                <label>קישור להרחבה:</label>
+                <input type="url" class="url-input" placeholder="הכנס קישור (אופציונלי)" value="${question.url || ''}">
             </div>
             <div class="form-group">
                 <label>טיימר (שניות):</label>
@@ -348,12 +354,14 @@ function setEditorReadOnly(isReadOnly) {
     gamePublicCheckbox.disabled = isReadOnly;
     finalQuestionQInput.disabled = isReadOnly;
     finalQuestionAInput.disabled = isReadOnly;
+    finalQuestionUrlInput.disabled = isReadOnly;
 
     // Disable inputs and hide action buttons in each question card
     questionsEditorContainer.querySelectorAll('.question-card').forEach(card => {
         card.querySelector('.question-input').disabled = isReadOnly;
         card.querySelector('.answer-input').disabled = isReadOnly;
         card.querySelector('.timer-input').disabled = isReadOnly;
+        card.querySelector('.url-input').disabled = isReadOnly;
         
         // Correctly set display property based on CSS. A standard button's default is 'inline-block'.
         card.querySelector('.delete-question-btn').style.display = isReadOnly ? 'none' : 'flex';
@@ -397,9 +405,11 @@ async function loadGameForEditing(gameDocument) {
         if (gameData.final_question) {
             finalQuestionQInput.value = gameData.final_question.q || '';
             finalQuestionAInput.value = gameData.final_question.a || '';
+            finalQuestionUrlInput.value = gameData.final_question.url || '';
         } else {
             finalQuestionQInput.value = '';
             finalQuestionAInput.value = '';
+            finalQuestionUrlInput.value = '';
         }
 
         setTimeout(() => {
@@ -474,17 +484,29 @@ function compileGameData() {
     questionCards.forEach(card => {
         const q = card.querySelector('.question-input').value.trim();
         const a = card.querySelector('.answer-input').value.trim();
+        const url = card.querySelector('.url-input').value.trim();
         const timer = parseInt(card.querySelector('.timer-input').value, 10);
+
         if (q && a && !isNaN(timer)) {
-            questions.push({ q, a, timer });
+            const questionData = { q, a, timer };
+            if (url) {
+                questionData.url = url;
+            }
+            questions.push(questionData);
         }
     });
     
     const finalQuestionQ = finalQuestionQInput.value.trim();
     const finalQuestionA = finalQuestionAInput.value.trim();
-    const final_question = (finalQuestionQ && finalQuestionA)
-        ? { q: finalQuestionQ, a: finalQuestionA }
-        : null;
+    const finalQuestionUrl = finalQuestionUrlInput.value.trim();
+    
+    let final_question = null;
+    if (finalQuestionQ && finalQuestionA) {
+        final_question = { q: finalQuestionQ, a: finalQuestionA };
+        if (finalQuestionUrl) {
+            final_question.url = finalQuestionUrl;
+        }
+    }
 
     return { questions, final_question };
 }
@@ -671,7 +693,7 @@ export function initializeEditGameScreen() {
             return;
         }
         const questionCount = questionsEditorContainer.children.length;
-        const newCard = renderQuestionCard({ q: '', a: '', timer: 30 }, questionCount);
+        const newCard = renderQuestionCard({ q: '', a: '', timer: 30, url: '' }, questionCount);
         questionsEditorContainer.appendChild(newCard);
     
         updateReorderButtons();
@@ -803,7 +825,7 @@ export function initializeEditGameScreen() {
             return;
         }
         
-        const newGameData = { questions: [], final_question: { q: "", a: "" } };
+        const newGameData = { questions: [], final_question: { q: "", a: "", url: "" } };
     
         try {
             const newDocument = await createGame(newName, newDescription, newCategoryId, newGameData, isPublic);
