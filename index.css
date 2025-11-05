@@ -1,5 +1,6 @@
 
 
+
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -1637,24 +1638,18 @@ h1, h2, h3, h4, h5, h6 {
     align-items: baseline;
 }
 
-/* NEW STYLES: Horizontal layout for form groups in the editor */
-#game-editor-form .form-group {
+/* NEW STYLES: Horizontal layout for form groups inside question cards */
+#game-editor-form .question-card-body .form-group {
     flex-direction: row;
     align-items: baseline;
     gap: 0.9375rem;
 }
 
-#game-editor-form .form-group label {
+#game-editor-form .question-card-body .form-group label {
     flex-basis: 7.5rem;
     flex-shrink: 0;
     text-align: right;
     font-weight: normal;
-}
-
-#game-editor-form .form-group input,
-#game-editor-form .form-group textarea,
-#game-editor-form .form-group select {
-    flex-grow: 1;
 }
 
 #game-editor-form .timer-input {
@@ -1667,9 +1662,15 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     align-items: center;
     gap: 1rem;
-    /* This rule will be for the editor */
-    padding-top: 1.875rem; 
 }
+
+/* This rule is for the editor form row, to make label appear on top */
+#game-editor-form .form-row > .public-toggle-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
 
 /* Specific adjustment for the modal layout where padding is not needed */
 #new-game-modal .public-toggle-container {
@@ -1720,7 +1721,7 @@ h1, h2, h3, h4, h5, h6 {
     content: "";
     height: 1.625rem; /* 26px */
     width: 1.625rem; /* 26px */
-    left: 0.25rem; /* 4px */
+    right: 0.25rem; /* 4px */
     bottom: 0.25rem; /* 4px */
     background-color: white;
     -webkit-transition: .4s;
@@ -1741,9 +1742,9 @@ input:focus-visible + .slider {
 }
 
 input:checked + .slider:before {
-    -webkit-transform: translateX(1.625rem); /* 26px */
-    -ms-transform: translateX(1.625rem);
-    transform: translateX(1.625rem);
+    -webkit-transform: translateX(-1.625rem); /* 26px */
+    -ms-transform: translateX(-1.625rem);
+    transform: translateX(-1.625rem);
 }
 
 /* Rounded sliders */
