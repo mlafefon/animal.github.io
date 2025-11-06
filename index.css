@@ -1425,13 +1425,13 @@ h1, h2, h3, h4, h5, h6 {
     top: 1.25rem;
     z-index: 500;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     gap: 1.25rem;
     padding: 0.9375rem 1.5625rem;
     margin-bottom: 1.25rem;
-    background-color: rgba(40, 50, 70, 0.85); /* Dark, semi-transparent theme color */
-    backdrop-filter: blur(0.625rem); /* Frosted glass effect for modern look */
+    background-color: rgba(40, 50, 70, 0.85);
+    backdrop-filter: blur(0.625rem);
     -webkit-backdrop-filter: blur(0.625rem);
     border: 0.0625rem solid rgba(255, 255, 255, 0.2);
     border-radius: 0.75rem;
@@ -1530,6 +1530,20 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* --- Game List in Edit Screen --- */
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#create-new-game-btn {
+    background-color: #2ecc71; /* Emerald */
+}
+#create-new-game-btn:hover:not(:disabled) {
+    background-color: #27ae60; /* Darker Emerald */
+}
+
+
 #game-list-panel #game-list-ul {
     list-style: none;
     padding: 0;

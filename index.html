@@ -243,9 +243,6 @@
         </div>
 
         <div class="edit-sticky-actions">
-             <div class="edit-controls-actions">
-                <button id="create-new-game-btn" class="btn btn-primary">צור משחק חדש</button>
-            </div>
             <div class="main-edit-actions">
                 <button type="button" id="play-selected-game-btn" class="btn btn-primary btn-medium" disabled>שחק במשחק</button>
             </div>
@@ -326,7 +323,12 @@
             </div>
 
             <div id="game-list-panel">
-                <h2>בחר משחק</h2>
+                <div class="panel-header">
+                    <h2>בחר משחק</h2>
+                    <button type="button" id="create-new-game-btn" class="btn-icon-round" title="צור משחק חדש">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    </button>
+                </div>
                 <ul id="game-list-ul">
                     <!-- Game list will be loaded here dynamically -->
                 </ul>
