@@ -1,5 +1,8 @@
 
 
+
+import { getSavedState } from './gameState.js';
+
 const groupList = document.getElementById('group-list');
 const startButton = document.getElementById('start-btn');
 const setupScreen = document.getElementById('setup-screen');
@@ -82,21 +85,17 @@ function toggleSetupControls(disabled) {
 export async function refreshSetupScreenState() {
     const continueCheckbox = document.getElementById('continue-last-point');
     const continueLabel = document.querySelector('label[for="continue-last-point"]');
-    const savedStateJSON = localStorage.getItem('animalGameState');
+    const savedState = getSavedState(); // Use new centralized function
 
-    if (savedStateJSON) {
-        try {
-            const savedState = JSON.parse(savedStateJSON);
-            continueCheckbox.disabled = false;
-            continueLabel.textContent = `המשך "${savedState.gameName}"`;
-        } catch (e) {
-            continueCheckbox.disabled = true;
-            continueLabel.textContent = 'המשך מנקודה אחרונה';
-            localStorage.removeItem('animalGameState');
-        }
+    if (savedState && savedState.gameName) {
+        continueCheckbox.disabled = false;
+        continueLabel.textContent = `המשך "${savedState.gameName}"`;
     } else {
         continueCheckbox.disabled = true;
         continueLabel.textContent = 'המשך מנקודה אחרונה';
+        if (savedState) { // If state exists but is corrupt/missing name
+            localStorage.removeItem('animalGameState'); // Clean it up
+        }
     }
     
     continueCheckbox.checked = false;
