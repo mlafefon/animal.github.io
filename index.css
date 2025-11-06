@@ -2038,42 +2038,43 @@ input:disabled + .slider:before {
     display: flex;
     justify-content: flex-start; /* Align to the right in RTL */
     gap: 1rem;
-    padding: 0.75rem 1rem;
+    padding: 1.25rem; /* Consistent with other panels */
     margin-bottom: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background-color: rgba(40, 50, 70, 0.9);
-    backdrop-filter: blur(0.625rem);
-    -webkit-backdrop-filter: blur(0.625rem);
-    border-radius: 0 0 0.75rem 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+    border: 0.0625rem solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.75rem;
+    box-shadow: 0 0.25rem 0.9375rem rgba(0,0,0,0.05);
+    /* Note: Removed sticky positioning and backdrop-filter to match panel style */
 }
 .btn-icon-round {
     width: 3rem;
     height: 3rem;
     border-radius: 50%;
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.3);
+    border: 0.125rem solid white;
+    opacity: 0.7;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s, opacity 0.2s;
+    transition: background-color 0.2s, transform 0.2s, opacity 0.2s, border-color 0.2s, box-shadow 0.2s;
     position: relative;
-    box-shadow: 0 0.125rem 0.3125rem rgba(0,0,0,0.2), inset 0 0.0625rem 0.125rem rgba(255,255,255,0.2);
+    box-shadow: none;
 }
 .btn-icon-round:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 0.25rem 0.625rem rgba(0,0,0,0.3), inset 0 0.0625rem 0.125rem rgba(255,255,255,0.3);
+    background-color: rgba(0, 0, 0, 0.5);
+    transform: scale(1.1);
+    opacity: 1;
 }
 .btn-icon-round:active:not(:disabled) {
-    transform: translateY(1px);
-    box-shadow: 0 0.0625rem 0.125rem rgba(0,0,0,0.3), inset 0 0.125rem 0.25rem rgba(0,0,0,0.2);
+    transform: scale(1.05);
+    transition-duration: 0.1s;
 }
 .btn-icon-round:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
 }
+
 .btn-icon-round svg {
     width: 1.6rem;
     height: 1.6rem;
@@ -2082,31 +2083,6 @@ input:disabled + .slider:before {
     transition: opacity 0.2s;
 }
 
-/* --- Toolbar Button Colors --- */
-#toolbar-add-question-btn {
-    background-color: #2ecc71; /* Emerald */
-}
-#toolbar-add-question-btn:hover:not(:disabled) {
-    background-color: #27ae60; /* Darker Emerald */
-}
-#toolbar-download-btn {
-    background-color: #3498db; /* Peter River */
-}
-#toolbar-download-btn:hover:not(:disabled) {
-    background-color: #2980b9; /* Darker Peter River */
-}
-#toolbar-save-btn {
-     background-color: #f39c12; /* Orange */
-}
-#toolbar-save-btn:hover:not(:disabled) {
-    background-color: #e67e22; /* Darker Orange */
-}
-.btn-icon-round.btn-icon-danger {
-    background-color: #e74c3c; /* Alizarin */
-}
-.btn-icon-round.btn-icon-danger:hover:not(:disabled) {
-    background-color: #c0392b; /* Darker Alizarin */
-}
 
 /* --- Save Button State (New Toolbar Button) --- */
 #toolbar-save-btn .save-icon-svg { display: block; }
@@ -2114,32 +2090,35 @@ input:disabled + .slider:before {
 
 /* Default disabled state: transparent/dimmed */
 #toolbar-save-btn:disabled:not(.saved) {
-    background-color: #f39c12; /* Keep base color for consistency */
-    opacity: 0.5;
+    /* This state now inherits the correct look from .btn-icon-round:disabled */
     animation: none;
-    cursor: not-allowed;
 }
 #toolbar-save-btn:disabled:not(.saved):hover {
-    transform: none; /* Disable hover effect */
-    box-shadow: 0 0.125rem 0.3125rem rgba(0,0,0,0.2), inset 0 0.0625rem 0.125rem rgba(255,255,255,0.2);
+    transform: none; /* Disable hover effect for specifically this disabled state */
+    background-color: rgba(0, 0, 0, 0.3); /* keep it from lighting up on hover */
+    opacity: 0.4;
 }
 
 #toolbar-save-btn.unsaved {
     background-color: #f1c40f; /* Sun Flower yellow */
+    border-color: #f1c40f; /* Match the border to the background */
     animation: pulse-unsaved-icon 1.5s infinite;
     opacity: 1; /* Ensure it's fully opaque when active */
 }
 #toolbar-save-btn.unsaved:hover:not(:disabled) {
     background-color: #f39c12; /* Orange on hover */
+    border-color: #f39c12;
+    transform: scale(1.1); /* Keep the hover transform */
 }
 @keyframes pulse-unsaved-icon {
-    0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7), 0 0.125rem 0.3125rem rgba(0,0,0,0.2); }
-    70% { box-shadow: 0 0 0 0.625rem rgba(241, 196, 15, 0), 0 0.25rem 0.625rem rgba(0,0,0,0.3); }
-    100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0), 0 0.125rem 0.3125rem rgba(0,0,0,0.2); }
+    0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); }
+    70% { box-shadow: 0 0 0 0.625rem rgba(241, 196, 15, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); }
 }
 
 #toolbar-save-btn.saved {
-    background-color: #2ecc71; /* Emerald, same as add button */
+    background-color: #2ecc71; /* Emerald */
+    border-color: #2ecc71; /* Match border to background */
     animation: none;
     cursor: default;
     opacity: 1;
