@@ -361,8 +361,10 @@ export function initializeFinalRound() {
         mainGameFooter.classList.remove('visible');
         document.body.classList.remove('game-active');
 
-        // 2. Show the main start screen.
+        // 2. Show the main start screen and header.
         startScreen.classList.remove('hidden');
+        document.getElementById('global-header').classList.remove('hidden');
+
 
         // 3. Clean up UI elements for the next game.
         // Remove the dynamically added winner announcement.

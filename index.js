@@ -67,6 +67,7 @@ function initializeFullscreenControls() {
 function initializeGlobalHomeButton() {
     const homeBtn = document.getElementById('global-home-btn');
     const startScreen = document.getElementById('start-screen');
+    const globalHeader = document.getElementById('global-header');
     const allScreens = [
         document.getElementById('setup-screen'),
         document.getElementById('pre-question-screen'),
@@ -99,8 +100,9 @@ function initializeGlobalHomeButton() {
         document.body.classList.remove('game-active');
         homeBtn.classList.add('hidden');
 
-        // Show the start screen
+        // Show the start screen and header
         startScreen.classList.remove('hidden');
+        globalHeader.classList.remove('hidden');
 
         // The game state is intentionally not cleared. This allows the user to
         // return to the setup screen and choose to continue their game.

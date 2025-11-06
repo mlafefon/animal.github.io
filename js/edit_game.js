@@ -726,6 +726,7 @@ export function initializeEditGameScreen() {
         }
         const gameDoc = gameDocumentsCache[selectedLi.dataset.documentId];
         editGameScreen.classList.add('hidden');
+        document.getElementById('global-header').classList.add('hidden'); // Hide header when starting a game
         showSetupScreenForGame(gameDoc);
     });
 
