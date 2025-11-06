@@ -1472,7 +1472,7 @@ h1, h2, h3, h4, h5, h6 {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow-y: auto; /* Allow editor panel to scroll independently */
+    overflow: hidden; /* Contain the scrolling form */
     padding-left: 0.625rem;
 }
 
@@ -1651,6 +1651,8 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     flex-direction: column;
     gap: 1.5625rem;
+    flex-grow: 1; /* Make form take remaining space */
+    overflow-y: auto; /* Enable scrolling on the form itself */
 }
 
 #game-editor-form .form-row {
@@ -2044,7 +2046,7 @@ input:disabled + .slider:before {
     border: 0.0625rem solid rgba(255, 255, 255, 0.3);
     border-radius: 0.75rem;
     box-shadow: 0 0.25rem 0.9375rem rgba(0,0,0,0.05);
-    /* Note: Removed sticky positioning and backdrop-filter to match panel style */
+    flex-shrink: 0; /* Prevent toolbar from shrinking */
 }
 .btn-icon-round {
     width: 3rem;
