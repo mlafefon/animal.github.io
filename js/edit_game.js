@@ -1,5 +1,3 @@
-
-
 import { listGames, createGame, updateGame, deleteGame, listCategories, getFileUrl } from './appwriteService.js';
 import { showSetupScreenForGame } from './setup.js';
 
@@ -240,7 +238,12 @@ function renderQuestionCard(question, index) {
             </div>
             <div class="form-group">
                 <label>קישור להרחבה:</label>
-                <input type="url" class="url-input" placeholder="הכנס קישור (אופציונלי)" value="${question.url || ''}">
+                <div class="input-with-button">
+                    <input type="url" class="url-input" placeholder="הכנס קישור (אופציונלי)" value="${question.url || ''}">
+                    <button type="button" class="btn-icon preview-link-btn" title="תצוגה מקדימה של הקישור" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    </button>
+                </div>
             </div>
             <div class="form-group">
                 <label>טיימר (שניות):</label>
@@ -423,6 +426,17 @@ async function loadGameForEditing(gameDocument) {
         
         // Hide delete button completely if not owned, using the correct display property ('flex')
         toolbarDeleteBtn.style.display = isOwned ? 'flex' : 'none';
+
+        // Set initial state for all preview buttons
+        gameEditorForm.querySelectorAll('input[type="url"]').forEach(input => {
+            const wrapper = input.closest('.input-with-button');
+            if(wrapper) {
+                const previewBtn = wrapper.querySelector('.preview-link-btn');
+                if (previewBtn) {
+                    previewBtn.disabled = !input.value.trim() || !input.checkValidity();
+                }
+            }
+        });
 
         gameEditorForm.dataset.documentId = gameDocument.$id;
         gameEditorForm.classList.remove('hidden');
@@ -641,6 +655,34 @@ export function initializeEditGameScreen() {
         const categoryId = selectedCard.dataset.categoryId;
         populateGameList(categoryId === 'all' ? null : categoryId);
         loadGameForEditing(null);
+    });
+
+    // --- Link Preview Listeners ---
+    
+    // Handles enabling/disabling the preview button as the user types in a URL field.
+    gameEditorForm.addEventListener('input', (e) => {
+        const input = e.target;
+        if (input.matches('input[type="url"]')) {
+            const wrapper = input.closest('.input-with-button');
+            if (wrapper) {
+                const previewBtn = wrapper.querySelector('.preview-link-btn');
+                if (previewBtn) {
+                    // Disable if input is empty or the URL is invalid.
+                    previewBtn.disabled = !input.value.trim() || !input.checkValidity();
+                }
+            }
+        }
+    });
+
+    // Handles clicking the preview button to open the link modal.
+    editGameScreen.addEventListener('click', (e) => {
+        const previewBtn = e.target.closest('.preview-link-btn');
+        if (previewBtn && !previewBtn.disabled) {
+            const urlInput = previewBtn.closest('.input-with-button')?.querySelector('input[type="url"]');
+            if (urlInput && urlInput.value) {
+                window.showLinkModal(urlInput.value);
+            }
+        }
     });
 
     gameListUl.addEventListener('click', async (e) => {

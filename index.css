@@ -1747,7 +1747,7 @@ h1, h2, h3, h4, h5, h6 {
     content: "";
     height: 1.625rem; /* 26px */
     width: 1.625rem; /* 26px */
-    left: 0.25rem; /* 4px (start from left for RTL) */
+    right: 0.25rem; /* 4px */
     bottom: 0.25rem; /* 4px */
     background-color: white;
     -webkit-transition: .4s;
@@ -1768,9 +1768,9 @@ input:focus-visible + .slider {
 }
 
 input:checked + .slider:before {
-    -webkit-transform: translateX(1.625rem); /* 26px */
-    -ms-transform: translateX(1.625rem);
-    transform: translateX(1.625rem);
+    -webkit-transform: translateX(-1.625rem); /* 26px */
+    -ms-transform: translateX(-1.625rem);
+    transform: translateX(-1.625rem);
 }
 
 /* Rounded sliders */
@@ -2464,6 +2464,46 @@ input:disabled + .slider:before {
     to {
         transform: rotate(360deg);
     }
+}
+
+
+/* --- Styles for URL input with preview button --- */
+.input-with-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Ensure URL inputs fill available space in both editor layouts */
+#game-editor-form > .form-group .input-with-button {
+    width: 100%; /* For vertical (final question) layout */
+}
+#game-editor-form .question-card-body .form-group .input-with-button {
+    flex-grow: 1; /* For horizontal (question card) layout */
+}
+
+.input-with-button input {
+    flex-grow: 1;
+}
+
+.preview-link-btn {
+    background-color: #3498db; /* Peter River Blue */
+    flex-shrink: 0;
+}
+
+.preview-link-btn:hover:not(:disabled) {
+    background-color: #2980b9; /* Darker blue */
+}
+
+.preview-link-btn:disabled {
+    background-color: rgba(85, 85, 85, 0.5);
+    border-color: rgba(255, 255, 255, 0.2);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.preview-link-btn:disabled:hover {
+     background-color: rgba(85, 85, 85, 0.5);
 }
 
 
