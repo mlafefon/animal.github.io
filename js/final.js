@@ -1,5 +1,6 @@
 import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState } from './game.js';
 import { playSound } from './audio.js';
+import { showLinkModal } from './ui.js';
 
 // --- Elements ---
 const bettingScreen = document.getElementById('betting-screen');
@@ -337,8 +338,8 @@ export function initializeFinalRound() {
     
     finalAnswerLinkBtn.addEventListener('click', () => {
         const finalQuestion = getFinalQuestionData();
-        if (finalQuestion && finalQuestion.url && window.showLinkModal) {
-            window.showLinkModal(finalQuestion.url);
+        if (finalQuestion && finalQuestion.url) {
+            showLinkModal(finalQuestion.url);
         }
     });
 

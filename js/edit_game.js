@@ -1,5 +1,6 @@
 import { listGames, createGame, updateGame, deleteGame, listCategories, getFileUrl } from './appwriteService.js';
 import { showSetupScreenForGame } from './setup.js';
+import { showConfirmModal, showLinkModal, showNotification } from './ui.js';
 
 // --- Elements ---
 const editGameScreen = document.getElementById('edit-game-screen');
@@ -445,7 +446,7 @@ async function loadGameForEditing(gameDocument) {
         setUnsavedState(false);
     } catch (error) {
         console.error(`Failed to parse game data for ${gameDocument.game_name}:`, error);
-        alert(`שגיאה בפענוח נתוני המשחק: ${gameDocument.game_name}`);
+        showNotification(`שגיאה בפענוח נתוני המשחק: ${gameDocument.game_name}. הנתונים עשויים להיות פגומים.`, 'error');
     }
 }
 
@@ -482,7 +483,8 @@ async function populateGameList(categoryId) {
             gameListUl.appendChild(li);
         });
     } catch (error) {
-        console.error('Failed to populate game list:', error);
+        // The error notification is already shown by appwriteService,
+        // so we just need to update the UI state.
         gameListUl.innerHTML = '<li>שגיאה בטעינת רשימת המשחקים</li>';
     }
 }
@@ -571,7 +573,7 @@ async function populateCategorySelectors() {
         });
 
     } catch (error) {
-        console.error("Failed to populate category selectors:", error);
+        // The service shows a notification. We just update the UI state.
         selectors.forEach(sel => {
             const option = document.createElement('option');
             option.textContent = 'שגיאה בטעינת קטגוריות';
@@ -607,7 +609,7 @@ async function renderCategories() {
         });
 
     } catch (error) {
-        console.error("Failed to render categories:", error);
+        // The service shows a notification. We just update the UI state.
         categoryListContainer.innerHTML = '<span>שגיאה בטעינת קטגוריות</span>';
     }
 }
@@ -644,7 +646,7 @@ export function initializeEditGameScreen() {
         }
 
         if (toolbarSaveBtn.classList.contains('unsaved')) {
-            const userConfirmed = await window.showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך להחליף קטגוריה? השינויים יאבדו.');
+            const userConfirmed = await showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך להחליף קטגוריה? השינויים יאבדו.');
             if (!userConfirmed) {
                 return; // User cancelled, do nothing
             }
@@ -680,7 +682,7 @@ export function initializeEditGameScreen() {
         if (previewBtn && !previewBtn.disabled) {
             const urlInput = previewBtn.closest('.input-with-button')?.querySelector('input[type="url"]');
             if (urlInput && urlInput.value) {
-                window.showLinkModal(urlInput.value);
+                showLinkModal(urlInput.value);
             }
         }
     });
@@ -696,7 +698,7 @@ export function initializeEditGameScreen() {
 
         // Check if the save button indicates unsaved changes
         if (toolbarSaveBtn.classList.contains('unsaved')) {
-            const userConfirmed = await window.showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לטעון משחק אחר? השינויים יאבדו.');
+            const userConfirmed = await showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לטעון משחק אחר? השינויים יאבדו.');
             if (!userConfirmed) {
                 return; // User cancelled, do nothing
             }
@@ -712,14 +714,14 @@ export function initializeEditGameScreen() {
 
     playSelectedGameBtn.addEventListener('click', async () => {
         if (toolbarSaveBtn.classList.contains('unsaved')) {
-            const userConfirmed = await window.showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לשחק במשחק? השינויים בעורך יאבדו.');
+            const userConfirmed = await showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לשחק במשחק? השינויים בעורך יאבדו.');
             if (!userConfirmed) {
                 return;
             }
         }
         const selectedLi = gameListUl.querySelector('li.selected');
         if(!selectedLi) {
-            alert('יש לבחור משחק תחילה.');
+            showNotification('יש לבחור משחק תחילה.', 'info');
             return;
         }
         const gameDoc = gameDocumentsCache[selectedLi.dataset.documentId];
@@ -731,7 +733,7 @@ export function initializeEditGameScreen() {
 
     toolbarAddQuestionBtn.addEventListener('click', () => {
         if (gameEditorForm.classList.contains('hidden')) {
-            alert('יש לבחור משחק לפני הוספת שאלה.');
+            showNotification('יש לבחור משחק לפני הוספת שאלה.', 'info');
             return;
         }
         const questionCount = questionsEditorContainer.children.length;
@@ -754,12 +756,12 @@ export function initializeEditGameScreen() {
     toolbarSaveBtn.addEventListener('click', async () => {
         const documentId = gameEditorForm.dataset.documentId;
         if (!documentId) {
-            alert('לא נבחר משחק לשמירה.');
+            showNotification('לא נבחר משחק לשמירה.', 'info');
             return;
         }
         const gameName = gameNameInput.value.trim();
         if (!gameName) {
-            alert('יש להזין שם למשחק.');
+            showNotification('יש להזין שם למשחק.', 'error');
             return;
         }
         const description = gameDescriptionInput.value.trim();
@@ -771,14 +773,14 @@ export function initializeEditGameScreen() {
             toolbarSaveBtn.disabled = true; // Disable button during save operation
             await updateGame(documentId, gameName, description, categoryId, gameData, isPublic);
             showSavedState();
+            showNotification('המשחק נשמר בהצלחה!', 'success');
             const currentCategoryId = categoryListContainer.querySelector('.selected')?.dataset.categoryId;
             await populateGameList(currentCategoryId === 'all' ? null : currentCategoryId);
             const liToSelect = gameListUl.querySelector(`li[data-document-id="${documentId}"]`);
             if(liToSelect) liToSelect.classList.add('selected');
 
         } catch (e) {
-            console.error("Error saving game to Appwrite", e);
-            alert("שגיאה בשמירת המשחק.");
+            // Error is logged and notification is shown by appwriteService.
             toolbarSaveBtn.disabled = false; // Re-enable button on failure
         }
     });
@@ -789,24 +791,23 @@ export function initializeEditGameScreen() {
 
         if (!documentId) return;
         
-        const userConfirmed = await window.showConfirmModal(`האם אתה בטוח שברצונך למחוק את המשחק "${gameName}"? לא ניתן לשחזר פעולה זו.`);
+        const userConfirmed = await showConfirmModal(`האם אתה בטוח שברצונך למחוק את המשחק "${gameName}"? לא ניתן לשחזר פעולה זו.`);
         if (userConfirmed) {
             try {
                 await deleteGame(documentId);
-                alert(`המשחק "${gameName}" נמחק בהצלחה.`);
+                showNotification(`המשחק "${gameName}" נמחק בהצלחה.`, 'success');
                 loadGameForEditing(null);
                 const currentCategoryId = categoryListContainer.querySelector('.selected')?.dataset.categoryId;
                 await populateGameList(currentCategoryId === 'all' ? null : currentCategoryId);
             } catch (error) {
-                console.error('Failed to delete game:', error);
-                alert('מחיקת המשחק נכשלה.');
+                // The error is already handled and shown by the service layer.
             }
         }
     });
 
     toolbarDownloadBtn.addEventListener('click', () => {
         if (gameEditorForm.classList.contains('hidden')) {
-            alert('לא נבחר משחק להורדה. אנא בחר משחק קיים.');
+            showNotification('לא נבחר משחק להורדה. אנא בחר משחק קיים.', 'info');
             return;
         }
         const gameName = gameNameInput.value.trim();
@@ -829,7 +830,7 @@ export function initializeEditGameScreen() {
 
     createNewGameBtn.addEventListener('click', async () => {
         if (toolbarSaveBtn.classList.contains('unsaved')) {
-            const userConfirmed = await window.showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך ליצור משחק חדש? השינויים הנוכחיים יאבדו.');
+            const userConfirmed = await showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך ליצור משחק חדש? השינויים הנוכחיים יאבדו.');
             if (!userConfirmed) {
                 return;
             }
@@ -863,7 +864,7 @@ export function initializeEditGameScreen() {
         const isPublic = newGamePublicCheckbox.checked;
 
         if (!newName || !newCategoryId) {
-            alert('יש למלא שם וקטגוריה למשחק.');
+            showNotification('יש למלא שם וקטגוריה למשחק.', 'error');
             return;
         }
         
@@ -882,10 +883,9 @@ export function initializeEditGameScreen() {
             const liToSelect = gameListUl.querySelector(`li[data-document-id="${newDocument.$id}"]`);
             if(liToSelect) liToSelect.click();
     
-            alert(`משחק חדש "${newName}" נוצר. כעת ניתן לערוך אותו.`);
+            showNotification(`משחק חדש "${newName}" נוצר. כעת ניתן לערוך אותו.`, 'success');
         } catch(e) {
-            console.error("Error creating new game:", e);
-            alert("שגיאה ביצירת המשחק החדש.");
+            // The service layer handles showing the error notification.
         }
     });
     

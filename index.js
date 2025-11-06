@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen, showSetupScreenForGame } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
@@ -17,6 +10,7 @@ import { initKeyboardNav } from './js/keyboardNav.js';
 import { preloadGameAssets } from './js/assets.js';
 import { initializeAuth } from './js/auth.js';
 import { clearAllCaches } from './js/appwriteService.js';
+import { initializeConfirmModal, initializeLinkModal, showConfirmModal } from './js/ui.js';
 
 
 /**
@@ -64,97 +58,6 @@ function initializeFullscreenControls() {
     updateIcon(); // Set initial icon state
 }
 
-/**
- * --- Global Confirmation Modal ---
- * A promise-based confirmation modal to replace the native `confirm()`.
- */
-let confirmModalResolve = null;
-function initializeConfirmModal() {
-    const overlay = document.getElementById('confirm-modal-overlay');
-    const modalText = document.getElementById('confirm-modal-text');
-    const confirmBtn = document.getElementById('confirm-modal-yes-btn');
-    const cancelBtn = document.getElementById('confirm-modal-no-btn');
-    
-    if (!overlay || !modalText || !confirmBtn || !cancelBtn) return;
-
-    const hide = () => overlay.classList.add('hidden');
-    
-    const resolve = (value) => {
-        hide();
-        if (confirmModalResolve) {
-            confirmModalResolve(value);
-            confirmModalResolve = null;
-        }
-    };
-
-    confirmBtn.addEventListener('click', () => resolve(true));
-    cancelBtn.addEventListener('click', () => resolve(false));
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) resolve(false);
-    });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !overlay.classList.contains('hidden')) {
-            resolve(false);
-        }
-    });
-    
-    // Expose the show function globally for other modules to use
-    window.showConfirmModal = (message) => {
-        modalText.textContent = message;
-        overlay.classList.remove('hidden');
-        confirmBtn.focus();
-        return new Promise((resolve) => {
-            confirmModalResolve = resolve;
-        });
-    };
-}
-
-/**
- * --- Global Link Modal ---
- * Initializes a modal for displaying embedded web content via an iframe.
- */
-function initializeLinkModal() {
-    const overlay = document.getElementById('link-modal-overlay');
-    const iframe = document.getElementById('link-modal-iframe');
-    const closeBtn = document.getElementById('close-link-modal-btn');
-    const loader = document.getElementById('link-modal-loader');
-
-    if (!overlay || !iframe || !closeBtn || !loader) return;
-
-    const hide = () => {
-        overlay.classList.add('hidden');
-        iframe.src = 'about:blank'; // Clear content to stop videos/audio
-    };
-
-    closeBtn.addEventListener('click', hide);
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) hide();
-    });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !overlay.classList.contains('hidden')) {
-            hide();
-        }
-    });
-
-    iframe.addEventListener('load', () => {
-        loader.style.display = 'none';
-    });
-
-    // Expose a global function to show the modal
-    window.showLinkModal = (url) => {
-        if (!url) return;
-        // Basic check to ensure it's a web URL
-        if (!url.startsWith('http://') && !url.startsWith('https://')) {
-            console.warn('Attempted to load invalid URL in modal:', url);
-            return;
-        }
-        loader.style.display = 'block';
-        iframe.src = url;
-        overlay.classList.remove('hidden');
-        closeBtn.focus();
-    };
-}
-
 
 /**
  * Initializes the global home button to be available on all screens.
@@ -180,7 +83,7 @@ function initializeGlobalHomeButton() {
         // Check for unsaved changes in the editor before navigating away
         const saveBtn = document.getElementById('toolbar-save-btn');
         if (saveBtn && saveBtn.classList.contains('unsaved')) {
-            const userConfirmed = await window.showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לחזור למסך הראשי? השינויים יאבדו.');
+            const userConfirmed = await showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לחזור למסך הראשי? השינויים יאבדו.');
             if (!userConfirmed) {
                 return; // User cancelled the action
             }
@@ -285,7 +188,7 @@ export function initializeApp() {
     initializeFullscreenControls();
     initializeGlobalHomeButton();
     initializeConfirmModal();
-    initializeLinkModal(); // Initialize the new link modal
+    initializeLinkModal(); 
     initKeyboardNav(document.body); // Initialize keyboard navigation for the whole app
 }
 

@@ -1,3 +1,5 @@
+import { showNotification } from './ui.js';
+
 // IMPORTANT: Fill in your Appwrite project details here!
 const AppwriteConfig = {
     endpoint: 'https://fra.cloud.appwrite.io/v1',
@@ -100,7 +102,8 @@ export async function listCategories() {
         return response.documents;
     } catch (error) {
         console.error("Failed to list categories:", error);
-        return [];
+        showNotification('שגיאה בטעינת הקטגוריות מהשרת.', 'error');
+        throw error;
     }
 }
 
@@ -181,7 +184,8 @@ export async function listGames(categoryId = null) {
 
     } catch (error) {
         console.error("Failed to list games:", error);
-        return [];
+        showNotification('שגיאה בטעינת רשימת המשחקים.', 'error');
+        throw error;
     }
 }
 
@@ -233,6 +237,7 @@ export async function createGame(gameName, description, categoryId, gameData, is
 
     } catch (error) {
         console.error("Error creating new game:", error);
+        showNotification('שגיאה ביצירת המשחק החדש.', 'error');
         throw error;
     }
 }
@@ -249,36 +254,42 @@ export async function createGame(gameName, description, categoryId, gameData, is
  * @returns {Promise<object>} The updated document.
  */
 export async function updateGame(documentId, gameName, description, categoryId, gameData, isPublic) {
-    const user = await getAccount();
-    if (!user) {
-        throw new Error("User not authenticated for update");
+    try {
+        const user = await getAccount();
+        if (!user) {
+            throw new Error("User not authenticated for update");
+        }
+
+        const permissions = [
+            Permission.read(Role.user(user.$id)),
+            Permission.update(Role.user(user.$id)),
+            Permission.delete(Role.user(user.$id)),
+        ];
+
+        if (isPublic) {
+            permissions.push(Permission.read(Role.users()));
+        }
+
+        const updatedDocument = await database.updateDocument(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.collectionId,
+            documentId,
+            {
+                game_name: gameName,
+                description: description,
+                categoryId: categoryId,
+                game_data: JSON.stringify(gameData),
+                is_public: isPublic
+            },
+            permissions
+        );
+        clearAllCaches(); // Invalidate cache after successful update
+        return updatedDocument;
+    } catch (error) {
+        console.error("Error updating game:", error);
+        showNotification('שגיאה בשמירת שינויים למשחק.', 'error');
+        throw error;
     }
-
-    const permissions = [
-        Permission.read(Role.user(user.$id)),
-        Permission.update(Role.user(user.$id)),
-        Permission.delete(Role.user(user.$id)),
-    ];
-
-    if (isPublic) {
-        permissions.push(Permission.read(Role.users()));
-    }
-
-    const updatedDocument = await database.updateDocument(
-        AppwriteConfig.databaseId,
-        AppwriteConfig.collectionId,
-        documentId,
-        {
-            game_name: gameName,
-            description: description,
-            categoryId: categoryId,
-            game_data: JSON.stringify(gameData),
-            is_public: isPublic
-        },
-        permissions
-    );
-    clearAllCaches(); // Invalidate cache after successful update
-    return updatedDocument;
 }
 
 /**
@@ -287,16 +298,22 @@ export async function updateGame(documentId, gameName, description, categoryId, 
  * @returns {Promise<object>} The updated document.
  */
 export async function deleteGame(documentId) {
-    const updatedDocument = await database.updateDocument(
-        AppwriteConfig.databaseId,
-        AppwriteConfig.collectionId,
-        documentId,
-        {
-            is_deleted: true
-        }
-    );
-    clearAllCaches(); // Invalidate cache after successful delete
-    return updatedDocument;
+    try {
+        const updatedDocument = await database.updateDocument(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.collectionId,
+            documentId,
+            {
+                is_deleted: true
+            }
+        );
+        clearAllCaches(); // Invalidate cache after successful delete
+        return updatedDocument;
+    } catch (error) {
+        console.error("Error deleting game:", error);
+        showNotification('שגיאה במחיקת המשחק.', 'error');
+        throw error;
+    }
 }
 
 

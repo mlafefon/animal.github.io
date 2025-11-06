@@ -1,13 +1,9 @@
-
-
-
 import { refreshSetupScreenState } from './setup.js';
 import { IMAGE_URLS } from './assets.js';
 
 const startScreen = document.getElementById('start-screen');
 const setupScreen = document.getElementById('setup-screen');
 const goToSetupBtn = document.getElementById('go-to-setup-btn');
-const settingsBtn = document.getElementById('settings-btn');
 const startImage = document.getElementById('start-screen-image');
 
 /**
@@ -15,7 +11,7 @@ const startImage = document.getElementById('start-screen-image');
  * @param {function} onGoToSettings - Callback to execute when the settings button is clicked.
  */
 export function initializeStartScreen(onGoToSettings) {
-    if (!startScreen || !setupScreen || !goToSetupBtn || !settingsBtn) {
+    if (!startScreen || !setupScreen || !goToSetupBtn) {
         console.error('Start screen elements not found!');
         return;
     }
@@ -28,12 +24,6 @@ export function initializeStartScreen(onGoToSettings) {
     goToSetupBtn.addEventListener('click', () => {
         // This button now behaves identically to the settings button, taking the user
         // to the new game selection/editing hub.
-        if (onGoToSettings) {
-            onGoToSettings();
-        }
-    });
-
-    settingsBtn.addEventListener('click', () => {
         if (onGoToSettings) {
             onGoToSettings();
         }

@@ -1,10 +1,7 @@
-
-
-
-
 import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTeam } from './game.js';
 import { showBoxesScreen } from './boxes.js';
 import { playSound, stopSound } from './audio.js';
+import { showLinkModal } from './ui.js';
 
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
@@ -435,8 +432,8 @@ export function initializeQuestionScreen(onComplete) {
 
     answerLinkBtn.addEventListener('click', () => {
         const url = getCurrentQuestion().url;
-        if (url && window.showLinkModal) {
-            window.showLinkModal(url);
+        if (url) {
+            showLinkModal(url);
         }
     });
 }
