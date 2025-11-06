@@ -1,3 +1,4 @@
+
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen, showSetupScreenForGame } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
@@ -10,7 +11,7 @@ import { initKeyboardNav } from './js/keyboardNav.js';
 import { preloadGameAssets } from './js/assets.js';
 import { initializeAuth } from './js/auth.js';
 import { clearAllCaches } from './js/appwriteService.js';
-import { initializeConfirmModal, initializeLinkModal, showConfirmModal } from './js/ui.js';
+import { initializeConfirmModal, initializeLinkModal, showConfirmModal, initializeNotification } from './js/ui.js';
 
 
 /**
@@ -189,6 +190,7 @@ export function initializeApp() {
     initializeGlobalHomeButton();
     initializeConfirmModal();
     initializeLinkModal(); 
+    initializeNotification();
     initKeyboardNav(document.body); // Initialize keyboard navigation for the whole app
 }
 

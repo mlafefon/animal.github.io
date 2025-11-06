@@ -1,4 +1,5 @@
 
+
 /**
  * --- Global Confirmation Modal ---
  * A promise-based confirmation modal to replace the native `confirm()`.
@@ -111,3 +112,49 @@ export const showLinkModal = (url) => {
     }
     _showLinkModal(url);
 };
+
+
+/**
+ * --- Global Notification Toast System ---
+ */
+let _notificationContainer = null;
+
+export function initializeNotification() {
+    _notificationContainer = document.getElementById('notification-toast');
+}
+
+/**
+ * Displays a non-blocking toast message at the top of the screen.
+ * @param {string} message The message to display.
+ * @param {'info' | 'success' | 'error'} [type='info'] The type of message, for styling.
+ * @param {number} [duration=3000] The duration in milliseconds to show the message.
+ */
+export function showNotification(message, type = 'info', duration = 3000) {
+    if (!_notificationContainer) {
+        // This can happen if the DOM isn't ready when a service tries to show an error.
+        // Fallback to alert for critical notifications.
+        if (type === 'error') {
+            alert(`ERROR: ${message}`);
+        }
+        console.error("Notification container not found or initialized. Message:", message);
+        return;
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast-message ${type}`;
+    toast.textContent = message;
+    toast.setAttribute('role', 'alert');
+
+    _notificationContainer.appendChild(toast);
+
+    // Set timeout to start hiding the toast
+    setTimeout(() => {
+        toast.classList.add('hiding');
+        // Wait for the fade-out animation to complete before removing
+        toast.addEventListener('animationend', () => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, { once: true });
+    }, duration);
+}
