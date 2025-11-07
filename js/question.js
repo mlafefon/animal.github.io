@@ -178,6 +178,32 @@ export function showQuestionScreen(startTime = 30) {
     // Reset failure box button text for the new question
     failureBoxBtn.textContent = 'תיבת כישלון';
 
+    // --- NEW: Broadcast state to participants when question is shown ---
+    const broadcastQuestionState = () => {
+        const state = getState();
+        if (!state.sessionDocumentId) return;
+
+        const { gameCode, gameName, teams, activeTeamIndex } = state;
+        const questionForParticipant = { q: currentQuestion.q };
+
+        const sessionData = {
+            gameCode,
+            gameName,
+            teams,
+            activeTeamIndex,
+            gameState: 'question', // We are now in the 'question' state
+            currentQuestion: questionForParticipant,
+        };
+        
+        try {
+            updateGameSession(state.sessionDocumentId, sessionData);
+        } catch (error) {
+            console.error("Failed to broadcast question state:", error);
+        }
+    };
+    broadcastQuestionState();
+    // --- END NEW LOGIC ---
+
     timerContainer.classList.remove('low-time'); // Reset on new question
     stopTimer();
     let timeLeft = startTime;
