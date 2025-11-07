@@ -31,6 +31,7 @@ function _resetInternalState() {
         totalQuestions: 0,
         isQuestionPassed: false,
         options: {},
+        gameCode: null,
     };
 }
 
@@ -163,5 +164,14 @@ export function incrementQuestion() {
  */
 export function setIsQuestionPassed(value) {
     _state.isQuestionPassed = value;
+    _saveState();
+}
+
+/**
+ * Sets the game code for the current session.
+ * @param {number} code - The game code.
+ */
+export function setGameCode(code) {
+    _state.gameCode = code;
     _saveState();
 }

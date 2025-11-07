@@ -11,7 +11,7 @@ const setupScreen = document.getElementById('setup-screen');
 
 // --- Data ---
 // This is now only used for initializing state
-const TEAMS_MASTER_DATA = [
+export const TEAMS_MASTER_DATA = [
     { name: 'ינשופים', icon: IMAGE_URLS.TEAM_OWL },
     { name: 'שועלים', icon: IMAGE_URLS.TEAM_FOX },
     { name: 'פילים', icon: IMAGE_URLS.TEAM_ELEPHANT },
@@ -217,7 +217,7 @@ export function switchToNextTeam() {
     gameState.setIsQuestionPassed(false);
     gameState.incrementQuestion();
     
-    const { currentQuestionNumber, totalQuestions, teams } = gameState.getState();
+    const { currentQuestionNumber, totalQuestions, teams, gameCode } = gameState.getState();
 
     if (currentQuestionNumber > totalQuestions) {
         prepareForFinalRound();
@@ -238,6 +238,16 @@ export function switchToNextTeam() {
         totalQuestions,
         startTime: questionTime,
     });
+
+    // Update localStorage for participants
+    const sessionKey = `animalGameSession_${gameCode}`;
+    const sessionData = JSON.parse(localStorage.getItem(sessionKey));
+    if (sessionData) {
+        sessionData.activeTeamIndex = newActiveTeamIndex;
+        sessionData.gameState = 'pre-question';
+        sessionData.currentQuestion = null;
+        localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+    }
 }
 
 export async function startGame(options) {
@@ -281,6 +291,9 @@ export async function startGame(options) {
     
     // Initialize the state module
     gameState.initializeState(options, gameData, TEAMS_MASTER_DATA);
+    if(options.gameCode) {
+        gameState.setGameCode(options.gameCode);
+    }
 
     const { totalQuestions } = gameState.getState();
 

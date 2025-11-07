@@ -1,7 +1,8 @@
 
 
-
 import { getSavedState } from './gameState.js';
+import { TEAMS_MASTER_DATA } from './game.js';
+import { showNotification } from './ui.js';
 
 const groupList = document.getElementById('group-list');
 const startButton = document.getElementById('start-btn');
@@ -119,6 +120,14 @@ export function showSetupScreenForGame(gameDoc) {
     if (setupGameTitle) {
         setupGameTitle.textContent = selectedGameDocument.game_name;
     }
+
+    const gameCode = Math.floor(100000 + Math.random() * 900000);
+    const gameCodeDisplay = document.getElementById('game-code-display');
+    if (gameCodeDisplay) {
+        gameCodeDisplay.textContent = gameCode;
+    }
+    selectedGameDocument.gameCode = gameCode; // Attach to the document object for later use
+
     refreshSetupScreenState(); // Handles the "continue" checkbox state
     setupScreen.classList.remove('hidden');
     updateQuestionStats();
@@ -150,6 +159,18 @@ export function initializeSetupScreen(onStart) {
         updateQuestionStats();
     });
 
+    const gameCodeDisplay = document.getElementById('game-code-display');
+    if(gameCodeDisplay) {
+        gameCodeDisplay.addEventListener('click', () => {
+            navigator.clipboard.writeText(gameCodeDisplay.textContent).then(() => {
+                showNotification('הקוד הועתק!', 'success');
+            }).catch(err => {
+                console.error('Failed to copy code: ', err);
+                showNotification('שגיאה בהעתקת הקוד', 'error');
+            });
+        });
+    }
+
     startButton.addEventListener('click', () => {
         const actualQuestionsText = document.getElementById('actual-questions-stat').textContent;
         const actualQuestions = parseInt(actualQuestionsText.split(':')[1].trim(), 10) || 0;
@@ -173,9 +194,31 @@ export function initializeSetupScreen(onStart) {
         const documentId = selectedGameDocument ? selectedGameDocument.$id : null;
         const gameDataString = selectedGameDocument ? selectedGameDocument.game_data : '{}';
         const gameName = selectedGameDocument ? selectedGameDocument.game_name : '';
+        const gameCode = selectedGameDocument ? selectedGameDocument.gameCode : null;
+
+        // Create initial state for participants in localStorage
+        if (gameCode) {
+            const teamsForParticipants = [];
+            for (let i = 0; i < numberOfGroups; i++) {
+                const teamMaster = TEAMS_MASTER_DATA[i % TEAMS_MASTER_DATA.length];
+                teamsForParticipants.push({
+                    index: i,
+                    name: teamMaster.name,
+                    icon: teamMaster.icon,
+                    isTaken: false
+                });
+            }
+            const initialState = {
+                gameCode: gameCode,
+                gameName: gameName,
+                teams: teamsForParticipants,
+                gameState: 'setup' // Initial state for participants
+            };
+            localStorage.setItem(`animalGameSession_${gameCode}`, JSON.stringify(initialState));
+        }
 
         const shuffleQuestions = document.getElementById('shuffle-questions').checked;
         
-        onStart({ numberOfGroups, documentId, gameDataString, shuffleQuestions, actualQuestions, continueLastPoint, gameName });
+        onStart({ numberOfGroups, documentId, gameDataString, shuffleQuestions, actualQuestions, continueLastPoint, gameName, gameCode });
     });
 }

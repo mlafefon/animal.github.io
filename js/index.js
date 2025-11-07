@@ -1,16 +1,18 @@
+
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen, showSetupScreenForGame } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
 import { initializePreQuestionScreen } from './js/preq.js';
-import { initializeQuestionScreen, showQuestionScreen, stopTimer } from './js/question.js';
+import { initializeQuestionScreen, showQuestionScreen, stopTimer, triggerManualGrading } from './js/question.js';
 import { initializeBoxesScreen } from './js/boxes.js';
 import { initializeEditGameScreen, showEditScreen, checkForUnsavedChangesAndProceed } from './js/edit_game.js';
 import { initializeFinalRound, showBettingScreen } from './js/final.js';
 import { initKeyboardNav } from './js/keyboardNav.js';
 import { preloadGameAssets } from './js/assets.js';
 import { initializeAuth } from './js/auth.js';
-import { clearAllCaches, logout } from './js/appwriteService.js';
-import { initializeConfirmModal, initializeLinkModal, showNotification, initializeQuestionPreviewModal } from './js/ui.js';
+import { clearAllCaches, logout, getAccount } from './js/appwriteService.js';
+import { initializeConfirmModal, initializeLinkModal, showNotification, initializeQuestionPreviewModal, initializeNotification } from './js/ui.js';
+import { getState } from './js/gameState.js';
 
 
 /**
@@ -122,6 +124,59 @@ function initializeGlobalLogoutButton() {
 
 
 /**
+ * A central function to show the main application view (edit screen) after authentication.
+ * @param {object} user - The authenticated user object from Appwrite.
+ */
+function showMainApp(user) {
+    document.getElementById('global-header').classList.remove('hidden');
+    const userGreeting = document.getElementById('user-greeting');
+    if (user && userGreeting) {
+        const displayName = user.name || user.email;
+        userGreeting.textContent = `${displayName}`;
+    }
+    showEditScreen();
+}
+
+/**
+ * Listens for actions from participants (joining, stopping timer) via localStorage.
+ */
+function initializeParticipantListener() {
+    window.addEventListener('storage', (event) => {
+        const state = getState();
+        if (!state || !state.gameCode) return;
+
+        const actionKey = `animalGameParticipantAction_${state.gameCode}`;
+        const sessionKey = `animalGameSession_${state.gameCode}`;
+
+        if (event.key === actionKey && event.newValue) {
+            const actionData = JSON.parse(event.newValue);
+            const currentState = getState();
+
+            if (actionData.action === 'selectTeam') {
+                // Update the team as 'taken' in localStorage state for other participants to see
+                const sessionData = JSON.parse(localStorage.getItem(sessionKey));
+                if (sessionData) {
+                    const team = sessionData.teams.find(t => t.index === actionData.teamIndex);
+                    if (team && !team.isTaken) {
+                        team.isTaken = true;
+                        localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+                    }
+                }
+            } else if (actionData.action === 'stopTimer') {
+                // Check if it's the active team's request
+                if (actionData.teamIndex === currentState.activeTeamIndex) {
+                    // Check if the timer is actually running (stop button is visible)
+                    if (document.getElementById('stop-game-btn').offsetParent !== null) {
+                         triggerManualGrading();
+                    }
+                }
+            }
+        }
+    });
+}
+
+
+/**
  * Encapsulates the initialization of all core application modules.
  * This function is called only after a user has been successfully authenticated.
  */
@@ -177,11 +232,36 @@ export function initializeApp() {
     };
 
     /**
-     * Callback to navigate from the start screen to the edit screen.
+     * New callback for the "Start" button. It checks for authentication and routes the user.
      */
-    const onGoToSettings = () => {
-        document.getElementById('start-screen').classList.add('hidden');
-        showEditScreen();
+    const onStartClick = async () => {
+        const startScreen = document.getElementById('start-screen');
+        const authScreen = document.getElementById('auth-screen');
+        try {
+            const user = await getAccount();
+            // User is logged in, go to the main app (edit screen).
+            startScreen.classList.add('hidden');
+            showMainApp(user);
+        } catch (error) {
+            // User is not logged in, go to the authentication screen.
+            startScreen.classList.add('hidden');
+            authScreen.classList.remove('hidden');
+        }
+    };
+    
+    /**
+     * Callback for when a user successfully logs in.
+     */
+    const onLoginSuccess = async () => {
+        const authScreen = document.getElementById('auth-screen');
+        authScreen.classList.add('hidden');
+        try {
+            const user = await getAccount();
+            showMainApp(user);
+        } catch (error) {
+            // Should not happen, but as a fallback, go to start.
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
     };
 
     /**
@@ -192,7 +272,7 @@ export function initializeApp() {
     };
 
     // Initialize the listeners for all screens and components.
-    initializeStartScreen(onGoToSettings);
+    initializeStartScreen(onStartClick);
     initializeSetupScreen(onGameStart);
     initializePreQuestionScreen(onNextQuestion, onStartBetting);
     initializeQuestionScreen(onQuestionComplete);
@@ -208,6 +288,8 @@ export function initializeApp() {
     initializeQuestionPreviewModal();
     initializeNotification();
     initKeyboardNav(document.body); // Initialize keyboard navigation for the whole app
+    initializeAuth(onLoginSuccess);
+    initializeParticipantListener();
 }
 
 
@@ -215,8 +297,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // On every page refresh, clear the session cache to get the latest data.
     clearAllCaches();
     
-    // The very first thing we do is initialize the authentication flow.
-    // The rest of the app will be initialized via a callback from the auth module
-    // upon successful login.
-    initializeAuth();
+    // Initialize all application logic and event listeners.
+    initializeApp();
+
+    // Set the initial view: always show the start screen.
+    // All other screens are hidden by default in the HTML, so this is enough.
+    document.getElementById('start-screen').classList.remove('hidden');
+    document.getElementById('auth-screen').classList.add('hidden');
+    document.getElementById('global-header').classList.add('hidden');
+
+    // Fetch and display the app version
+    fetch('metadata.json')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const version = data.version;
+            if (version) {
+                const startScreen = document.getElementById('start-screen');
+                const versionElement = document.createElement('p');
+                versionElement.className = 'app-version';
+                versionElement.textContent = `גרסה ${version}`;
+                startScreen.appendChild(versionElement);
+            }
+        })
+        .catch(error => console.error('Error fetching app version:', error));
 });

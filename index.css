@@ -1,4 +1,5 @@
 
+
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -454,6 +455,7 @@ h1, h2, h3, h4, h5, h6 {
     gap: 1.875rem;
     margin-bottom: 2.5rem;
     flex-wrap: wrap;
+    align-items: stretch;
 }
 
 .setup-box {
@@ -2679,6 +2681,132 @@ input:disabled + .slider:before {
         opacity: 0;
         transform: translateY(-1.25rem);
     }
+}
+
+/* --- Styles for Participant View --- */
+.participant-container {
+    background: rgba(0, 0, 0, 0.25);
+    border: 0.0625rem solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.9375rem;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 31.25rem;
+    box-shadow: 0 0.5rem 1.875rem rgba(0, 0, 0, 0.2);
+    text-align: center;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.participant-container h1 {
+    font-size: 3rem;
+    color: #ffeb3b;
+}
+
+#join-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    align-items: center;
+}
+
+#game-code-input {
+    width: 100%;
+    max-width: 18.75rem;
+    padding: 0.9375rem;
+    font-size: 2.5rem;
+    text-align: center;
+    letter-spacing: 0.625rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 0.0625rem solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.5rem;
+    color: #f0f8ff;
+}
+/* Hide number input arrows */
+#game-code-input::-webkit-outer-spin-button,
+#game-code-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+#game-code-input[type=number] {
+    -moz-appearance: textfield;
+}
+
+#team-selection-grid .team-member {
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+#team-selection-grid .team-member:hover:not(.taken) {
+    transform: scale(1.1);
+}
+
+#team-selection-grid .team-member.taken {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(80%);
+}
+
+#participant-game-screen {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem;
+    position: relative;
+}
+
+.participant-team-info {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+}
+
+.participant-team-info img {
+    width: 4.375rem;
+    height: 4.375rem;
+    border-radius: 50%;
+    border: 0.1875rem solid #ffeb3b;
+}
+
+#participant-game-screen #q-a-wrapper {
+    margin-top: 6.25rem; /* Make space for header */
+}
+
+.waiting-message {
+    text-align: center;
+    font-size: 2rem;
+    color: #ffeb3b;
+    margin-top: 2.5rem;
+}
+
+/* Styles for Host View Game Code */
+.game-code-box {
+    text-align: center;
+}
+.game-code-box p {
+    font-size: 1.1rem;
+    margin-bottom: 0.625rem;
+    color: rgba(240, 248, 255, 0.8);
+}
+.game-code-display {
+    font-size: 4rem;
+    font-weight: bold;
+    color: #ffeb3b;
+    background: rgba(0,0,0,0.3);
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.625rem;
+    letter-spacing: 0.625rem;
+    cursor: copy;
+    border: 2px dashed rgba(255,255,255,0.4);
+    transition: background-color 0.2s;
+}
+.game-code-display:hover {
+    background-color: rgba(0,0,0,0.5);
 }
 
 

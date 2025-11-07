@@ -2,6 +2,7 @@ import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTe
 import { showBoxesScreen } from './boxes.js';
 import { playSound, stopSound } from './audio.js';
 import { showLinkModal } from './ui.js';
+import { getState } from './gameState.js';
 
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
@@ -100,7 +101,7 @@ export function stopTimer() {
  * Stops the timer and shows the manual grading buttons (Correct/Incorrect).
  * This is used when the 'Stop' button is clicked or when the timer runs out.
  */
-function triggerManualGrading() {
+export function triggerManualGrading() {
     stopTimer();
     timerContainer.classList.remove('low-time');
 
@@ -115,6 +116,16 @@ function triggerManualGrading() {
     
     // Set focus on the next logical control for accessibility
     correctAnswerBtn.focus();
+
+    // Update localStorage for participants
+    const state = getState();
+    if (!state.gameCode) return;
+    const sessionKey = `animalGameSession_${state.gameCode}`;
+    const sessionData = JSON.parse(localStorage.getItem(sessionKey));
+    if (sessionData) {
+        sessionData.gameState = 'grading'; // Host is grading
+        localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+    }
 }
 
 
@@ -212,6 +223,18 @@ export function showQuestionScreen(startTime = 30) {
             triggerManualGrading();
         }
     }, 1000);
+
+    // Update localStorage for participants
+    const state = getState();
+    if (!state.gameCode) return;
+    const sessionKey = `animalGameSession_${state.gameCode}`;
+    const sessionData = JSON.parse(localStorage.getItem(sessionKey));
+    if (sessionData) {
+        sessionData.gameState = 'question';
+        sessionData.currentQuestion = { q: currentQuestion.q }; // Only send the question, not the answer
+        sessionData.activeTeamIndex = state.activeTeamIndex;
+        localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+    }
 }
 
 /**
