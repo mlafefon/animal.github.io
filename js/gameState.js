@@ -33,6 +33,8 @@ function _resetInternalState() {
         options: {},
         gameCode: null,
         sessionDocumentId: null, // To store the Appwrite document ID
+        boxScores: [], // To hold scores for remote box selection
+        victoryType: 'victory',
     };
 }
 
