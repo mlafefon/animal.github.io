@@ -79,6 +79,14 @@ function animateScore(element, start, end, onComplete = null) {
 function generateTeams() {
     mainTeamsContainer.innerHTML = '';
     const { teams } = gameState.getState();
+
+    // Add class for responsive styling if there are many teams
+    if (teams.length > 5) {
+        mainGameFooter.classList.add('many-teams');
+    } else {
+        mainGameFooter.classList.remove('many-teams');
+    }
+        
     teams.forEach(team => {
         const teamElement = document.createElement('div');
         teamElement.className = 'team-member';

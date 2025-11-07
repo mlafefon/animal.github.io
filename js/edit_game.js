@@ -5,6 +5,7 @@ import { showConfirmModal, showLinkModal, showNotification } from './ui.js';
 // --- Elements ---
 const editGameScreen = document.getElementById('edit-game-screen');
 const createNewGameBtn = document.getElementById('create-new-game-btn');
+const duplicateSelectedGameBtn = document.getElementById('duplicate-selected-game-btn');
 const gameEditorForm = document.getElementById('game-editor-form');
 const gameNameInput = document.getElementById('game-name-input');
 const gameDescriptionInput = document.getElementById('game-description-input');
@@ -39,6 +40,7 @@ const cancelNewGameBtn = document.getElementById('cancel-new-game-btn');
 // --- State Management ---
 let saveStateTimeout = null;
 let gameDocumentsCache = {}; // Cache for all fetched game documents
+let gameDataToDuplicate = null;
 
 /**
  * Sets the visual and functional state of the save button.
@@ -395,6 +397,7 @@ async function loadGameForEditing(gameDocument) {
         gameEditorForm.classList.add('hidden');
         editorToolbar.classList.add('hidden');
         playSelectedGameBtn.disabled = true;
+        duplicateSelectedGameBtn.disabled = true;
         setUnsavedState(false);
         return;
     }
@@ -443,6 +446,7 @@ async function loadGameForEditing(gameDocument) {
         gameEditorForm.classList.remove('hidden');
         editorToolbar.classList.remove('hidden');
         playSelectedGameBtn.disabled = false;
+        duplicateSelectedGameBtn.disabled = false;
         setUnsavedState(false);
     } catch (error) {
         console.error(`Failed to parse game data for ${gameDocument.game_name}:`, error);
@@ -622,6 +626,7 @@ export async function showEditScreen() {
     gameEditorForm.classList.add('hidden');
     editorToolbar.classList.add('hidden');
     playSelectedGameBtn.disabled = true;
+    duplicateSelectedGameBtn.disabled = true;
     document.getElementById('global-home-btn').classList.remove('hidden');
     delete gameEditorForm.dataset.documentId;
     
@@ -854,8 +859,41 @@ export function initializeEditGameScreen() {
         newGameNameInput.focus();
     });
 
+    duplicateSelectedGameBtn.addEventListener('click', () => {
+        const selectedLi = gameListUl.querySelector('li.selected');
+        if (!selectedLi) {
+            showNotification('יש לבחור משחק לשכפול.', 'info');
+            return;
+        }
+
+        const gameDoc = gameDocumentsCache[selectedLi.dataset.documentId];
+        if (!gameDoc) return;
+
+        // Store the game data for the creation step
+        try {
+            gameDataToDuplicate = JSON.parse(gameDoc.game_data);
+        } catch(e) {
+            showNotification('שגיאה בנתוני המשחק המקורי.', 'error');
+            gameDataToDuplicate = null; // Reset on error
+            return;
+        }
+
+        // Pre-fill the modal
+        newGameNameInput.value = `עותק של ${gameDoc.game_name}`;
+        newGameDescriptionInput.value = gameDoc.description || '';
+        newGameCategorySelect.value = gameDoc.categoryId || '';
+        newGamePublicCheckbox.checked = gameDoc.is_public || false;
+        
+        // Show the modal
+        newGameModalOverlay.classList.remove('hidden');
+        newGameNameInput.focus();
+        newGameNameInput.select(); // Select the text for easy renaming
+    });
+
+
     cancelNewGameBtn.addEventListener('click', () => {
         newGameModalOverlay.classList.add('hidden');
+        gameDataToDuplicate = null;
     });
 
     confirmNewGameBtn.addEventListener('click', async () => {
@@ -869,14 +907,17 @@ export function initializeEditGameScreen() {
             return;
         }
         
-        const newGameData = { questions: [], final_question: { q: "", a: "", url: "" } };
+        const newGameData = gameDataToDuplicate || { questions: [], final_question: { q: "", a: "", url: "" } };
     
         try {
             const newDocument = await createGame(newName, newDescription, newCategoryId, newGameData, isPublic);
+            
             newGameModalOverlay.classList.add('hidden');
             newGameNameInput.value = '';
             newGameDescriptionInput.value = '';
             newGamePublicCheckbox.checked = false;
+            
+            gameDataToDuplicate = null; // Reset after use
     
             const currentCategoryId = categoryListContainer.querySelector('.selected')?.dataset.categoryId;
             await populateGameList(currentCategoryId === 'all' ? null : currentCategoryId);
@@ -887,6 +928,7 @@ export function initializeEditGameScreen() {
             showNotification(`משחק חדש "${newName}" נוצר. כעת ניתן לערוך אותו.`, 'success');
         } catch(e) {
             // The service layer handles showing the error notification.
+            gameDataToDuplicate = null; // Also reset on error
         }
     });
     
