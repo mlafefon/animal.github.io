@@ -224,7 +224,7 @@ function renderQuestionCard(question, index) {
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/></svg>
                     </button>
                     <button type="button" class="reorder-btn reorder-down-btn" title="העבר למטה">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41 1.41z"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6 6 1.41 1.41z"/></svg>
                     </button>
                 </div>
                 <h3>שאלה ${index + 1}</h3>
@@ -652,41 +652,6 @@ export async function showEditScreen() {
 }
 
 /**
- * A central handler for actions that might discard unsaved changes.
- * It shows a modal with "Save", "Don't Save", and "Cancel" options.
- * @param {function} actionCallback The function to execute if the user decides to proceed.
- */
-export async function checkForUnsavedChangesAndProceed(actionCallback) {
-    const isUnsaved = toolbarSaveBtn.classList.contains('unsaved');
-    const isEditorVisible = !editGameScreen.classList.contains('hidden');
-
-    if (!isEditorVisible || !isUnsaved || userAcknowledgedUnsavedChanges) {
-        if (actionCallback) actionCallback();
-        return;
-    }
-
-    const result = await showConfirmModal('יש לך שינויים שלא נשמרו. מה ברצונך לעשות?', 'save_flow');
-
-    switch (result) {
-        case 'save':
-            const wasSaveSuccessful = await handleSave();
-            if (wasSaveSuccessful && actionCallback) {
-                actionCallback();
-            }
-            break;
-        case 'dont_save':
-            userAcknowledgedUnsavedChanges = true;
-            if (actionCallback) actionCallback();
-            break;
-        case 'cancel':
-        case false:
-        default:
-            // Do nothing, user stays on the page.
-            break;
-    }
-}
-
-/**
  * The logic for saving the game, extracted into a reusable async function.
  * @returns {Promise<boolean>} A promise that resolves to true on success, false on failure.
  */
@@ -719,6 +684,42 @@ async function handleSave() {
     } catch (e) {
         toolbarSaveBtn.disabled = false;
         return false;
+    }
+}
+
+
+/**
+ * A central handler for actions that might discard unsaved changes.
+ * It shows a modal with "Save", "Don't Save", and "Cancel" options.
+ * @param {function} actionCallback The function to execute if the user decides to proceed.
+ */
+export async function checkForUnsavedChangesAndProceed(actionCallback) {
+    const isUnsaved = toolbarSaveBtn.classList.contains('unsaved');
+    const isEditorVisible = !editGameScreen.classList.contains('hidden');
+
+    if (!isEditorVisible || !isUnsaved || userAcknowledgedUnsavedChanges) {
+        if (actionCallback) actionCallback();
+        return;
+    }
+
+    const result = await showConfirmModal('יש לך שינויים שלא נשמרו. מה ברצונך לעשות?', 'save_flow');
+
+    switch (result) {
+        case 'save':
+            const wasSaveSuccessful = await handleSave();
+            if (wasSaveSuccessful && actionCallback) {
+                actionCallback();
+            }
+            break;
+        case 'dont_save':
+            userAcknowledgedUnsavedChanges = true;
+            if (actionCallback) actionCallback();
+            break;
+        case 'cancel':
+        case false:
+        default:
+            // Do nothing, user stays on the page.
+            break;
     }
 }
 
