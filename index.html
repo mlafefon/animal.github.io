@@ -309,7 +309,7 @@
                         <div class="input-with-button">
                             <input type="url" id="final-question-url-input" placeholder="הכנס קישור (אופציונלי)">
                             <button type="button" id="final-question-preview-btn" class="btn-icon preview-link-btn" title="תצוגה מקדימה של הקישור" disabled>
-                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2zm-3-4h8v2H8v-2z"/></svg>
                             </button>
                         </div>
                     </div>
@@ -406,6 +406,25 @@
             <div class="link-modal-content">
                 <div id="link-modal-loader"></div>
                 <iframe id="link-modal-iframe" src="about:blank" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question Preview Modal -->
+    <div id="question-preview-modal-overlay" class="hidden">
+        <div id="question-preview-modal">
+            <button id="close-question-preview-modal-btn" title="סגור">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+            <div class="question-preview-content">
+                <h2>תצוגה מקדימה</h2>
+                <div id="preview-question-container">
+                    <p id="preview-question-text"></p>
+                </div>
+                <div id="preview-answer-container" class="hidden">
+                    <p id="preview-answer-text"></p>
+                </div>
+                <button id="preview-show-answer-btn" class="btn btn-secondary btn-small">הצג תשובה</button>
             </div>
         </div>
     </div>

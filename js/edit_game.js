@@ -1,6 +1,6 @@
 import { listGames, createGame, updateGame, deleteGame, listCategories, getFileUrl } from './appwriteService.js';
 import { showSetupScreenForGame } from './setup.js';
-import { showConfirmModal, showLinkModal, showNotification } from './ui.js';
+import { showConfirmModal, showLinkModal, showNotification, showQuestionPreview } from './ui.js';
 
 // --- Elements ---
 const editGameScreen = document.getElementById('edit-game-screen');
@@ -226,6 +226,9 @@ function renderQuestionCard(question, index) {
                 <h3>שאלה ${index + 1}</h3>
             </div>
             <div class="header-right">
+                <button type="button" class="btn-icon preview-question-btn" title="תצוגת שאלה">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                </button>
                 <button type="button" class="delete-question-btn" title="מחק שאלה"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
                 <svg class="collapse-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
             </div>
@@ -244,7 +247,7 @@ function renderQuestionCard(question, index) {
                 <div class="input-with-button">
                     <input type="url" class="url-input" placeholder="הכנס קישור (אופציונלי)" value="${question.url || ''}">
                     <button type="button" class="btn-icon preview-link-btn" title="תצוגה מקדימה של הקישור" disabled>
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2zm-3-4h8v2H8v-2z"/></svg>
                     </button>
                 </div>
             </div>
@@ -275,6 +278,13 @@ function renderQuestionCard(question, index) {
         if (!e.target.closest('button')) {
             card.classList.contains('collapsed') ? expandCard(card) : collapseCard(card);
         }
+    });
+
+    card.querySelector('.preview-question-btn').addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent card from toggling collapse
+        const q = card.querySelector('.question-input').value;
+        const a = card.querySelector('.answer-input').value;
+        showQuestionPreview(q, a);
     });
 
     card.querySelector('.delete-question-btn').addEventListener('click', (e) => {

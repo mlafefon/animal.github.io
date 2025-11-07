@@ -1,5 +1,6 @@
 
 
+
 /**
  * --- Global Confirmation Modal ---
  * A promise-based confirmation modal to replace the native `confirm()`.
@@ -111,6 +112,59 @@ export const showLinkModal = (url) => {
         return;
     }
     _showLinkModal(url);
+};
+
+/**
+ * --- Global Question Preview Modal ---
+ */
+let _showQuestionPreview;
+
+export function initializeQuestionPreviewModal() {
+    const overlay = document.getElementById('question-preview-modal-overlay');
+    const closeBtn = document.getElementById('close-question-preview-modal-btn');
+    const qText = document.getElementById('preview-question-text');
+    const aText = document.getElementById('preview-answer-text');
+    const aContainer = document.getElementById('preview-answer-container');
+    const showAnswerBtn = document.getElementById('preview-show-answer-btn');
+
+    if (!overlay || !closeBtn || !qText || !aText || !aContainer || !showAnswerBtn) return;
+
+    const hide = () => {
+        overlay.classList.add('hidden');
+        // Reset state for next time
+        aContainer.classList.add('hidden');
+        showAnswerBtn.classList.remove('hidden');
+    };
+
+    closeBtn.addEventListener('click', hide);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) hide();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !overlay.classList.contains('hidden')) {
+            hide();
+        }
+    });
+
+    showAnswerBtn.addEventListener('click', () => {
+        aContainer.classList.remove('hidden');
+        showAnswerBtn.classList.add('hidden');
+    });
+
+    _showQuestionPreview = (question, answer) => {
+        qText.textContent = question || '(אין שאלה)';
+        aText.textContent = answer || '(אין תשובה)';
+        overlay.classList.remove('hidden');
+        showAnswerBtn.focus();
+    };
+}
+
+export const showQuestionPreview = (question, answer) => {
+    if (!_showQuestionPreview) {
+        console.error("Question preview modal has not been initialized.");
+        return;
+    }
+    _showQuestionPreview(question, answer);
 };
 
 
