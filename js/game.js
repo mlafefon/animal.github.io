@@ -2,6 +2,8 @@ import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
 import * as gameState from './gameState.js';
+import { subscribeToActions, updateGameSession } from './appwriteService.js';
+import { triggerManualGrading } from './question.js';
 
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
@@ -128,6 +130,76 @@ function prepareForFinalRound() {
     showPreQuestionScreen({ isFinalRound: true });
 }
 
+/**
+ * Gathers the current game state and broadcasts it to participants via Appwrite.
+ */
+async function broadcastGameState() {
+    const { sessionDocumentId, gameCode, gameName, teams, activeTeamIndex } = gameState.getState();
+    if (!sessionDocumentId) return;
+
+    // Determine the high-level state for participants
+    let currentGameState = 'waiting';
+    if (document.getElementById('pre-question-screen').offsetParent !== null) {
+        currentGameState = 'pre-question';
+    } else if (document.getElementById('game-screen').offsetParent !== null && document.getElementById('stop-game-btn').offsetParent !== null) {
+        currentGameState = 'question';
+    } else if (document.getElementById('game-screen').offsetParent !== null) {
+        currentGameState = 'grading';
+    } else if (document.getElementById('betting-screen').offsetParent !== null) {
+        currentGameState = 'betting';
+    }
+
+    let questionForParticipant = null;
+    if (currentGameState === 'question') {
+        const q = getCurrentQuestion();
+        questionForParticipant = { q: q.q }; // Only send the question text
+    }
+
+    const sessionData = {
+        gameCode,
+        gameName,
+        teams, // This now includes the `isTaken` flag
+        activeTeamIndex,
+        gameState: currentGameState,
+        currentQuestion: questionForParticipant,
+    };
+
+    try {
+        await updateGameSession(sessionDocumentId, sessionData);
+    } catch (error) {
+        console.error("Failed to broadcast game state:", error);
+    }
+}
+
+/**
+ * Handles actions received from participants via Appwrite Realtime.
+ * @param {object} actionPayload - The payload from the `game_actions` document.
+ */
+async function handleParticipantAction(actionPayload) {
+    try {
+        const actionData = JSON.parse(actionPayload.actionData);
+        const currentState = gameState.getState();
+
+        if (actionData.type === 'selectTeam') {
+            const team = currentState.teams.find(t => t.index === actionData.teamIndex);
+            if (team && !team.isTaken) {
+                team.isTaken = true;
+                gameState.setTeams(currentState.teams); // Update internal state
+                await broadcastGameState(); // Broadcast change to all participants
+            }
+        } else if (actionData.type === 'stopTimer') {
+            if (actionData.teamIndex === currentState.activeTeamIndex) {
+                // Check if the timer is actually running
+                if (document.getElementById('stop-game-btn').offsetParent !== null) {
+                    triggerManualGrading(); // This function will handle its own broadcast
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error processing participant action:", error);
+    }
+}
+
 
 // --- Public (Exported) Functions ---
 
@@ -166,6 +238,7 @@ export function passQuestionToTeam(targetIndex) {
     gameState.setIsQuestionPassed(true);
     gameState.setActiveTeam(targetIndex);
     updateActiveTeam(); // Update UI
+    broadcastGameState();
 }
 
 export function getCurrentQuestion() {
@@ -205,10 +278,16 @@ export function adjustScoreForTeam(teamIndex, amount, onAnimationComplete = null
         
         if (instant) {
             scoreElement.textContent = endScore;
+            broadcastGameState(); // Broadcast score change
             if (onAnimationComplete) onAnimationComplete();
         } else {
             const startScoreForAnim = parseInt(scoreElement.textContent, 10) || 0;
-            animateScore(scoreElement, startScoreForAnim, endScore, onAnimationComplete);
+            // Add broadcast to the animation completion callback
+            const onCompleteWithBroadcast = () => {
+                broadcastGameState();
+                if (onAnimationComplete) onAnimationComplete();
+            };
+            animateScore(scoreElement, startScoreForAnim, endScore, onCompleteWithBroadcast);
         }
     }
 }
@@ -217,10 +296,11 @@ export function switchToNextTeam() {
     gameState.setIsQuestionPassed(false);
     gameState.incrementQuestion();
     
-    const { currentQuestionNumber, totalQuestions, teams, gameCode } = gameState.getState();
+    const { currentQuestionNumber, totalQuestions, teams } = gameState.getState();
 
     if (currentQuestionNumber > totalQuestions) {
         prepareForFinalRound();
+        broadcastGameState();
         return;
     }
     
@@ -239,15 +319,7 @@ export function switchToNextTeam() {
         startTime: questionTime,
     });
 
-    // Update localStorage for participants
-    const sessionKey = `animalGameSession_${gameCode}`;
-    const sessionData = JSON.parse(localStorage.getItem(sessionKey));
-    if (sessionData) {
-        sessionData.activeTeamIndex = newActiveTeamIndex;
-        sessionData.gameState = 'pre-question';
-        sessionData.currentQuestion = null;
-        localStorage.setItem(sessionKey, JSON.stringify(sessionData));
-    }
+    broadcastGameState();
 }
 
 export async function startGame(options) {
@@ -257,6 +329,8 @@ export async function startGame(options) {
         const savedState = gameState.getSavedState();
         if (savedState) {
             gameState.loadStateFromObject(savedState);
+             // Subscribe to actions for the existing game session
+            subscribeToActions(savedState.gameCode, handleParticipantAction);
             
             // Restore UI from loaded state
             generateTeams();
@@ -277,6 +351,7 @@ export async function startGame(options) {
                 totalQuestions,
                 startTime: questionTime,
             });
+            broadcastGameState(); // Sync participants on continue
             return;
         }
     }
@@ -291,9 +366,6 @@ export async function startGame(options) {
     
     // Initialize the state module
     gameState.initializeState(options, gameData, TEAMS_MASTER_DATA);
-    if(options.gameCode) {
-        gameState.setGameCode(options.gameCode);
-    }
 
     const { totalQuestions } = gameState.getState();
 
@@ -302,6 +374,9 @@ export async function startGame(options) {
         setupScreen.classList.remove('hidden');
         return;
     }
+    
+    // Subscribe to actions from participants for the new game
+    subscribeToActions(options.gameCode, handleParticipantAction);
 
     // Render UI from new state
     generateTeams();
@@ -322,6 +397,7 @@ export async function startGame(options) {
         totalQuestions,
         startTime: questionTime,
     });
+    broadcastGameState(); // Initial broadcast
 }
 
 export function initializeScoreControls() {

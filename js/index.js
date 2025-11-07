@@ -1,4 +1,5 @@
 
+
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen, showSetupScreenForGame } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
@@ -10,7 +11,7 @@ import { initializeFinalRound, showBettingScreen } from './js/final.js';
 import { initKeyboardNav } from './js/keyboardNav.js';
 import { preloadGameAssets } from './js/assets.js';
 import { initializeAuth } from './js/auth.js';
-import { clearAllCaches, logout, getAccount } from './js/appwriteService.js';
+import { clearAllCaches, logout, getAccount, unsubscribeAllRealtime } from './js/appwriteService.js';
 import { initializeConfirmModal, initializeLinkModal, showNotification, initializeQuestionPreviewModal, initializeNotification } from './js/ui.js';
 import { getState } from './js/gameState.js';
 
@@ -72,6 +73,7 @@ function initializeGlobalHomeButton() {
     homeBtn.addEventListener('click', () => {
         const goHome = () => {
             stopTimer(); // Stop any active game timer
+            unsubscribeAllRealtime(); // Unsubscribe from Appwrite channels
 
             // Hide all potential screens
             const allScreens = [
@@ -135,44 +137,6 @@ function showMainApp(user) {
         userGreeting.textContent = `${displayName}`;
     }
     showEditScreen();
-}
-
-/**
- * Listens for actions from participants (joining, stopping timer) via localStorage.
- */
-function initializeParticipantListener() {
-    window.addEventListener('storage', (event) => {
-        const state = getState();
-        if (!state || !state.gameCode) return;
-
-        const actionKey = `animalGameParticipantAction_${state.gameCode}`;
-        const sessionKey = `animalGameSession_${state.gameCode}`;
-
-        if (event.key === actionKey && event.newValue) {
-            const actionData = JSON.parse(event.newValue);
-            const currentState = getState();
-
-            if (actionData.action === 'selectTeam') {
-                // Update the team as 'taken' in localStorage state for other participants to see
-                const sessionData = JSON.parse(localStorage.getItem(sessionKey));
-                if (sessionData) {
-                    const team = sessionData.teams.find(t => t.index === actionData.teamIndex);
-                    if (team && !team.isTaken) {
-                        team.isTaken = true;
-                        localStorage.setItem(sessionKey, JSON.stringify(sessionData));
-                    }
-                }
-            } else if (actionData.action === 'stopTimer') {
-                // Check if it's the active team's request
-                if (actionData.teamIndex === currentState.activeTeamIndex) {
-                    // Check if the timer is actually running (stop button is visible)
-                    if (document.getElementById('stop-game-btn').offsetParent !== null) {
-                         triggerManualGrading();
-                    }
-                }
-            }
-        }
-    });
 }
 
 
@@ -289,13 +253,13 @@ export function initializeApp() {
     initializeNotification();
     initKeyboardNav(document.body); // Initialize keyboard navigation for the whole app
     initializeAuth(onLoginSuccess);
-    initializeParticipantListener();
 }
 
 
 document.addEventListener('DOMContentLoaded', () => {
     // On every page refresh, clear the session cache to get the latest data.
     clearAllCaches();
+    unsubscribeAllRealtime(); // Ensure no lingering subscriptions on reload
     
     // Initialize all application logic and event listeners.
     initializeApp();

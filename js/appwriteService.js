@@ -6,7 +6,10 @@ const AppwriteConfig = {
     projectId: '690655370021dba8ada1', // Replace with your Project ID
     databaseId: '69065916001e6cdd8b06',       // Replace with your Database ID
     collectionId: 'animal-data',    // Replace with your Collection ID
-    bucketId: '6907a2590030f0e8ed04' // <--- עדכן עם ה-Bucket ID שלך!
+    bucketId: '6907a2590030f0e8ed04', // <--- עדכן עם ה-Bucket ID שלך!
+    // *** הוסף כאן את המזהים של ה-Collections החדשים שיצרת ***
+    gameSessionsCollectionId: 'game_sessions', // החלף עם ה-ID של game_sessions
+    gameActionsCollectionId: 'game_actions'    // החלף עם ה-ID של game_actions
 };
 
 // --- Appwrite SDK Initialization ---
@@ -20,6 +23,24 @@ client
 const account = new Account(client);
 const database = new Databases(client);
 const storage = new Storage(client);
+
+// --- Realtime Subscription Management ---
+let activeSubscriptions = [];
+
+/**
+ * Unsubscribes from all active Appwrite Realtime subscriptions.
+ */
+export function unsubscribeAllRealtime() {
+    activeSubscriptions.forEach(unsubscribe => {
+        try {
+            unsubscribe();
+        } catch (e) {
+            console.warn("Could not unsubscribe from a realtime channel.", e);
+        }
+    });
+    activeSubscriptions = [];
+}
+
 
 // --- Authentication Functions ---
 
@@ -49,6 +70,7 @@ export function loginWithGoogle() {
  * @returns {Promise} A promise that resolves on successful logout.
  */
 export function logout() {
+    unsubscribeAllRealtime(); // Unsubscribe from channels on logout
     return account.deleteSession('current');
 }
 
@@ -331,4 +353,134 @@ export function getFileUrl(fileId) {
     }
     // storage.getFileView returns a URL object. We need its string representation.
     return storage.getFileView(AppwriteConfig.bucketId, fileId).href;
+}
+
+// --- Real-time Game Session Functions ---
+
+/**
+ * Creates a new game session document in Appwrite.
+ * @param {string} gameCode The unique 6-digit code for the game.
+ * @param {string} hostId The Appwrite user ID of the host.
+ * @param {object} initialSessionData The initial state of the game.
+ * @returns {Promise<object>} The created document.
+ */
+export function createGameSession(gameCode, hostId, initialSessionData) {
+    if (!AppwriteConfig.gameSessionsCollectionId.includes('_')) {
+        return database.createDocument(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.gameSessionsCollectionId,
+            ID.unique(),
+            {
+                gameCode,
+                hostId,
+                sessionData: JSON.stringify(initialSessionData)
+            },
+            [
+                Permission.read(Role.any()), // Anyone can read the session
+                Permission.update(Role.user(hostId)), // Only host can update
+                Permission.delete(Role.user(hostId))  // Only host can delete
+            ]
+        );
+    }
+    return Promise.reject("Game sessions collection ID not configured.");
+}
+
+
+/**
+ * Retrieves a game session document by its game code.
+ * @param {string} gameCode The game code to search for.
+ * @returns {Promise<object|null>} The session document or null if not found.
+ */
+export async function getGameSession(gameCode) {
+    if (!AppwriteConfig.gameSessionsCollectionId.includes('_')) {
+        const response = await database.listDocuments(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.gameSessionsCollectionId,
+            [
+                Query.equal('gameCode', gameCode),
+                Query.limit(1)
+            ]
+        );
+        return response.documents.length > 0 ? response.documents[0] : null;
+    }
+    return null;
+}
+
+/**
+ * Updates the sessionData of a specific game session document.
+ * @param {string} documentId The ID of the session document to update.
+ * @param {object} newSessionData The new state object to save.
+ * @returns {Promise<object>} The updated document.
+ */
+export function updateGameSession(documentId, newSessionData) {
+     if (!AppwriteConfig.gameSessionsCollectionId.includes('_')) {
+        return database.updateDocument(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.gameSessionsCollectionId,
+            documentId,
+            {
+                sessionData: JSON.stringify(newSessionData)
+            }
+        );
+    }
+    return Promise.reject("Game sessions collection ID not configured.");
+}
+
+/**
+ * Subscribes to real-time updates for a specific game session document.
+ * @param {string} documentId The ID of the document to listen to.
+ * @param {function} callback The function to call with the update payload.
+ * @returns {function} A function to unsubscribe.
+ */
+export function subscribeToSessionUpdates(documentId, callback) {
+    if (!AppwriteConfig.gameSessionsCollectionId.includes('_')) {
+        const documentChannel = `databases.${AppwriteConfig.databaseId}.collections.${AppwriteConfig.gameSessionsCollectionId}.documents.${documentId}`;
+        const unsubscribe = client.subscribe(documentChannel, callback);
+        activeSubscriptions.push(unsubscribe);
+        return unsubscribe;
+    }
+    return () => {};
+}
+
+/**
+ * Subscribes to the creation of new action documents for a specific game code.
+ * @param {string} gameCode The game code to filter actions by.
+ * @param {function} callback The function to call with the new action's payload.
+ * @returns {function} A function to unsubscribe.
+ */
+export function subscribeToActions(gameCode, callback) {
+     if (!AppwriteConfig.gameActionsCollectionId.includes('_')) {
+        const collectionChannel = `databases.${AppwriteConfig.databaseId}.collections.${AppwriteConfig.gameActionsCollectionId}.documents`;
+        const unsubscribe = client.subscribe(collectionChannel, response => {
+            if (response.events.includes(`databases.*.collections.*.documents.*.create`)) {
+                if (response.payload.gameCode === gameCode) {
+                    callback(response.payload);
+                }
+            }
+        });
+        activeSubscriptions.push(unsubscribe);
+        return unsubscribe;
+    }
+    return () => {};
+}
+
+/**
+ * Creates a new action document, sent by a participant.
+ * @param {string} gameCode The game code the action belongs to.
+ * @param {object} actionData The payload of the action.
+ * @returns {Promise<object>} The created document.
+ */
+export function sendAction(gameCode, actionData) {
+    if (!AppwriteConfig.gameActionsCollectionId.includes('_')) {
+        return database.createDocument(
+            AppwriteConfig.databaseId,
+            AppwriteConfig.gameActionsCollectionId,
+            ID.unique(),
+            {
+                gameCode,
+                actionData: JSON.stringify(actionData)
+            }
+        );
+    }
+    return Promise.reject("Game actions collection ID not configured.");
 }

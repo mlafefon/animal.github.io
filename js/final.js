@@ -1,6 +1,7 @@
 import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState } from './game.js';
 import { playSound } from './audio.js';
 import { showLinkModal } from './ui.js';
+import { unsubscribeAllRealtime } from './appwriteService.js';
 
 // --- Elements ---
 const bettingScreen = document.getElementById('betting-screen');
@@ -360,6 +361,9 @@ export function initializeFinalRound() {
         finalQuestionScreen.classList.add('hidden');
         mainGameFooter.classList.remove('visible');
         document.body.classList.remove('game-active');
+
+        // Stop listening to Appwrite events for this game
+        unsubscribeAllRealtime();
 
         // 2. Show the main start screen and header.
         startScreen.classList.remove('hidden');

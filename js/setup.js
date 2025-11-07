@@ -3,6 +3,7 @@
 import { getSavedState } from './gameState.js';
 import { TEAMS_MASTER_DATA } from './game.js';
 import { showNotification } from './ui.js';
+import { createGameSession, getAccount } from './appwriteService.js';
 
 const groupList = document.getElementById('group-list');
 const startButton = document.getElementById('start-btn');
@@ -12,58 +13,44 @@ const setupGameTitle = document.getElementById('setup-game-title');
 
 let selectedGameDocument = null;
 let selectedGameData = null;
+let currentSessionDoc = null;
 
 
 /**
- * Creates or updates the session state in localStorage for participants to see.
- * This function preserves the 'isTaken' status of teams if the session already exists.
+ * Creates or updates the session document in Appwrite for participants.
  */
-function createOrUpdateParticipantSession() {
+async function createOrUpdateParticipantSession() {
     if (!selectedGameDocument || !selectedGameDocument.gameCode) return;
 
-    const gameCode = selectedGameDocument.gameCode;
-    const gameName = selectedGameDocument.game_name;
+    const { gameCode, game_name: gameName } = selectedGameDocument;
     const selectedGroup = groupList.querySelector('.selected');
     const numberOfGroups = selectedGroup ? parseInt(selectedGroup.textContent, 10) : 4;
+    
+    const teamsForParticipants = TEAMS_MASTER_DATA.slice(0, numberOfGroups).map((team, index) => ({
+        ...team,
+        index,
+        isTaken: false
+    }));
 
-    const teamsForParticipants = [];
-    for (let i = 0; i < numberOfGroups; i++) {
-        const teamMaster = TEAMS_MASTER_DATA[i % TEAMS_MASTER_DATA.length];
-        teamsForParticipants.push({
-            index: i,
-            name: teamMaster.name,
-            icon: teamMaster.icon,
-            isTaken: false
-        });
-    }
-
-    const sessionKey = `animalGameSession_${gameCode}`;
-    const existingSessionJSON = localStorage.getItem(sessionKey);
-    let gameState = 'setup';
-
-    if (existingSessionJSON) {
-        const existingSession = JSON.parse(existingSessionJSON);
-        // Preserve isTaken status if host changes number of teams
-        if (existingSession.teams) {
-            teamsForParticipants.forEach(newTeam => {
-                const oldTeam = existingSession.teams.find(t => t.index === newTeam.index);
-                if (oldTeam && oldTeam.isTaken) {
-                    newTeam.isTaken = true;
-                }
-            });
-        }
-        if (existingSession.gameState && existingSession.gameState !== 'setup') {
-            gameState = existingSession.gameState;
-        }
-    }
-
-    const newSessionState = {
-        gameCode: gameCode,
-        gameName: gameName,
+    const sessionData = {
+        gameCode,
+        gameName,
         teams: teamsForParticipants,
-        gameState: gameState,
+        gameState: 'setup',
     };
-    localStorage.setItem(sessionKey, JSON.stringify(newSessionState));
+
+    try {
+        if (!currentSessionDoc) {
+            const user = await getAccount();
+            const newDoc = await createGameSession(gameCode, user.$id, sessionData);
+            currentSessionDoc = newDoc;
+        }
+        // Note: For this flow, we don't need to update an existing session document
+        // because a new session is created for each new game setup screen.
+    } catch (error) {
+        console.error("Failed to create game session:", error);
+        showNotification("שגיאה ביצירת סשן המשחק. המשתתפים לא יוכלו להצטרף.", "error");
+    }
 }
 
 /**
@@ -161,6 +148,7 @@ export async function refreshSetupScreenState() {
  */
 export function showSetupScreenForGame(gameDoc) {
     selectedGameDocument = gameDoc;
+    currentSessionDoc = null; // Reset session for the new game
     try {
         selectedGameData = JSON.parse(gameDoc.game_data);
     } catch (e) {
@@ -173,7 +161,7 @@ export function showSetupScreenForGame(gameDoc) {
         setupGameTitle.textContent = selectedGameDocument.game_name;
     }
 
-    const gameCode = Math.floor(100000 + Math.random() * 900000);
+    const gameCode = Math.floor(100000 + Math.random() * 900000).toString();
     const gameCodeDisplay = document.getElementById('game-code-display');
     if (gameCodeDisplay) {
         gameCodeDisplay.textContent = gameCode;
@@ -210,7 +198,7 @@ export function initializeSetupScreen(onStart) {
     groupList.addEventListener('click', (e) => {
         handleSelection(groupList, e);
         updateQuestionStats();
-        createOrUpdateParticipantSession(); // Update session on group change
+        // createOrUpdateParticipantSession(); // This is now handled on game load
     });
 
     const gameCodeDisplay = document.getElementById('game-code-display');
@@ -235,8 +223,8 @@ export function initializeSetupScreen(onStart) {
             return;
         }
 
-        if (!selectedGameDocument && !continueLastPoint) {
-            alert('אירעה שגיאה. לא נבחר משחק.');
+        if ((!selectedGameDocument || !currentSessionDoc) && !continueLastPoint) {
+            alert('אירעה שגיאה. לא נוצר סשן למשחק.');
             return;
         }
 
@@ -252,7 +240,16 @@ export function initializeSetupScreen(onStart) {
         
         const shuffleQuestions = document.getElementById('shuffle-questions').checked;
         
-        // The participant session is already created/updated. Just start the game.
-        onStart({ numberOfGroups, documentId, gameDataString, shuffleQuestions, actualQuestions, continueLastPoint, gameName, gameCode });
+        onStart({ 
+            numberOfGroups, 
+            documentId, 
+            gameDataString, 
+            shuffleQuestions, 
+            actualQuestions, 
+            continueLastPoint, 
+            gameName, 
+            gameCode,
+            sessionDocumentId: currentSessionDoc ? currentSessionDoc.$id : null
+        });
     });
 }

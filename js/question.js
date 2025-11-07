@@ -3,6 +3,7 @@ import { showBoxesScreen } from './boxes.js';
 import { playSound, stopSound } from './audio.js';
 import { showLinkModal } from './ui.js';
 import { getState } from './gameState.js';
+import { updateGameSession } from './appwriteService.js';
 
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
@@ -117,15 +118,25 @@ export function triggerManualGrading() {
     // Set focus on the next logical control for accessibility
     correctAnswerBtn.focus();
 
-    // Update localStorage for participants
+    // Update Appwrite state for participants
     const state = getState();
-    if (!state.gameCode) return;
-    const sessionKey = `animalGameSession_${state.gameCode}`;
-    const sessionData = JSON.parse(localStorage.getItem(sessionKey));
-    if (sessionData) {
-        sessionData.gameState = 'grading'; // Host is grading
-        localStorage.setItem(sessionKey, JSON.stringify(sessionData));
-    }
+    if (!state.sessionDocumentId) return;
+
+    // We need to construct the sessionData object to update
+    // This is a simplified version of broadcastGameState
+    const { gameCode, gameName, teams, activeTeamIndex } = state;
+    const currentQuestion = getCurrentQuestion();
+    const questionForParticipant = { q: currentQuestion.q };
+
+    const sessionData = {
+        gameCode,
+        gameName,
+        teams,
+        activeTeamIndex,
+        gameState: 'grading', // Host is grading
+        currentQuestion: questionForParticipant,
+    };
+    updateGameSession(state.sessionDocumentId, sessionData);
 }
 
 
@@ -223,18 +234,6 @@ export function showQuestionScreen(startTime = 30) {
             triggerManualGrading();
         }
     }, 1000);
-
-    // Update localStorage for participants
-    const state = getState();
-    if (!state.gameCode) return;
-    const sessionKey = `animalGameSession_${state.gameCode}`;
-    const sessionData = JSON.parse(localStorage.getItem(sessionKey));
-    if (sessionData) {
-        sessionData.gameState = 'question';
-        sessionData.currentQuestion = { q: currentQuestion.q }; // Only send the question, not the answer
-        sessionData.activeTeamIndex = state.activeTeamIndex;
-        localStorage.setItem(sessionKey, JSON.stringify(sessionData));
-    }
 }
 
 /**

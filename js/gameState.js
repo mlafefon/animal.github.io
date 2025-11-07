@@ -32,6 +32,7 @@ function _resetInternalState() {
         isQuestionPassed: false,
         options: {},
         gameCode: null,
+        sessionDocumentId: null, // To store the Appwrite document ID
     };
 }
 
@@ -48,6 +49,8 @@ export function initializeState(options, gameData, teamsMasterData) {
     _state.gameName = options.gameName || gameData.game_name;
     _state.loadedQuestions = gameData.questions;
     _state.finalQuestionData = gameData.final_question;
+    _state.gameCode = options.gameCode;
+    _state.sessionDocumentId = options.sessionDocumentId;
 
     // Shuffle questions if the option is selected
     if (options.shuffleQuestions) {
@@ -72,7 +75,8 @@ export function initializeState(options, gameData, teamsMasterData) {
             index: i,
             name: team.name,
             icon: team.icon,
-            score: 0
+            score: 0,
+            isTaken: false // Add isTaken flag for participants
         });
     }
 
@@ -168,10 +172,10 @@ export function setIsQuestionPassed(value) {
 }
 
 /**
- * Sets the game code for the current session.
- * @param {number} code - The game code.
+ * Sets the entire teams array. Used by host to update 'isTaken' status.
+ * @param {Array<object>} teamsArray - The new teams array.
  */
-export function setGameCode(code) {
-    _state.gameCode = code;
+export function setTeams(teamsArray) {
+    _state.teams = teamsArray;
     _saveState();
 }
