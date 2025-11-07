@@ -146,7 +146,7 @@ export async function refreshSetupScreenState() {
  * Shows the setup screen for a specific game chosen from the previous screen.
  * @param {object} gameDoc The full game document from Appwrite.
  */
-export function showSetupScreenForGame(gameDoc) {
+export async function showSetupScreenForGame(gameDoc) {
     selectedGameDocument = gameDoc;
     currentSessionDoc = null; // Reset session for the new game
     try {
@@ -171,7 +171,7 @@ export function showSetupScreenForGame(gameDoc) {
     refreshSetupScreenState(); // Handles the "continue" checkbox state
     setupScreen.classList.remove('hidden');
     updateQuestionStats();
-    createOrUpdateParticipantSession(); // Create session as soon as code is visible
+    await createOrUpdateParticipantSession(); // Create session *before* returning, ensuring it's ready.
 }
 
 

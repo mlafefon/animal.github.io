@@ -698,7 +698,7 @@ export async function checkForUnsavedChangesAndProceed(actionCallback) {
     const isEditorVisible = !editGameScreen.classList.contains('hidden');
 
     if (!isEditorVisible || !isUnsaved || userAcknowledgedUnsavedChanges) {
-        if (actionCallback) actionCallback();
+        if (actionCallback) await actionCallback();
         return;
     }
 
@@ -708,12 +708,12 @@ export async function checkForUnsavedChangesAndProceed(actionCallback) {
         case 'save':
             const wasSaveSuccessful = await handleSave();
             if (wasSaveSuccessful && actionCallback) {
-                actionCallback();
+                await actionCallback();
             }
             break;
         case 'dont_save':
             userAcknowledgedUnsavedChanges = true;
-            if (actionCallback) actionCallback();
+            if (actionCallback) await actionCallback();
             break;
         case 'cancel':
         case false:
@@ -755,7 +755,7 @@ export function initializeEditGameScreen() {
     });
 
     playSelectedGameBtn.addEventListener('click', () => {
-        const proceed = () => {
+        const proceed = async () => {
             const selectedLi = gameListUl.querySelector('li.selected');
             if(!selectedLi) {
                 showNotification('יש לבחור משחק תחילה.', 'info');
@@ -764,7 +764,7 @@ export function initializeEditGameScreen() {
             const gameDoc = gameDocumentsCache[selectedLi.dataset.documentId];
             editGameScreen.classList.add('hidden');
             document.getElementById('global-header').classList.add('hidden');
-            showSetupScreenForGame(gameDoc);
+            await showSetupScreenForGame(gameDoc);
         };
         checkForUnsavedChangesAndProceed(proceed);
     });

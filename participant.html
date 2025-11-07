@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>משחק חידות ידע - משתתף</title>
     <link rel="stylesheet" href="index.css">
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@11.0.0"></script>
 </head>
 <body>
 
@@ -13,7 +14,7 @@
             <h1>הצטרף למשחק</h1>
             <p>הכנס את קוד המשחק שקיבלת מהמנחה</p>
             <form id="join-form">
-                <input type="number" id="game-code-input" placeholder="123456" maxlength="6" required>
+                <input type="text" inputmode="numeric" pattern="[0-9]*" id="game-code-input" placeholder="123456" maxlength="6" required>
                 <button type="submit" id="join-game-btn" class="btn btn-primary">הצטרף</button>
             </form>
             <p id="join-error" class="auth-error-message hidden"></p>
