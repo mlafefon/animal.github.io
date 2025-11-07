@@ -1,18 +1,16 @@
-
-
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen, showSetupScreenForGame } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
 import { initializePreQuestionScreen } from './js/preq.js';
 import { initializeQuestionScreen, showQuestionScreen, stopTimer } from './js/question.js';
 import { initializeBoxesScreen } from './js/boxes.js';
-import { initializeEditGameScreen, showEditScreen } from './js/edit_game.js';
+import { initializeEditGameScreen, showEditScreen, checkForUnsavedChangesAndProceed } from './js/edit_game.js';
 import { initializeFinalRound, showBettingScreen } from './js/final.js';
 import { initKeyboardNav } from './js/keyboardNav.js';
 import { preloadGameAssets } from './js/assets.js';
 import { initializeAuth } from './js/auth.js';
-import { clearAllCaches } from './js/appwriteService.js';
-import { initializeConfirmModal, initializeLinkModal, showConfirmModal, initializeNotification, initializeQuestionPreviewModal } from './js/ui.js';
+import { clearAllCaches, logout, getAccount } from './js/appwriteService.js';
+import { initializeConfirmModal, initializeLinkModal, showNotification, initializeQuestionPreviewModal, initializeNotification } from './js/ui.js';
 
 
 /**
@@ -63,52 +61,80 @@ function initializeFullscreenControls() {
 
 /**
  * Initializes the global home button to be available on all screens.
- * Clicking it returns to the start screen, allowing the game to be resumed later.
+ * It uses the new confirmation flow to check for unsaved changes before returning home.
  */
 function initializeGlobalHomeButton() {
     const homeBtn = document.getElementById('global-home-btn');
-    const startScreen = document.getElementById('start-screen');
-    const globalHeader = document.getElementById('global-header');
-    const allScreens = [
-        document.getElementById('setup-screen'),
-        document.getElementById('pre-question-screen'),
-        document.getElementById('game-screen'),
-        document.getElementById('boxes-screen'),
-        document.getElementById('betting-screen'),
-        document.getElementById('final-question-screen'),
-        document.getElementById('edit-game-screen'),
-    ];
-    const gameFooter = document.getElementById('main-game-footer');
-
     if (!homeBtn) return;
 
-    homeBtn.addEventListener('click', async () => {
-        // Check for unsaved changes in the editor before navigating away
-        const saveBtn = document.getElementById('toolbar-save-btn');
-        if (saveBtn && saveBtn.classList.contains('unsaved')) {
-            const userConfirmed = await showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לחזור למסך הראשי? השינויים יאבדו.');
-            if (!userConfirmed) {
-                return; // User cancelled the action
-            }
-        }
-        
-        // Stop the question timer and its sound if it's running
-        stopTimer();
+    homeBtn.addEventListener('click', () => {
+        const goHome = () => {
+            stopTimer(); // Stop any active game timer
 
-        // Hide all game-related screens and elements
-        allScreens.forEach(screen => screen.classList.add('hidden'));
-        gameFooter.classList.remove('visible');
-        document.body.classList.remove('game-active');
-        homeBtn.classList.add('hidden');
+            // Hide all potential screens
+            const allScreens = [
+                document.getElementById('setup-screen'),
+                document.getElementById('pre-question-screen'),
+                document.getElementById('game-screen'),
+                document.getElementById('boxes-screen'),
+                document.getElementById('betting-screen'),
+                document.getElementById('final-question-screen'),
+                document.getElementById('edit-game-screen'),
+            ];
+            allScreens.forEach(screen => screen.classList.add('hidden'));
+            
+            // Reset main layout state
+            document.getElementById('main-game-footer').classList.remove('visible');
+            document.body.classList.remove('game-active');
+            homeBtn.classList.add('hidden');
 
-        // Show the start screen and header
-        startScreen.classList.remove('hidden');
-        globalHeader.classList.remove('hidden');
+            // Show the main start screen and header
+            document.getElementById('start-screen').classList.remove('hidden');
+            document.getElementById('global-header').classList.remove('hidden');
+        };
 
-        // The game state is intentionally not cleared. This allows the user to
-        // return to the setup screen and choose to continue their game.
+        checkForUnsavedChangesAndProceed(goHome);
     });
 }
+
+
+/**
+ * Initializes the global logout button, integrating the unsaved changes check.
+ */
+function initializeGlobalLogoutButton() {
+    const logoutBtn = document.getElementById('logout-btn');
+    if (!logoutBtn) return;
+
+    logoutBtn.addEventListener('click', () => {
+        const performLogout = async () => {
+            try {
+                await logout();
+                window.location.reload(); // Easiest way to reset all state
+            } catch (error) {
+                console.error('Logout Failed:', error);
+                showNotification('ההתנתקות נכשלה.', 'error');
+            }
+        };
+
+        checkForUnsavedChangesAndProceed(performLogout);
+    });
+}
+
+
+/**
+ * A central function to show the main application view (edit screen) after authentication.
+ * @param {object} user - The authenticated user object from Appwrite.
+ */
+function showMainApp(user) {
+    document.getElementById('global-header').classList.remove('hidden');
+    const userGreeting = document.getElementById('user-greeting');
+    if (user && userGreeting) {
+        const displayName = user.name || user.email;
+        userGreeting.textContent = `${displayName}`;
+    }
+    showEditScreen();
+}
+
 
 /**
  * Encapsulates the initialization of all core application modules.
@@ -166,11 +192,36 @@ export function initializeApp() {
     };
 
     /**
-     * Callback to navigate from the start screen to the edit screen.
+     * New callback for the "Start" button. It checks for authentication and routes the user.
      */
-    const onGoToSettings = () => {
-        document.getElementById('start-screen').classList.add('hidden');
-        showEditScreen();
+    const onStartClick = async () => {
+        const startScreen = document.getElementById('start-screen');
+        const authScreen = document.getElementById('auth-screen');
+        try {
+            const user = await getAccount();
+            // User is logged in, go to the main app (edit screen).
+            startScreen.classList.add('hidden');
+            showMainApp(user);
+        } catch (error) {
+            // User is not logged in, go to the authentication screen.
+            startScreen.classList.add('hidden');
+            authScreen.classList.remove('hidden');
+        }
+    };
+    
+    /**
+     * Callback for when a user successfully logs in.
+     */
+    const onLoginSuccess = async () => {
+        const authScreen = document.getElementById('auth-screen');
+        authScreen.classList.add('hidden');
+        try {
+            const user = await getAccount();
+            showMainApp(user);
+        } catch (error) {
+            // Should not happen, but as a fallback, go to start.
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
     };
 
     /**
@@ -181,7 +232,7 @@ export function initializeApp() {
     };
 
     // Initialize the listeners for all screens and components.
-    initializeStartScreen(onGoToSettings);
+    initializeStartScreen(onStartClick);
     initializeSetupScreen(onGameStart);
     initializePreQuestionScreen(onNextQuestion, onStartBetting);
     initializeQuestionScreen(onQuestionComplete);
@@ -191,11 +242,13 @@ export function initializeApp() {
     initializeFinalRound();
     initializeFullscreenControls();
     initializeGlobalHomeButton();
+    initializeGlobalLogoutButton();
     initializeConfirmModal();
     initializeLinkModal();
     initializeQuestionPreviewModal();
     initializeNotification();
     initKeyboardNav(document.body); // Initialize keyboard navigation for the whole app
+    initializeAuth(onLoginSuccess);
 }
 
 
@@ -203,8 +256,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // On every page refresh, clear the session cache to get the latest data.
     clearAllCaches();
     
-    // The very first thing we do is initialize the authentication flow.
-    // The rest of the app will be initialized via a callback from the auth module
-    // upon successful login.
-    initializeAuth();
+    // Initialize all application logic and event listeners.
+    initializeApp();
+
+    // Set the initial view: always show the start screen.
+    // All other screens are hidden by default in the HTML, so this is enough.
+    document.getElementById('start-screen').classList.remove('hidden');
+    document.getElementById('auth-screen').classList.add('hidden');
+    document.getElementById('global-header').classList.add('hidden');
 });
