@@ -3,6 +3,7 @@
 
 import { initializeNotification, showNotification } from './js/ui.js';
 import { getGameSession, subscribeToSessionUpdates, sendAction, unsubscribeAllRealtime } from './js/appwriteService.js';
+import { IMAGE_URLS } from './js/assets.js';
 
 
 // --- DOM Elements ---
@@ -10,7 +11,7 @@ const screens = {
     join: document.getElementById('join-screen'),
     teamSelect: document.getElementById('team-select-screen'),
     game: document.getElementById('participant-game-screen'),
-    boxSelect: document.getElementById('box-select-screen')
+    boxes: document.getElementById('participant-boxes-screen'),
 };
 const joinForm = document.getElementById('join-form');
 const gameCodeInput = document.getElementById('game-code-input');
@@ -24,8 +25,9 @@ const questionText = document.getElementById('participant-question-text');
 const participantControls = document.getElementById('participant-controls');
 const stopBtn = document.getElementById('participant-stop-btn');
 const waitingMessage = document.getElementById('waiting-message');
-const participantChestsContainer = document.getElementById('participant-chests-container');
-const boxSelectMessage = document.getElementById('box-select-message');
+const boxesTitle = document.getElementById('participant-boxes-title');
+const chestsContainer = document.getElementById('participant-chests-container');
+const boxesMessage = document.getElementById('participant-boxes-message');
 
 
 // --- State ---
@@ -110,13 +112,91 @@ async function handleTeamSelection(teamIndex) {
     }
 }
 
-function renderBoxSelectScreen() {
-    participantChestsContainer.querySelectorAll('.treasure-chest').forEach(chest => {
-        chest.classList.remove('disabled');
-        chest.style.pointerEvents = 'auto';
-    });
-    boxSelectMessage.textContent = '';
+/**
+ * Renders the boxes screen for the participant based on the host's state.
+ * @param {object} state The latest sessionData from the host.
+ */
+function renderBoxesScreen(state) {
+    const { boxesData } = state;
+    if (!boxesData) return;
+
+    boxesTitle.textContent = boxesData.mode === 'failure' ? 'תיבת כישלון' : 'תיבת נצחון';
+    chestsContainer.innerHTML = '';
+    const isMyTurn = state.activeTeamIndex === myTeam?.index;
+    const alreadySelected = boxesData.selectedChestIndex !== null;
+    
+    if (alreadySelected) {
+        boxesMessage.textContent = 'הבחירה בוצעה!';
+    } else if (isMyTurn) {
+        boxesMessage.textContent = 'תורכם לבחור תיבה!';
+    } else {
+        const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
+        boxesMessage.textContent = `ממתינים לקבוצת ${activeTeam ? activeTeam.name : ''} לבחור תיבה...`;
+    }
+
+    for (let i = 0; i < 3; i++) {
+        const chest = document.createElement('div');
+        chest.className = 'treasure-chest';
+        chest.dataset.chest = i + 1;
+
+        const img = document.createElement('img');
+        const span = document.createElement('span');
+        span.textContent = i + 1;
+        
+        chest.appendChild(img);
+        chest.appendChild(span);
+
+        if (alreadySelected) {
+            span.style.display = 'none';
+            const score = boxesData.scores[i];
+            const scoreDiv = document.createElement('div');
+            scoreDiv.className = 'score-reveal-above';
+            scoreDiv.textContent = `\u200e${score}`;
+            chest.appendChild(scoreDiv);
+
+            if (i === boxesData.selectedChestIndex) {
+                chest.classList.add('selected');
+                scoreDiv.classList.add('selected-score');
+                img.src = score < 0 ? IMAGE_URLS.CHEST_BROKEN : IMAGE_URLS.CHEST_OPEN;
+            } else {
+                chest.classList.add('disabled');
+                img.src = IMAGE_URLS.CHEST_CLOSED;
+            }
+        } else {
+            img.src = IMAGE_URLS.CHEST_CLOSED;
+            if (isMyTurn) {
+                chest.addEventListener('click', () => handleChestSelection(i));
+            } else {
+                chest.classList.add('disabled');
+            }
+        }
+        
+        chestsContainer.appendChild(chest);
+    }
 }
+
+
+/**
+ * Sends a 'selectChest' action to the host.
+ * @param {number} chestIndex The index of the selected chest (0, 1, or 2).
+ */
+async function handleChestSelection(chestIndex) {
+    // Disable all chests immediately to prevent double-clicks
+    chestsContainer.querySelectorAll('.treasure-chest').forEach(c => c.style.pointerEvents = 'none');
+    
+    try {
+        await sendAction(gameCode, {
+            type: 'selectChest',
+            chestIndex: chestIndex,
+            participantId: participantId
+        });
+    } catch (error) {
+        showNotification('שגיאה בשליחת הבחירה.', 'error');
+        // Re-enable on error by re-rendering
+        updateGameView(currentHostState);
+    }
+}
+
 
 /**
  * The main UI update function, driven by state changes from the host.
@@ -124,40 +204,49 @@ function renderBoxSelectScreen() {
  */
 function updateGameView(state) {
     currentHostState = state; // Always keep the latest state
+    
+    if (state.gameState === 'boxes') {
+        renderBoxesScreen(state);
+        showScreen('boxes');
+        return; // Early exit, since this is a distinct screen
+    }
 
     // Determine if my team selection has been confirmed by the host.
     const isTeamConfirmed = myTeam && state.teams.find(t => t.index === myTeam.index)?.isTaken;
 
     if (isTeamConfirmed) {
-        if (state.gameState === 'box-selection') {
-            if (state.activeTeamIndex === myTeam.index) {
-                renderBoxSelectScreen();
-                showScreen('boxSelect');
-            } else {
-                const activeTeamName = state.teams[state.activeTeamIndex]?.name || 'הקבוצה';
-                questionText.textContent = `ממתינים לקבוצת ${activeTeamName} לבחור תיבה...`;
-                participantControls.classList.add('hidden');
-                waitingMessage.classList.add('hidden');
-                showScreen('game');
-            }
-        } else if (state.gameState === 'question' && state.currentQuestion) {
+        // --- My team selection is confirmed ---
+
+        // If the team select screen is still visible, switch to the game screen.
+        if (screens.teamSelect.offsetParent !== null) {
+            showScreen('game');
+        }
+
+        // Update the UI of the game screen based on the current state.
+        const isMyTurn = (state.activeTeamIndex === myTeam.index);
+        const isQuestionActive = (state.gameState === 'question' && state.currentQuestion);
+
+        if (isQuestionActive) {
             questionText.textContent = state.currentQuestion.q;
-            if (state.activeTeamIndex === myTeam.index) {
+            if (isMyTurn) {
                 participantControls.classList.remove('hidden');
-                stopBtn.disabled = false;
+                stopBtn.disabled = false; // Ensure button is usable
                 waitingMessage.classList.add('hidden');
             } else {
                 participantControls.classList.add('hidden');
                 waitingMessage.classList.remove('hidden');
             }
-            showScreen('game');
         } else {
+            // Not in an active question state (e.g., pre-question, grading, betting).
             questionText.textContent = 'ממתין לשאלה מהמנחה...';
             participantControls.classList.add('hidden');
             waitingMessage.classList.add('hidden');
-            showScreen('game');
         }
     } else {
+        // --- My team is not selected or not yet confirmed ---
+
+        // Always show the team select screen and re-render the teams
+        // to reflect the latest `isTaken` status from the host.
         renderTeamSelectScreen(state);
         showScreen('teamSelect');
     }
@@ -222,33 +311,6 @@ function initializeGameScreen() {
     });
 }
 
-function initializeBoxSelectScreen() {
-    participantChestsContainer.addEventListener('click', async (e) => {
-        const selectedChest = e.target.closest('.treasure-chest');
-        if (!selectedChest || selectedChest.classList.contains('disabled')) return;
-
-        participantChestsContainer.querySelectorAll('.treasure-chest').forEach(chest => {
-            chest.classList.add('disabled');
-            chest.style.pointerEvents = 'none';
-        });
-        
-        boxSelectMessage.textContent = 'שולח בחירה למנחה...';
-        
-        const boxIndex = selectedChest.dataset.chest;
-
-        try {
-            await sendAction(gameCode, {
-                type: 'selectBox',
-                boxIndex: parseInt(boxIndex, 10)
-            });
-            // After sending, the host will change the state, and our updateGameView listener will move us to the next screen.
-        } catch (error) {
-            showNotification('שגיאה בשליחת הבחירה. נסה לרענן.', 'error');
-            boxSelectMessage.textContent = 'שגיאה בשליחת הבחירה.';
-        }
-    });
-}
-
 
 // --- Main Execution ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -256,7 +318,6 @@ document.addEventListener('DOMContentLoaded', () => {
     showScreen('join');
     initializeJoinScreen();
     initializeGameScreen();
-    initializeBoxSelectScreen();
 
     // Clean up subscriptions when the user closes the page
     window.addEventListener('beforeunload', () => {

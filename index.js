@@ -1,8 +1,7 @@
 
-
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen, showSetupScreenForGame } from './js/setup.js';
-import { startGame, initializeScoreControls, adjustScore, switchToNextTeam, startRemoteBoxSelection } from './js/game.js';
+import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
 import { initializePreQuestionScreen } from './js/preq.js';
 import { initializeQuestionScreen, showQuestionScreen, stopTimer } from './js/question.js';
 import { initializeBoxesScreen } from './js/boxes.js';

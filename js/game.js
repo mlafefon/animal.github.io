@@ -4,7 +4,7 @@ import { IMAGE_URLS } from './assets.js';
 import * as gameState from './gameState.js';
 import { subscribeToActions, updateGameSession } from './appwriteService.js';
 import { triggerManualGrading } from './question.js';
-import { showBoxesScreen, revealSelectedBox } from './boxes.js';
+import { triggerChestSelection } from './boxes.js';
 
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
@@ -27,6 +27,59 @@ export const TEAMS_MASTER_DATA = [
 let scoreAnimationId = null;
 
 // --- Private UI Functions ---
+
+/**
+ * Gathers the current game state and broadcasts it to participants via Appwrite.
+ */
+async function broadcastGameState() {
+    const { sessionDocumentId, gameCode, gameName, teams, activeTeamIndex, boxesData } = gameState.getState();
+    if (!sessionDocumentId) return;
+
+    // Determine the high-level state for participants based on visible screens
+    let currentGameState = 'waiting';
+    let questionForParticipant = null;
+    let boxesDataForParticipant = null;
+
+    if (document.getElementById('pre-question-screen').offsetParent !== null) {
+        currentGameState = 'pre-question';
+    } else if (document.getElementById('game-screen').offsetParent !== null && document.getElementById('stop-game-btn').offsetParent !== null) {
+        currentGameState = 'question';
+    } else if (document.getElementById('game-screen').offsetParent !== null) {
+        currentGameState = 'grading';
+    } else if (document.getElementById('boxes-screen').offsetParent !== null) {
+        currentGameState = 'boxes';
+    } else if (document.getElementById('betting-screen').offsetParent !== null) {
+        currentGameState = 'betting';
+    }
+
+    if (currentGameState === 'question' || currentGameState === 'grading') {
+        const q = getCurrentQuestion();
+        questionForParticipant = { q: q.q }; // Only send the question text
+    } else if (currentGameState === 'boxes') {
+        boxesDataForParticipant = boxesData;
+    }
+
+
+    const sessionData = {
+        gameCode,
+        gameName,
+        teams, // This now includes the `isTaken` flag
+        activeTeamIndex,
+        gameState: currentGameState,
+        currentQuestion: questionForParticipant,
+        boxesData: boxesDataForParticipant,
+    };
+
+    try {
+        await updateGameSession(sessionDocumentId, sessionData);
+    } catch (error) {
+        console.error("Failed to broadcast game state:", error);
+    }
+}
+
+// Add a global listener for state changes dispatched from other modules.
+document.addEventListener('gamestatechange', broadcastGameState);
+
 
 /**
  * Animates a number counting up or down in an HTML element.
@@ -132,51 +185,6 @@ function prepareForFinalRound() {
 }
 
 /**
- * Gathers the current game state and broadcasts it to participants via Appwrite.
- */
-async function broadcastGameState() {
-    const state = gameState.getState();
-    const { sessionDocumentId, gameCode, gameName, teams, activeTeamIndex, victoryType } = state;
-    if (!sessionDocumentId) return;
-
-    // Determine the high-level state for participants
-    let currentGameState = 'waiting';
-    if (document.getElementById('boxes-screen').offsetParent !== null && !document.getElementById('return-from-boxes-btn').classList.contains('visible')) {
-        currentGameState = 'box-selection';
-    } else if (document.getElementById('pre-question-screen').offsetParent !== null) {
-        currentGameState = 'pre-question';
-    } else if (document.getElementById('game-screen').offsetParent !== null && document.getElementById('stop-game-btn').offsetParent !== null) {
-        currentGameState = 'question';
-    } else if (document.getElementById('game-screen').offsetParent !== null) {
-        currentGameState = 'grading';
-    } else if (document.getElementById('betting-screen').offsetParent !== null) {
-        currentGameState = 'betting';
-    }
-
-    let questionForParticipant = null;
-    if (currentGameState === 'question') {
-        const q = getCurrentQuestion();
-        questionForParticipant = { q: q.q }; // Only send the question text
-    }
-
-    const sessionData = {
-        gameCode,
-        gameName,
-        teams,
-        activeTeamIndex,
-        gameState: currentGameState,
-        currentQuestion: questionForParticipant,
-        victoryType: victoryType
-    };
-
-    try {
-        await updateGameSession(sessionDocumentId, sessionData);
-    } catch (error) {
-        console.error("Failed to broadcast game state:", error);
-    }
-}
-
-/**
  * Handles actions received from participants via Appwrite Realtime.
  * @param {object} actionPayload - The payload from the `game_actions` document.
  */
@@ -194,13 +202,15 @@ async function handleParticipantAction(actionPayload) {
             }
         } else if (actionData.type === 'stopTimer') {
             if (actionData.teamIndex === currentState.activeTeamIndex) {
+                // Check if the timer is actually running
                 if (document.getElementById('stop-game-btn').offsetParent !== null) {
-                    triggerManualGrading();
+                    triggerManualGrading(); // This function will handle its own broadcast
                 }
             }
-        } else if (actionData.type === 'selectBox') {
-            if (actionData.teamIndex === currentState.activeTeamIndex) {
-                revealSelectedBox(actionData.boxIndex);
+        } else if (actionData.type === 'selectChest') {
+            // Check if it's the active team's turn before accepting the action
+            if (currentState.activeTeamIndex === actionData.teamIndex) {
+                 triggerChestSelection(actionData.chestIndex);
             }
         }
     } catch (error) {
@@ -210,32 +220,6 @@ async function handleParticipantAction(actionPayload) {
 
 
 // --- Public (Exported) Functions ---
-
-/**
- * Initiates the box selection process on the participant's device.
- * @param {string} victoryType - 'victory' or 'half-victory'.
- */
-export function startRemoteBoxSelection(victoryType) {
-    let scores;
-    if (victoryType === 'half-victory') {
-        scores = [5, 10, 15, 20, 25];
-    } else {
-        scores = [10, 20, 30, 40, 50];
-    }
-    
-    for (let i = scores.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [scores[i], scores[j]] = [scores[j], scores[i]];
-    }
-    
-    const state = gameState.getState();
-    state.boxScores = scores.slice(0, 3);
-    state.victoryType = victoryType;
-    // This updates the internal state, but doesn't save to localStorage, which is correct for transient data.
-    
-    showBoxesScreen({ mode: 'waiting', victoryType });
-    broadcastGameState();
-}
 
 /**
  * Clears the saved game state by calling the state module.
@@ -315,12 +299,12 @@ export function adjustScoreForTeam(teamIndex, amount, onAnimationComplete = null
             broadcastGameState(); // Broadcast score change
             if (onAnimationComplete) onAnimationComplete();
         } else {
-            const startScoreForAnim = parseInt(scoreElement.textContent, 10) || 0;
             // Add broadcast to the animation completion callback
             const onCompleteWithBroadcast = () => {
                 broadcastGameState();
                 if (onAnimationComplete) onAnimationComplete();
             };
+            const startScoreForAnim = parseInt(scoreElement.textContent, 10) || 0;
             animateScore(scoreElement, startScoreForAnim, endScore, onCompleteWithBroadcast);
         }
     }
