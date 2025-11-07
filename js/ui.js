@@ -1,22 +1,28 @@
 
 
+let confirmModalResolve = null;
 
 /**
- * --- Global Confirmation Modal ---
- * A promise-based confirmation modal to replace the native `confirm()`.
+ * Initializes the confirmation modal, attaching listeners to all possible buttons.
  */
-let confirmModalResolve = null;
-let _showConfirmModal;
-
 export function initializeConfirmModal() {
     const overlay = document.getElementById('confirm-modal-overlay');
-    const modalText = document.getElementById('confirm-modal-text');
+    const yesNoActions = document.getElementById('confirm-modal-yes-no-actions');
+    const saveActions = document.getElementById('confirm-modal-save-actions');
     const confirmBtn = document.getElementById('confirm-modal-yes-btn');
     const cancelBtn = document.getElementById('confirm-modal-no-btn');
+    const saveBtn = document.getElementById('confirm-modal-save-btn');
+    const dontSaveBtn = document.getElementById('confirm-modal-dont-save-btn');
+    const closeBtn = document.getElementById('close-confirm-modal-btn');
     
-    if (!overlay || !modalText || !confirmBtn || !cancelBtn) return;
+    if (!overlay || !confirmBtn || !cancelBtn || !saveBtn || !dontSaveBtn || !closeBtn) return;
 
-    const hide = () => overlay.classList.add('hidden');
+    const hide = () => {
+        overlay.classList.add('hidden');
+        // Reset to default view for the next call
+        yesNoActions.classList.remove('hidden');
+        saveActions.classList.add('hidden');
+    };
     
     const resolve = (value) => {
         hide();
@@ -28,34 +34,71 @@ export function initializeConfirmModal() {
 
     confirmBtn.addEventListener('click', () => resolve(true));
     cancelBtn.addEventListener('click', () => resolve(false));
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) resolve(false);
-    });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !overlay.classList.contains('hidden')) {
+    saveBtn.addEventListener('click', () => resolve('save'));
+    dontSaveBtn.addEventListener('click', () => resolve('dont_save'));
+    
+    closeBtn.addEventListener('click', () => {
+        if (saveActions && !saveActions.classList.contains('hidden')) {
+            resolve('cancel');
+        } else {
             resolve(false);
         }
     });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            if (saveActions && !saveActions.classList.contains('hidden')) {
+                resolve('cancel');
+            } else {
+                resolve(false);
+            }
+        }
+    });
     
-    // Assign the function to the module-level variable
-    _showConfirmModal = (message) => {
-        modalText.textContent = message;
-        overlay.classList.remove('hidden');
-        confirmBtn.focus();
-        return new Promise((resolve) => {
-            confirmModalResolve = resolve;
-        });
-    };
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !overlay.classList.contains('hidden')) {
+             if (saveActions && !saveActions.classList.contains('hidden')) {
+                resolve('cancel');
+            } else {
+                resolve(false);
+            }
+        }
+    });
 }
 
-// Export a wrapper function that ensures the modal is initialized before use.
-export const showConfirmModal = (message) => {
-    if (!_showConfirmModal) {
-        console.error("Confirm modal has not been initialized.");
-        return Promise.resolve(false); // Fail gracefully
-    }
-    return _showConfirmModal(message);
-};
+/**
+ * Shows a confirmation modal with different button configurations.
+ * @param {string} message The message to display in the modal.
+ * @param {'yes_no' | 'save_flow'} [type='yes_no'] The type of confirmation.
+ * @returns {Promise<boolean | 'save' | 'dont_save' | 'cancel'>} A promise that resolves with the user's choice.
+ */
+export function showConfirmModal(message, type = 'yes_no') {
+    return new Promise((resolve) => {
+        confirmModalResolve = resolve;
+
+        const overlay = document.getElementById('confirm-modal-overlay');
+        const modalTitle = document.getElementById('confirm-modal-title');
+        const modalText = document.getElementById('confirm-modal-text');
+        const yesNoActions = document.getElementById('confirm-modal-yes-no-actions');
+        const saveActions = document.getElementById('confirm-modal-save-actions');
+        
+        modalText.textContent = message;
+
+        if (type === 'save_flow') {
+            modalTitle.textContent = 'שינויים שלא נשמרו';
+            yesNoActions.classList.add('hidden');
+            saveActions.classList.remove('hidden');
+            document.getElementById('confirm-modal-save-btn').focus();
+        } else {
+            modalTitle.textContent = 'אישור פעולה';
+            saveActions.classList.add('hidden');
+            yesNoActions.classList.remove('hidden');
+            document.getElementById('confirm-modal-yes-btn').focus();
+        }
+
+        overlay.classList.remove('hidden');
+    });
+}
 
 
 /**

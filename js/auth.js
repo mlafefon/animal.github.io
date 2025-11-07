@@ -1,6 +1,6 @@
 import { getAccount, login, loginWithGoogle, logout } from './appwriteService.js';
 import { initializeApp } from '../index.js';
-import { showConfirmModal, showNotification } from './ui.js';
+import { showNotification } from './ui.js';
 
 const authScreen = document.getElementById('auth-screen');
 const startScreen = document.getElementById('start-screen');
@@ -9,7 +9,6 @@ const loginForm = document.getElementById('login-form');
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
 const googleLoginBtn = document.getElementById('google-login-btn');
-const logoutBtn = document.getElementById('logout-btn');
 const authError = document.getElementById('auth-error');
 const userGreeting = document.getElementById('user-greeting');
 
@@ -83,34 +82,12 @@ async function handleLogin(e) {
 }
 
 /**
- * Handles the logout process.
- */
-async function handleLogout() {
-    // Check for unsaved changes in the editor before logging out
-    const saveBtn = document.getElementById('toolbar-save-btn');
-    if (saveBtn && saveBtn.classList.contains('unsaved')) {
-        const userConfirmed = await showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך להתנתק? השינויים יאבדו.');
-         if (!userConfirmed) {
-            return; // User cancelled the action
-        }
-    }
-
-    try {
-        await logout();
-        window.location.reload(); // Easiest way to reset all state
-    } catch (error) {
-        console.error('Logout Failed:', error);
-        showNotification('ההתנתקות נכשלה.', 'error');
-    }
-}
-
-/**
  * Initializes all authentication-related event listeners and checks for an existing session.
  */
 export async function initializeAuth() {
     loginForm.addEventListener('submit', handleLogin);
     googleLoginBtn.addEventListener('click', loginWithGoogle);
-    logoutBtn.addEventListener('click', handleLogout);
+    // The logout button listener is now initialized in index.js
 
     try {
         const user = await getAccount();

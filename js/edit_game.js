@@ -34,13 +34,15 @@ const newGameDescriptionInput = document.getElementById('new-game-description');
 const newGameCategorySelect = document.getElementById('new-game-category');
 const newGamePublicCheckbox = document.getElementById('new-game-public');
 const confirmNewGameBtn = document.getElementById('confirm-new-game-btn');
-const cancelNewGameBtn = document.getElementById('cancel-new-game-btn');
+const closeNewGameModalBtn = document.getElementById('close-new-game-modal-btn');
 
 
 // --- State Management ---
 let saveStateTimeout = null;
 let gameDocumentsCache = {}; // Cache for all fetched game documents
 let gameDataToDuplicate = null;
+let userAcknowledgedUnsavedChanges = false;
+
 
 /**
  * Sets the visual and functional state of the save button.
@@ -69,6 +71,7 @@ function setUnsavedState(isUnsaved) {
     } else {
         toolbarSaveBtn.classList.remove('unsaved');
         toolbarSaveBtn.disabled = true; // Disable on load or after save
+        userAcknowledgedUnsavedChanges = false; // Reset acknowledgment when changes are no longer unsaved
     }
 }
 
@@ -82,6 +85,7 @@ function showSavedState() {
     toolbarSaveBtn.classList.add('saved'); // Show the green checkmark
     toolbarSaveBtn.title = 'נשמר!';
     toolbarSaveBtn.disabled = true; // Keep it disabled
+    userAcknowledgedUnsavedChanges = false; // Reset on successful save
 
     // Set a timeout to remove the 'saved' visual, reverting to the default disabled state.
     saveStateTimeout = setTimeout(() => {
@@ -648,35 +652,140 @@ export async function showEditScreen() {
 }
 
 /**
+ * A central handler for actions that might discard unsaved changes.
+ * It shows a modal with "Save", "Don't Save", and "Cancel" options.
+ * @param {function} actionCallback The function to execute if the user decides to proceed.
+ */
+export async function checkForUnsavedChangesAndProceed(actionCallback) {
+    const isUnsaved = toolbarSaveBtn.classList.contains('unsaved');
+    const isEditorVisible = !editGameScreen.classList.contains('hidden');
+
+    if (!isEditorVisible || !isUnsaved || userAcknowledgedUnsavedChanges) {
+        if (actionCallback) actionCallback();
+        return;
+    }
+
+    const result = await showConfirmModal('יש לך שינויים שלא נשמרו. מה ברצונך לעשות?', 'save_flow');
+
+    switch (result) {
+        case 'save':
+            const wasSaveSuccessful = await handleSave();
+            if (wasSaveSuccessful && actionCallback) {
+                actionCallback();
+            }
+            break;
+        case 'dont_save':
+            userAcknowledgedUnsavedChanges = true;
+            if (actionCallback) actionCallback();
+            break;
+        case 'cancel':
+        case false:
+        default:
+            // Do nothing, user stays on the page.
+            break;
+    }
+}
+
+/**
+ * The logic for saving the game, extracted into a reusable async function.
+ * @returns {Promise<boolean>} A promise that resolves to true on success, false on failure.
+ */
+async function handleSave() {
+    const documentId = gameEditorForm.dataset.documentId;
+    if (!documentId) {
+        showNotification('לא נבחר משחק לשמירה.', 'info');
+        return false;
+    }
+    const gameName = gameNameInput.value.trim();
+    if (!gameName) {
+        showNotification('יש להזין שם למשחק.', 'error');
+        return false;
+    }
+    const description = gameDescriptionInput.value.trim();
+    const categoryId = gameCategorySelect.value;
+    const isPublic = gamePublicCheckbox.checked;
+    const gameData = compileGameData();
+    
+    try {
+        toolbarSaveBtn.disabled = true;
+        await updateGame(documentId, gameName, description, categoryId, gameData, isPublic);
+        showSavedState();
+        showNotification('המשחק נשמר בהצלחה!', 'success');
+        const currentCategoryId = categoryListContainer.querySelector('.selected')?.dataset.categoryId;
+        await populateGameList(currentCategoryId === 'all' ? null : currentCategoryId);
+        const liToSelect = gameListUl.querySelector(`li[data-document-id="${documentId}"]`);
+        if(liToSelect) liToSelect.classList.add('selected');
+        return true;
+    } catch (e) {
+        toolbarSaveBtn.disabled = false;
+        return false;
+    }
+}
+
+/**
  * Initializes all event listeners for the edit game screen.
  */
 export function initializeEditGameScreen() {
-    categoryListContainer.addEventListener('click', async (e) => {
+    categoryListContainer.addEventListener('click', (e) => {
         const selectedCard = e.target.closest('.category-card');
-        if (!selectedCard) return;
+        if (!selectedCard || selectedCard.classList.contains('selected')) return;
 
-        // Prevent re-triggering if the same category is clicked again
-        if (selectedCard.classList.contains('selected')) {
-            return;
-        }
-
-        if (toolbarSaveBtn.classList.contains('unsaved')) {
-            const userConfirmed = await showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך להחליף קטגוריה? השינויים יאבדו.');
-            if (!userConfirmed) {
-                return; // User cancelled, do nothing
-            }
-        }
-
-        categoryListContainer.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
-        selectedCard.classList.add('selected');
-        const categoryId = selectedCard.dataset.categoryId;
-        populateGameList(categoryId === 'all' ? null : categoryId);
-        loadGameForEditing(null);
+        const proceed = () => {
+            categoryListContainer.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+            selectedCard.classList.add('selected');
+            const categoryId = selectedCard.dataset.categoryId;
+            populateGameList(categoryId === 'all' ? null : categoryId);
+            loadGameForEditing(null);
+        };
+        checkForUnsavedChangesAndProceed(proceed);
     });
 
+    gameListUl.addEventListener('click', (e) => {
+        const selectedLi = e.target.closest('li');
+        if (!selectedLi || !selectedLi.dataset.documentId || selectedLi.classList.contains('selected')) return;
+
+        const proceed = () => {
+            gameListUl.querySelectorAll('li').forEach(li => li.classList.remove('selected'));
+            selectedLi.classList.add('selected');
+            const gameDoc = gameDocumentsCache[selectedLi.dataset.documentId];
+            loadGameForEditing(gameDoc);
+        };
+        checkForUnsavedChangesAndProceed(proceed);
+    });
+
+    playSelectedGameBtn.addEventListener('click', () => {
+        const proceed = () => {
+            const selectedLi = gameListUl.querySelector('li.selected');
+            if(!selectedLi) {
+                showNotification('יש לבחור משחק תחילה.', 'info');
+                return;
+            }
+            const gameDoc = gameDocumentsCache[selectedLi.dataset.documentId];
+            editGameScreen.classList.add('hidden');
+            document.getElementById('global-header').classList.add('hidden');
+            showSetupScreenForGame(gameDoc);
+        };
+        checkForUnsavedChangesAndProceed(proceed);
+    });
+
+    createNewGameBtn.addEventListener('click', () => {
+        const proceed = () => {
+            const selectedCategoryCard = categoryListContainer.querySelector('.category-card.selected');
+            const selectedCategoryId = selectedCategoryCard ? selectedCategoryCard.dataset.categoryId : null;
+
+            if (selectedCategoryId && selectedCategoryId !== 'all') {
+                newGameCategorySelect.value = selectedCategoryId;
+            } else if (newGameCategorySelect.options.length > 0) {
+                newGameCategorySelect.selectedIndex = 0;
+            }
+            newGameModalOverlay.classList.remove('hidden');
+            newGameNameInput.focus();
+        };
+        checkForUnsavedChangesAndProceed(proceed);
+    });
+
+
     // --- Link Preview Listeners ---
-    
-    // Handles enabling/disabling the preview button as the user types in a URL field.
     gameEditorForm.addEventListener('input', (e) => {
         const input = e.target;
         if (input.matches('input[type="url"]')) {
@@ -684,14 +793,12 @@ export function initializeEditGameScreen() {
             if (wrapper) {
                 const previewBtn = wrapper.querySelector('.preview-link-btn');
                 if (previewBtn) {
-                    // Disable if input is empty or the URL is invalid.
                     previewBtn.disabled = !input.value.trim() || !input.checkValidity();
                 }
             }
         }
     });
 
-    // Handles clicking the preview button to open the link modal.
     editGameScreen.addEventListener('click', (e) => {
         const previewBtn = e.target.closest('.preview-link-btn');
         if (previewBtn && !previewBtn.disabled) {
@@ -700,49 +807,6 @@ export function initializeEditGameScreen() {
                 showLinkModal(urlInput.value);
             }
         }
-    });
-
-    gameListUl.addEventListener('click', async (e) => {
-        const selectedLi = e.target.closest('li');
-        if (!selectedLi || !selectedLi.dataset.documentId) return;
-
-        // Prevent re-loading the same game, which could discard unsaved changes without warning.
-        if (selectedLi.classList.contains('selected')) {
-            return;
-        }
-
-        // Check if the save button indicates unsaved changes
-        if (toolbarSaveBtn.classList.contains('unsaved')) {
-            const userConfirmed = await showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לטעון משחק אחר? השינויים יאבדו.');
-            if (!userConfirmed) {
-                return; // User cancelled, do nothing
-            }
-        }
-
-        // If no unsaved changes or user confirmed, proceed
-        gameListUl.querySelectorAll('li').forEach(li => li.classList.remove('selected'));
-        selectedLi.classList.add('selected');
-
-        const gameDoc = gameDocumentsCache[selectedLi.dataset.documentId];
-        loadGameForEditing(gameDoc);
-    });
-
-    playSelectedGameBtn.addEventListener('click', async () => {
-        if (toolbarSaveBtn.classList.contains('unsaved')) {
-            const userConfirmed = await showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לשחק במשחק? השינויים בעורך יאבדו.');
-            if (!userConfirmed) {
-                return;
-            }
-        }
-        const selectedLi = gameListUl.querySelector('li.selected');
-        if(!selectedLi) {
-            showNotification('יש לבחור משחק תחילה.', 'info');
-            return;
-        }
-        const gameDoc = gameDocumentsCache[selectedLi.dataset.documentId];
-        editGameScreen.classList.add('hidden');
-        document.getElementById('global-header').classList.add('hidden'); // Hide header when starting a game
-        showSetupScreenForGame(gameDoc);
     });
 
     gameEditorForm.addEventListener('input', () => setUnsavedState(true));
@@ -760,7 +824,6 @@ export function initializeEditGameScreen() {
         updateToggleAllButtonState();
         setUnsavedState(true);
     
-        // Expand, scroll to, and focus the new card
         expandCard(newCard);
         newCard.scrollIntoView({ behavior: 'smooth', block: 'end' });
         const questionInput = newCard.querySelector('.question-input');
@@ -769,42 +832,11 @@ export function initializeEditGameScreen() {
         }
     });
 
-    toolbarSaveBtn.addEventListener('click', async () => {
-        const documentId = gameEditorForm.dataset.documentId;
-        if (!documentId) {
-            showNotification('לא נבחר משחק לשמירה.', 'info');
-            return;
-        }
-        const gameName = gameNameInput.value.trim();
-        if (!gameName) {
-            showNotification('יש להזין שם למשחק.', 'error');
-            return;
-        }
-        const description = gameDescriptionInput.value.trim();
-        const categoryId = gameCategorySelect.value;
-        const isPublic = gamePublicCheckbox.checked;
-        const gameData = compileGameData();
-        
-        try {
-            toolbarSaveBtn.disabled = true; // Disable button during save operation
-            await updateGame(documentId, gameName, description, categoryId, gameData, isPublic);
-            showSavedState();
-            showNotification('המשחק נשמר בהצלחה!', 'success');
-            const currentCategoryId = categoryListContainer.querySelector('.selected')?.dataset.categoryId;
-            await populateGameList(currentCategoryId === 'all' ? null : currentCategoryId);
-            const liToSelect = gameListUl.querySelector(`li[data-document-id="${documentId}"]`);
-            if(liToSelect) liToSelect.classList.add('selected');
-
-        } catch (e) {
-            // Error is logged and notification is shown by appwriteService.
-            toolbarSaveBtn.disabled = false; // Re-enable button on failure
-        }
-    });
+    toolbarSaveBtn.addEventListener('click', handleSave);
 
     toolbarDeleteBtn.addEventListener('click', async () => {
         const documentId = gameEditorForm.dataset.documentId;
         const gameName = gameNameInput.value.trim();
-
         if (!documentId) return;
         
         const userConfirmed = await showConfirmModal(`האם אתה בטוח שברצונך למחוק את המשחק "${gameName}"? לא ניתן לשחזר פעולה זו.`);
@@ -844,64 +876,35 @@ export function initializeEditGameScreen() {
         }
     });
 
-    createNewGameBtn.addEventListener('click', async () => {
-        if (toolbarSaveBtn.classList.contains('unsaved')) {
-            const userConfirmed = await showConfirmModal('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך ליצור משחק חדש? השינויים הנוכחיים יאבדו.');
-            if (!userConfirmed) {
+    duplicateSelectedGameBtn.addEventListener('click', () => {
+        const proceed = () => {
+            const selectedLi = gameListUl.querySelector('li.selected');
+            if (!selectedLi) {
+                showNotification('יש לבחור משחק לשכפול.', 'info');
                 return;
             }
-        }
-        // Find the currently selected category in the main panel
-        const selectedCategoryCard = categoryListContainer.querySelector('.category-card.selected');
-        const selectedCategoryId = selectedCategoryCard ? selectedCategoryCard.dataset.categoryId : null;
-
-        // Pre-select the category in the modal's dropdown
-        if (selectedCategoryId && selectedCategoryId !== 'all') {
-            newGameCategorySelect.value = selectedCategoryId;
-        } else {
-            // If 'All' is selected or nothing is selected, default to the first actual category
-            if (newGameCategorySelect.options.length > 0) {
-                newGameCategorySelect.selectedIndex = 0;
+            const gameDoc = gameDocumentsCache[selectedLi.dataset.documentId];
+            if (!gameDoc) return;
+            try {
+                gameDataToDuplicate = JSON.parse(gameDoc.game_data);
+            } catch(e) {
+                showNotification('שגיאה בנתוני המשחק המקורי.', 'error');
+                gameDataToDuplicate = null;
+                return;
             }
-        }
-
-        newGameModalOverlay.classList.remove('hidden');
-        newGameNameInput.focus();
-    });
-
-    duplicateSelectedGameBtn.addEventListener('click', () => {
-        const selectedLi = gameListUl.querySelector('li.selected');
-        if (!selectedLi) {
-            showNotification('יש לבחור משחק לשכפול.', 'info');
-            return;
-        }
-
-        const gameDoc = gameDocumentsCache[selectedLi.dataset.documentId];
-        if (!gameDoc) return;
-
-        // Store the game data for the creation step
-        try {
-            gameDataToDuplicate = JSON.parse(gameDoc.game_data);
-        } catch(e) {
-            showNotification('שגיאה בנתוני המשחק המקורי.', 'error');
-            gameDataToDuplicate = null; // Reset on error
-            return;
-        }
-
-        // Pre-fill the modal
-        newGameNameInput.value = `עותק של ${gameDoc.game_name}`;
-        newGameDescriptionInput.value = gameDoc.description || '';
-        newGameCategorySelect.value = gameDoc.categoryId || '';
-        newGamePublicCheckbox.checked = gameDoc.is_public || false;
-        
-        // Show the modal
-        newGameModalOverlay.classList.remove('hidden');
-        newGameNameInput.focus();
-        newGameNameInput.select(); // Select the text for easy renaming
+            newGameNameInput.value = `עותק של ${gameDoc.game_name}`;
+            newGameDescriptionInput.value = gameDoc.description || '';
+            newGameCategorySelect.value = gameDoc.categoryId || '';
+            newGamePublicCheckbox.checked = gameDoc.is_public || false;
+            newGameModalOverlay.classList.remove('hidden');
+            newGameNameInput.focus();
+            newGameNameInput.select();
+        };
+        checkForUnsavedChangesAndProceed(proceed);
     });
 
 
-    cancelNewGameBtn.addEventListener('click', () => {
+    closeNewGameModalBtn.addEventListener('click', () => {
         newGameModalOverlay.classList.add('hidden');
         gameDataToDuplicate = null;
     });

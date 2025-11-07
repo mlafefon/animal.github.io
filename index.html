@@ -344,6 +344,7 @@
 
         <div id="new-game-modal-overlay" class="hidden">
             <div id="new-game-modal">
+                <button id="close-new-game-modal-btn" class="modal-close-btn" title="סגור"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
                 <h2>יצירת משחק חדש</h2>
                 <div class="form-group">
                     <label for="new-game-name">שם המשחק:</label>
@@ -368,7 +369,6 @@
                 </div>
                 <div class="modal-actions">
                     <button id="confirm-new-game-btn" class="btn btn-primary btn-small">צור</button>
-                    <button id="cancel-new-game-btn" class="btn btn-secondary btn-small">בטל</button>
                 </div>
             </div>
         </div>
@@ -377,11 +377,16 @@
     <!-- Confirmation Modal -->
     <div id="confirm-modal-overlay" class="hidden">
         <div id="confirm-modal">
+            <button id="close-confirm-modal-btn" class="modal-close-btn" title="סגור"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
             <h2 id="confirm-modal-title">אישור פעולה</h2>
             <p id="confirm-modal-text"></p>
-            <div class="modal-actions">
+            <div class="modal-actions" id="confirm-modal-yes-no-actions">
                 <button id="confirm-modal-yes-btn" class="btn btn-primary btn-small">כן</button>
                 <button id="confirm-modal-no-btn" class="btn btn-secondary btn-small">לא</button>
+            </div>
+            <div class="modal-actions hidden" id="confirm-modal-save-actions">
+                <button id="confirm-modal-save-btn" class="btn btn-primary btn-small">שמור</button>
+                <button id="confirm-modal-dont-save-btn" class="btn btn-danger btn-small">אל תשמור</button>
             </div>
         </div>
     </div>
@@ -389,18 +394,18 @@
     <!-- Pass Question Modal -->
     <div id="pass-question-modal-overlay" class="hidden">
         <div id="pass-question-modal">
+            <button id="close-pass-question-modal-btn" class="modal-close-btn" title="סגור"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
             <h2>בחר קבוצה להעביר אליה את השאלה</h2>
             <div id="pass-question-teams-container">
                 <!-- Team icons will be injected here by JS -->
             </div>
-            <button id="cancel-pass-question-btn" class="btn btn-secondary btn-small">בטל</button>
         </div>
     </div>
 
     <!-- Link Modal -->
     <div id="link-modal-overlay" class="hidden">
         <div id="link-modal">
-            <button id="close-link-modal-btn" title="סגור">
+            <button id="close-link-modal-btn" class="modal-close-btn" title="סגור">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </button>
             <div class="link-modal-content">
@@ -413,7 +418,7 @@
     <!-- Question Preview Modal -->
     <div id="question-preview-modal-overlay" class="hidden">
         <div id="question-preview-modal">
-            <button id="close-question-preview-modal-btn" title="סגור">
+            <button id="close-question-preview-modal-btn" class="modal-close-btn" title="סגור">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </button>
             <div class="question-preview-content">

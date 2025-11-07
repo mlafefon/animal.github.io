@@ -2196,6 +2196,7 @@ input:disabled + .slider:before {
     display: flex;
     flex-direction: column;
     gap: 1.5625rem;
+    position: relative;
 }
 
 #new-game-modal h2 {
@@ -2268,6 +2269,7 @@ input:disabled + .slider:before {
     flex-direction: column;
     gap: 1.25rem;
     text-align: center;
+    position: relative;
 }
 
 #confirm-modal h2 {
@@ -2281,6 +2283,11 @@ input:disabled + .slider:before {
     line-height: 1.6;
     color: #f0f8ff;
 }
+
+#confirm-modal .modal-actions button {
+    flex: 1;
+}
+
 
 /* --- Pass Question Modal --- */
 #pass-question-modal-overlay {
@@ -2308,6 +2315,7 @@ input:disabled + .slider:before {
     flex-direction: column;
     gap: 1.875rem;
     text-align: center;
+    position: relative;
 }
 
 #pass-question-modal h2 {
@@ -2429,35 +2437,7 @@ input:disabled + .slider:before {
     position: relative;
     padding: 0.625rem;
 }
-#close-link-modal-btn {
-    position: absolute;
-    top: -1.25rem;
-    right: -1.25rem; /* For RTL */
-    width: 2.8rem;
-    height: 2.8rem;
-    border-radius: 50%;
-    border: 2px solid white;
-    background-color: #e74c3c;
-    color: white;
-    font-size: 1.5rem;
-    font-weight: bold;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10;
-    padding: 0;
-    transition: transform 0.2s, background-color 0.2s;
-}
-#close-link-modal-btn:hover {
-    transform: scale(1.1) rotate(90deg);
-    background-color: #c0392b;
-}
-#close-link-modal-btn svg {
-    width: 1.5rem;
-    height: 1.5rem;
-    fill: white;
-}
+
 .link-modal-content {
     flex-grow: 1;
     position: relative;
@@ -2494,6 +2474,36 @@ input:disabled + .slider:before {
     }
 }
 
+/* --- Generic Modal Close Button --- */
+.modal-close-btn {
+    position: absolute;
+    top: -1.25rem;
+    right: -1.25rem;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 50%;
+    border: 2px solid white;
+    background-color: #e74c3c;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    padding: 0;
+    transition: transform 0.2s, background-color 0.2s;
+}
+.modal-close-btn:hover {
+    transform: scale(1.1) rotate(90deg);
+    background-color: #c0392b;
+}
+.modal-close-btn svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    fill: white;
+}
+
+
 /* --- Question Preview Modal --- */
 #question-preview-modal-overlay {
     position: fixed;
@@ -2513,33 +2523,6 @@ input:disabled + .slider:before {
     box-shadow: 0 0.625rem 2.5rem rgba(0, 0, 0, 0.5);
     position: relative;
     padding: 2.5rem;
-}
-#close-question-preview-modal-btn {
-    position: absolute;
-    top: -1.25rem;
-    right: -1.25rem; /* For RTL */
-    width: 2.8rem;
-    height: 2.8rem;
-    border-radius: 50%;
-    border: 2px solid white;
-    background-color: #e74c3c;
-    color: white;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10;
-    padding: 0;
-    transition: transform 0.2s, background-color 0.2s;
-}
-#close-question-preview-modal-btn:hover {
-    transform: scale(1.1) rotate(90deg);
-    background-color: #c0392b;
-}
-#close-question-preview-modal-btn svg {
-    width: 1.5rem;
-    height: 1.5rem;
-    fill: white;
 }
 .question-preview-content {
     display: flex;

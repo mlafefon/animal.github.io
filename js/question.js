@@ -23,7 +23,7 @@ const failureBoxBtn = document.getElementById('failure-box-btn');
 const passQuestionBtn = document.getElementById('pass-question-btn');
 const passQuestionModalOverlay = document.getElementById('pass-question-modal-overlay');
 const passQuestionTeamsContainer = document.getElementById('pass-question-teams-container');
-const cancelPassQuestionBtn = document.getElementById('cancel-pass-question-btn');
+const closePassQuestionModalBtn = document.getElementById('close-pass-question-modal-btn');
 const undoAnswerChoiceBtn = document.getElementById('undo-answer-choice-btn');
 const mainGameFooter = document.getElementById('main-game-footer');
 
@@ -401,7 +401,7 @@ export function initializeQuestionScreen(onComplete) {
         passQuestionModalOverlay.classList.remove('hidden');
     });
 
-    cancelPassQuestionBtn.addEventListener('click', () => {
+    closePassQuestionModalBtn.addEventListener('click', () => {
         passQuestionModalOverlay.classList.add('hidden');
     });
 
