@@ -103,43 +103,55 @@ async function handleTeamSelection(teamIndex) {
          teamSelectError.textContent = 'שגיאה בבחירת קבוצה. נסה שוב.';
          teamSelectError.classList.remove('hidden');
          // Re-enable buttons on error
-         initializeTeamSelectScreen(currentHostState);
+         renderTeamSelectScreen(currentHostState);
     }
 }
 
+/**
+ * The main UI update function, driven by state changes from the host.
+ * @param {object} state - The latest sessionData from the host.
+ */
 function updateGameView(state) {
-    currentHostState = state; // Update global state
+    currentHostState = state; // Always keep the latest state
 
-    // If I have selected a team, I should be on the game screen.
-    if (myTeam) {
-        // Find my team in the new state to check if I was the one who selected it.
-        const myTeamInNewState = state.teams.find(t => t.index === myTeam.index);
-        if (myTeamInNewState && myTeamInNewState.isTaken && screens.teamSelect.offsetParent !== null) {
-             showScreen('game');
+    // Determine if my team selection has been confirmed by the host.
+    const isTeamConfirmed = myTeam && state.teams.find(t => t.index === myTeam.index)?.isTaken;
+
+    if (isTeamConfirmed) {
+        // --- My team selection is confirmed ---
+
+        // If the team select screen is still visible, switch to the game screen.
+        if (screens.teamSelect.offsetParent !== null) {
+            showScreen('game');
         }
 
+        // Update the UI of the game screen based on the current state.
         const isMyTurn = (state.activeTeamIndex === myTeam.index);
         const isQuestionActive = (state.gameState === 'question' && state.currentQuestion);
 
         if (isQuestionActive) {
             questionText.textContent = state.currentQuestion.q;
-            
-            if(isMyTurn) {
+            if (isMyTurn) {
                 participantControls.classList.remove('hidden');
+                stopBtn.disabled = false; // Ensure button is usable
                 waitingMessage.classList.add('hidden');
             } else {
                 participantControls.classList.add('hidden');
                 waitingMessage.classList.remove('hidden');
             }
         } else {
+            // Not in an active question state (e.g., pre-question, grading, betting).
             questionText.textContent = 'ממתין לשאלה מהמנחה...';
             participantControls.classList.add('hidden');
             waitingMessage.classList.add('hidden');
         }
     } else {
-        // If I haven't selected a team, I should be on the team select screen.
-        // Re-render it with the latest team taken status.
+        // --- My team is not selected or not yet confirmed ---
+
+        // Always show the team select screen and re-render the teams
+        // to reflect the latest `isTaken` status from the host.
         renderTeamSelectScreen(state);
+        showScreen('teamSelect');
     }
 }
 
@@ -175,7 +187,6 @@ function initializeJoinScreen() {
             
             // Initial render and switch to team select screen
             updateGameView(sessionData);
-            showScreen('teamSelect');
 
         } catch (error) {
             console.error("Failed to join game:", error);
