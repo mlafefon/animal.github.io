@@ -15,6 +15,58 @@ let selectedGameData = null;
 
 
 /**
+ * Creates or updates the session state in localStorage for participants to see.
+ * This function preserves the 'isTaken' status of teams if the session already exists.
+ */
+function createOrUpdateParticipantSession() {
+    if (!selectedGameDocument || !selectedGameDocument.gameCode) return;
+
+    const gameCode = selectedGameDocument.gameCode;
+    const gameName = selectedGameDocument.game_name;
+    const selectedGroup = groupList.querySelector('.selected');
+    const numberOfGroups = selectedGroup ? parseInt(selectedGroup.textContent, 10) : 4;
+
+    const teamsForParticipants = [];
+    for (let i = 0; i < numberOfGroups; i++) {
+        const teamMaster = TEAMS_MASTER_DATA[i % TEAMS_MASTER_DATA.length];
+        teamsForParticipants.push({
+            index: i,
+            name: teamMaster.name,
+            icon: teamMaster.icon,
+            isTaken: false
+        });
+    }
+
+    const sessionKey = `animalGameSession_${gameCode}`;
+    const existingSessionJSON = localStorage.getItem(sessionKey);
+    let gameState = 'setup';
+
+    if (existingSessionJSON) {
+        const existingSession = JSON.parse(existingSessionJSON);
+        // Preserve isTaken status if host changes number of teams
+        if (existingSession.teams) {
+            teamsForParticipants.forEach(newTeam => {
+                const oldTeam = existingSession.teams.find(t => t.index === newTeam.index);
+                if (oldTeam && oldTeam.isTaken) {
+                    newTeam.isTaken = true;
+                }
+            });
+        }
+        if (existingSession.gameState && existingSession.gameState !== 'setup') {
+            gameState = existingSession.gameState;
+        }
+    }
+
+    const newSessionState = {
+        gameCode: gameCode,
+        gameName: gameName,
+        teams: teamsForParticipants,
+        gameState: gameState,
+    };
+    localStorage.setItem(sessionKey, JSON.stringify(newSessionState));
+}
+
+/**
  * Updates the UI with the number of questions in the bank and the calculated
  * number of questions that will actually be used in the game. It also enables/disables
  * the start button based on the number of actual questions.
@@ -131,6 +183,7 @@ export function showSetupScreenForGame(gameDoc) {
     refreshSetupScreenState(); // Handles the "continue" checkbox state
     setupScreen.classList.remove('hidden');
     updateQuestionStats();
+    createOrUpdateParticipantSession(); // Create session as soon as code is visible
 }
 
 
@@ -157,6 +210,7 @@ export function initializeSetupScreen(onStart) {
     groupList.addEventListener('click', (e) => {
         handleSelection(groupList, e);
         updateQuestionStats();
+        createOrUpdateParticipantSession(); // Update session on group change
     });
 
     const gameCodeDisplay = document.getElementById('game-code-display');
@@ -195,30 +249,10 @@ export function initializeSetupScreen(onStart) {
         const gameDataString = selectedGameDocument ? selectedGameDocument.game_data : '{}';
         const gameName = selectedGameDocument ? selectedGameDocument.game_name : '';
         const gameCode = selectedGameDocument ? selectedGameDocument.gameCode : null;
-
-        // Create initial state for participants in localStorage
-        if (gameCode) {
-            const teamsForParticipants = [];
-            for (let i = 0; i < numberOfGroups; i++) {
-                const teamMaster = TEAMS_MASTER_DATA[i % TEAMS_MASTER_DATA.length];
-                teamsForParticipants.push({
-                    index: i,
-                    name: teamMaster.name,
-                    icon: teamMaster.icon,
-                    isTaken: false
-                });
-            }
-            const initialState = {
-                gameCode: gameCode,
-                gameName: gameName,
-                teams: teamsForParticipants,
-                gameState: 'setup' // Initial state for participants
-            };
-            localStorage.setItem(`animalGameSession_${gameCode}`, JSON.stringify(initialState));
-        }
-
+        
         const shuffleQuestions = document.getElementById('shuffle-questions').checked;
         
+        // The participant session is already created/updated. Just start the game.
         onStart({ numberOfGroups, documentId, gameDataString, shuffleQuestions, actualQuestions, continueLastPoint, gameName, gameCode });
     });
 }
