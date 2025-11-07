@@ -51,17 +51,29 @@
             <p>ממתינים לתורכם...</p>
         </div>
     </div>
-    
-    <div id="participant-boxes-screen" class="hidden">
-        <div class="boxes-content">
-            <h1 id="participant-boxes-title"></h1>
+
+    <div id="box-select-screen" class="container hidden">
+        <div class="participant-container">
+            <h1>תורכם לבחור תיבה!</h1>
+            <p>בחרו תיבה אחת כדי לגלות את הניקוד שלכם.</p>
             <div id="participant-chests-container" class="chests-container">
-                <!-- Chests injected by JS -->
+                <div class="treasure-chest" data-chest="1">
+                    <img src="https://fra.cloud.appwrite.io/v1/storage/buckets/6907a2590030f0e8ed04/files/6907a581002d5279cb02/view?project=690655370021dba8ada1" alt="Treasure Chest 1">
+                    <span>1</span>
+                </div>
+                <div class="treasure-chest" data-chest="2">
+                    <img src="https://fra.cloud.appwrite.io/v1/storage/buckets/6907a2590030f0e8ed04/files/6907a581002d5279cb02/view?project=690655370021dba8ada1" alt="Treasure Chest 2">
+                    <span>2</span>
+                </div>
+                <div class="treasure-chest" data-chest="3">
+                    <img src="https://fra.cloud.appwrite.io/v1/storage/buckets/6907a2590030f0e8ed04/files/6907a581002d5279cb02/view?project=690655370021dba8ada1" alt="Treasure Chest 3">
+                    <span>3</span>
+                </div>
             </div>
-            <p id="participant-boxes-message"></p>
+            <p id="box-select-message"></p>
         </div>
     </div>
-
+    
     <div id="notification-toast"></div>
 
     <script src="participant.js" type="module"></script>

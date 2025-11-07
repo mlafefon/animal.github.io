@@ -33,7 +33,8 @@ function _resetInternalState() {
         options: {},
         gameCode: null,
         sessionDocumentId: null, // To store the Appwrite document ID
-        boxesData: null, // To store state for the boxes screen
+        boxScores: [], // To hold scores for remote box selection
+        victoryType: 'victory',
     };
 }
 
@@ -178,14 +179,5 @@ export function setIsQuestionPassed(value) {
  */
 export function setTeams(teamsArray) {
     _state.teams = teamsArray;
-    _saveState();
-}
-
-/**
- * Updates the data specific to the boxes screen.
- * @param {object} data - The boxes screen data { mode, scores, selectedChestIndex }.
- */
-export function setBoxesData(data) {
-    _state.boxesData = data;
     _saveState();
 }

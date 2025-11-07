@@ -13,16 +13,7 @@ let chestSelected = false;
 
 import { IMAGE_URLS } from './assets.js';
 import { playSound } from './audio.js';
-import { setBoxesData, getState } from './gameState.js';
-
-
-/**
- * Dispatches a custom event to signal that the game state has changed
- * and needs to be broadcast to participants.
- */
-function notifyStateChange() {
-    document.dispatchEvent(new CustomEvent('gamestatechange'));
-}
+import * as gameState from './gameState.js';
 
 
 /**
@@ -59,38 +50,19 @@ function resetBoxesScreen() {
 }
 
 /**
- * Handles the selection of a treasure chest.
- * @param {Event} event - The click event from the chest.
+ * Handles the logic for revealing all chests after one has been selected.
+ * @param {HTMLElement} selectedChest The chest element that was chosen.
  */
-async function handleChestClick(event) {
-    const currentState = getState();
-    if (chestSelected || (currentState.boxesData && currentState.boxesData.selectedChestIndex !== null)) {
-        return; // Prevent multiple selections
-    }
-    chestSelected = true;
-
-    const selectedChest = event.currentTarget;
+async function revealAllChests(selectedChest) {
     const score = parseInt(selectedChest.dataset.score, 10);
-    const chestIndex = Array.from(treasureChests).indexOf(selectedChest);
 
-    // Update state to show the selection and broadcast to participants
-    const newBoxesData = { ...currentState.boxesData, selectedChestIndex: chestIndex };
-    setBoxesData(newBoxesData);
-    notifyStateChange();
-
-    // This function will be called once the score animation finishes.
     const showReturnButton = () => {
         returnBtn.classList.add('visible');
-        // We use a nested setTimeout with a 0ms delay. This pushes the focus() call
-        // to the end of the browser's event queue, ensuring it runs *after* the
-        // browser has processed the style changes from adding the '.visible' class.
-        // This makes the element focusable just before we try to focus it.
         setTimeout(() => {
             returnBtn.focus();
         }, 0);
     };
 
-    // Change image to open chest
     const selectedImg = selectedChest.querySelector('img');
     if (score < 0) {
         selectedImg.src = IMAGE_URLS.CHEST_BROKEN;
@@ -99,16 +71,11 @@ async function handleChestClick(event) {
     }
     selectedImg.style.transform = 'scale(1.1)';
 
-    // Mark the selected chest and disable others
     selectedChest.classList.add('selected');
     treasureChests.forEach(chest => {
-        // Hide chest number
         chest.querySelector('span').style.display = 'none';
-
-        // Reveal the score above the chest
         const scoreDiv = document.createElement('div');
         scoreDiv.className = 'score-reveal-above';
-        // Use Left-to-Right Mark (LRM) character to ensure minus sign is on the left in RTL.
         scoreDiv.textContent = `\u200e${chest.dataset.score}`;
         chest.appendChild(scoreDiv);
 
@@ -119,83 +86,86 @@ async function handleChestClick(event) {
         }
     });
 
-    // Use LRM character for the message as well.
     boxesMessage.textContent = `הניקוד שהתקבל: \u200e${score} נקודות`;
 
-    // Play sound and then trigger score animation. The timing depends on the outcome.
     if (score < 0) {
-        // For failure, wait for the failure sound to end before starting the score animation.
         await playSound('failure');
         if (onBoxesCompleteCallback) {
             onBoxesCompleteCallback(score, showReturnButton);
         }
     } else {
-        // For victory, play the sound and start the score animation after a fixed delay.
         playSound('chestOpen');
-        const soundDelay = 1500;
         setTimeout(() => {
             if (onBoxesCompleteCallback) {
                 onBoxesCompleteCallback(score, showReturnButton);
             }
-        }, soundDelay);
+        }, 1500);
     }
 }
 
-/**
- * Programmatically triggers a click on a specific chest, used for participant selections.
- * @param {number} chestIndex The index of the chest to click (0, 1, or 2).
- */
-export function triggerChestSelection(chestIndex) {
-    if (chestIndex >= 0 && chestIndex < treasureChests.length) {
-        const chestToClick = treasureChests[chestIndex];
-        if (chestToClick && !chestToClick.classList.contains('disabled')) {
-            chestToClick.click();
-        }
-    }
-}
 
 /**
  * Shows the boxes screen, assigns pre-determined random scores, and hides the game screen.
  * @param {object} options - Configuration for the boxes screen.
- * @param {string} [options.mode='victory'] - The mode, can be 'victory', 'failure', or 'half-victory'.
+ * @param {string} [options.mode='victory'] - The mode, can be 'victory', 'failure', 'half-victory', or 'waiting'.
+ * @param {string} [options.victoryType] - The type of victory if mode is 'waiting'.
  */
 export function showBoxesScreen(options = {}) {
-    const { mode = 'victory' } = options;
+    const { mode = 'victory', victoryType } = options;
     resetBoxesScreen();
     
     let scores;
     let title;
 
-    if (mode === 'failure') {
+    if (mode === 'waiting') {
+        title = victoryType === 'half-victory' ? 'חצי תיבת נצחון (5-25)' : 'תיבת נצחון (10-50)';
+        boxesTitle.textContent = title;
+        boxesMessage.textContent = 'ממתינים לבחירת תיבה מהנייד...';
+        chestsContainer.style.display = 'flex';
+        treasureChests.forEach(chest => {
+            chest.classList.add('disabled'); // Make them look non-interactive
+        });
+    } else { // 'failure' mode, which is still initiated by the host
         title = 'תיבת כישלון (0 עד 25-)';
         scores = [0, -5, -10, -15, -20, -25];
-    } else if (mode === 'half-victory') {
-        title = 'חצי תיבת נצחון (5-25)';
-        scores = [5, 10, 15, 20, 25];
-    } else { // Default to 'victory'
-        title = 'תיבת נצחון (10-50)';
-        scores = [10, 20, 30, 40, 50];
+        boxesTitle.textContent = title;
+        shuffleArray(scores);
+        treasureChests.forEach((chest, index) => {
+            chest.dataset.score = scores[index % scores.length];
+        });
+        chestsContainer.style.display = 'flex';
     }
-    
-    boxesTitle.textContent = title;
-    
-    shuffleArray(scores);
-    treasureChests.forEach((chest, index) => {
-        // Only assign score, don't show it yet
-        chest.dataset.score = scores[index % scores.length];
-    });
     
     document.getElementById('game-screen').classList.add('hidden');
     boxesScreen.classList.remove('hidden');
+}
+
+
+/**
+ * Called when a participant selects a box. This triggers the reveal animation on the host screen.
+ * @param {number} boxIndex - The index (1, 2, or 3) of the chosen box.
+ */
+export function revealSelectedBox(boxIndex) {
+    if (chestSelected) return;
+
+    const { boxScores } = gameState.getState();
+    if (!boxScores || boxScores.length < 3) {
+        console.error("Box scores not found for reveal.");
+        return;
+    }
+
+    treasureChests.forEach((chest, index) => {
+        chest.dataset.score = boxScores[index];
+    });
+
+    const selectedChest = chestsContainer.querySelector(`[data-chest="${boxIndex}"]`);
+    if (!selectedChest) {
+        console.error(`Chest with index ${boxIndex} not found.`);
+        return;
+    }
     
-    // Update game state for participants and broadcast it
-    const boxesData = {
-        mode,
-        scores,
-        selectedChestIndex: null
-    };
-    setBoxesData(boxesData);
-    notifyStateChange();
+    chestSelected = true;
+    revealAllChests(selectedChest);
 }
 
 /**
@@ -207,14 +177,17 @@ export function initializeBoxesScreen(onComplete, onContinue) {
     onBoxesCompleteCallback = onComplete;
     onBoxesContinueCallback = onContinue;
 
-    treasureChests.forEach(chest => {
-        chest.setAttribute('role', 'button');
-        chest.setAttribute('tabindex', '0');
-        chest.addEventListener('click', handleChestClick);
+    // This listener is now only for the 'failure' mode, which is the only time the host clicks a box.
+    chestsContainer.addEventListener('click', async (event) => {
+        const selectedChest = event.currentTarget.closest('.treasure-chest');
+        // Only proceed if a chest was clicked, it's not disabled, and one hasn't been selected yet.
+        if (selectedChest && !selectedChest.classList.contains('disabled') && !chestSelected) {
+             chestSelected = true;
+             await revealAllChests(selectedChest);
+        }
     });
 
     returnBtn.addEventListener('click', () => {
-        // This button is now the only way to proceed from this screen.
         if (onBoxesContinueCallback) {
             onBoxesContinueCallback();
         }

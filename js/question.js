@@ -1,4 +1,4 @@
-import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTeam } from './game.js';
+import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTeam, startRemoteBoxSelection } from './game.js';
 import { showBoxesScreen } from './boxes.js';
 import { playSound, stopSound } from './audio.js';
 import { showLinkModal } from './ui.js';
@@ -471,11 +471,7 @@ export function initializeQuestionScreen(onComplete) {
             onQuestionCompleteCallback();
         }
         const victoryType = gameScreen.dataset.victoryType;
-        if (victoryType === 'half') {
-            showBoxesScreen({ mode: 'half-victory' });
-        } else {
-            showBoxesScreen({ mode: 'victory' });
-        }
+        startRemoteBoxSelection(victoryType === 'half' ? 'half-victory' : 'victory');
     });
 
     answerLinkBtn.addEventListener('click', () => {
