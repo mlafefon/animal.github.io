@@ -1,3 +1,4 @@
+
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -229,6 +230,16 @@ h1, h2, h3, h4, h5, h6 {
     padding: 1.25rem;
     position: relative;
     color: white;
+}
+
+.app-version {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    font-size: 0.9rem;
+    color: rgba(240, 248, 255, 0.6);
+    text-shadow: none;
+    font-weight: bold;
 }
 
 .start-content {

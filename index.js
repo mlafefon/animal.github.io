@@ -1,3 +1,4 @@
+
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen, showSetupScreenForGame } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
@@ -264,4 +265,24 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('start-screen').classList.remove('hidden');
     document.getElementById('auth-screen').classList.add('hidden');
     document.getElementById('global-header').classList.add('hidden');
+
+    // Fetch and display the app version
+    fetch('metadata.json')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const version = data.version;
+            if (version) {
+                const startScreen = document.getElementById('start-screen');
+                const versionElement = document.createElement('p');
+                versionElement.className = 'app-version';
+                versionElement.textContent = `גרסה ${version}`;
+                startScreen.appendChild(versionElement);
+            }
+        })
+        .catch(error => console.error('Error fetching app version:', error));
 });
