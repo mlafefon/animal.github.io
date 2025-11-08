@@ -219,74 +219,77 @@ function updateGameView(state) {
         return;
     }
 
-    // Handle box selection state
-    if (state.gameState === 'boxes' || state.gameState === 'boxes-revealed') {
-        const isMyTurnForBoxes = myTeam && state.activeTeamIndex === myTeam.index;
-        
-        if (isMyTurnForBoxes) {
-            showScreen('boxes');
-            renderBoxesScreen(state);
-        } else {
-            showScreen('game'); // Other teams see a waiting message
-            const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
-            const activeTeamName = activeTeam ? activeTeam.name : 'הקבוצה';
-            questionText.textContent = `ממתין לקבוצת ${activeTeamName} לבחור תיבה...`;
-            participantControls.classList.add('hidden');
-            waitingMessage.classList.add('hidden');
-        }
-        return; // End processing for this state
+    // If I haven't selected a team, I should be on the team select screen.
+    // Re-render it with the latest team taken status.
+    if (!myTeam) {
+        renderTeamSelectScreen(state);
+        return;
+    }
+    
+    // If I HAVE selected a team, but am still seeing the team select screen,
+    // it means my selection was confirmed. Move to the game screen.
+    const myTeamInNewState = state.teams.find(t => t.index === myTeam.index);
+    if (myTeamInNewState && myTeamInNewState.isTaken && screens.teamSelect.offsetParent !== null) {
+         showScreen('game');
     }
 
+    // Main game logic starts here, assuming a team is selected.
+    const isMyTurn = state.activeTeamIndex === myTeam.index;
+    const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
+    const activeTeamName = activeTeam ? activeTeam.name : 'הקבוצה';
 
-    // If I have selected a team, I should be on the game screen.
-    if (myTeam) {
-        // Find my team in the new state to check if I was the one who selected it.
-        const myTeamInNewState = state.teams.find(t => t.index === myTeam.index);
-        if (myTeamInNewState && myTeamInNewState.isTaken && screens.teamSelect.offsetParent !== null) {
-             showScreen('game');
-        }
+    // Default UI state: hide controls and waiting messages.
+    participantControls.classList.add('hidden');
+    waitingMessage.classList.add('hidden');
 
-        const isMyTurn = (state.activeTeamIndex === myTeam.index);
-        const isQuestionActive = (state.gameState === 'question' && state.currentQuestion);
-
-        stopBtn.disabled = false; // Re-enable stop button for new question
-
-        if (isQuestionActive) {
+    switch (state.gameState) {
+        case 'question':
+            showScreen('game');
             questionText.textContent = state.currentQuestion.q;
-            
-            if(isMyTurn) {
+            if (isMyTurn) {
                 participantControls.classList.remove('hidden');
-                waitingMessage.classList.add('hidden');
+                stopBtn.disabled = false; // Ensure button is enabled for new question
             } else {
-                participantControls.classList.add('hidden');
+                const otherTeamMessage = `התור של קבוצת ${activeTeamName}.`;
+                waitingMessage.querySelector('p').textContent = otherTeamMessage;
                 waitingMessage.classList.remove('hidden');
             }
-        } else if (state.gameState === 'grading') {
-             if (isMyTurn) {
-                questionText.textContent = 'ממתין לניקוד מהמנחה...';
-            } else {
-                const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
-                const activeTeamName = activeTeam ? activeTeam.name : 'הקבוצה';
-                questionText.textContent = `ממתין לניקוד של קבוצת ${activeTeamName}...`;
-            }
-            participantControls.classList.add('hidden');
-            waitingMessage.classList.add('hidden');
-        }
-        else { // This block is now primarily for the 'waiting' state
-            const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
-            const activeTeamName = activeTeam ? activeTeam.name : 'הקבוצה';
+            break;
+
+        case 'grading':
+            showScreen('game');
             if (isMyTurn) {
-                 questionText.textContent = 'הקבוצה ממתינה לתורה';
+                questionText.textContent = 'התשובה התקבלה. ממתין לניקוד מהמנחה...';
             } else {
-                 questionText.textContent = `ממתינים לתור של קבוצת ${activeTeamName}...`;
+                questionText.textContent = `המנחה בודק את התשובה של קבוצת ${activeTeamName}...`;
             }
-            participantControls.classList.add('hidden');
-            waitingMessage.classList.add('hidden');
-        }
-    } else {
-        // If I haven't selected a team, I should be on the team select screen.
-        // Re-render it with the latest team taken status.
-        renderTeamSelectScreen(state);
+            break;
+            
+        case 'boxes':
+        case 'boxes-revealed':
+            if (isMyTurn) {
+                showScreen('boxes');
+                renderBoxesScreen(state);
+            } else {
+                showScreen('game');
+                questionText.textContent = `ממתין לקבוצת ${activeTeamName} לבחור תיבת אוצר...`;
+            }
+            break;
+        
+        case 'setup':
+            showScreen('game');
+            questionText.textContent = "המשחק יתחיל בקרוב...";
+            break;
+
+        case 'waiting':
+        default:
+            showScreen('game');
+            if (isMyTurn) {
+                questionText.textContent = 'הקבוצה ממתינה לתורה';
+            } else {
+                questionText.textContent = `התור הבא הוא של קבוצת ${activeTeamName}. השאלה תופיע בקרוב...`;
+            }
+            break;
     }
 }
 

@@ -2733,6 +2733,16 @@ input:disabled + .slider:before {
     -moz-appearance: textfield;
 }
 
+/* Participant Team Selection Grid Override */
+#team-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 40rem;
+    margin: 1.25rem auto 0;
+}
+
 #team-selection-grid .team-member {
     cursor: pointer;
     transition: transform 0.2s, opacity 0.2s;
@@ -2947,5 +2957,132 @@ input:disabled + .slider:before {
     }
     .winner-card .team-score {
         font-size: 1.8rem;
+    }
+}
+
+/* --- Responsive Styles for Participant View --- */
+@media (max-width: 600px) {
+    /* Join and Team Select Screens */
+    .participant-container {
+        padding: 1.5rem;
+        width: 95%;
+    }
+
+    .participant-container h1 {
+        font-size: 2.2rem;
+    }
+
+    .participant-container h2 {
+        font-size: 1.5rem;
+    }
+
+    #game-code-input {
+        font-size: 2rem;
+        letter-spacing: 0.3rem;
+        padding: 0.75rem;
+    }
+
+    #team-selection-grid {
+        grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+        gap: 1.25rem;
+    }
+
+    #team-selection-grid .team-member {
+        gap: 0.4rem;
+    }
+    
+    #team-selection-grid .team-icon {
+        width: 5rem;
+        height: 5rem;
+        border-width: 0.2rem;
+    }
+    
+    #team-selection-grid .team-name {
+        font-size: 1rem;
+    }
+
+    /* Participant Game Screen */
+    #participant-game-screen {
+        padding: 1rem;
+    }
+
+    #participant-game-screen #q-a-wrapper {
+        margin-top: 5rem; /* Adjust for smaller header */
+    }
+    
+    .participant-team-info {
+        gap: 0.75rem;
+        top: 1rem;
+        right: 1rem;
+    }
+
+    .participant-team-info img {
+        width: 3.5rem;
+        height: 3.5rem;
+    }
+
+    .participant-team-info h2 {
+        font-size: 1.2rem;
+    }
+    
+    #participant-game-screen #question-container,
+    #participant-game-screen #answer-container {
+        min-height: 50vh;
+        padding: 1rem;
+    }
+
+    #participant-question-text {
+        font-size: 1.8rem;
+    }
+
+    .waiting-message {
+        font-size: 1.5rem;
+    }
+
+    #participant-stop-btn.btn-large {
+        padding: 1rem 3rem;
+        font-size: 1.5rem;
+    }
+    
+    /* Participant Boxes Screen */
+    #participant-boxes-screen .boxes-content {
+        gap: 1.5rem;
+        padding-top: 1rem;
+        justify-content: flex-start;
+    }
+    
+    #participant-boxes-screen .boxes-content h1 {
+        font-size: 2rem;
+    }
+    
+    #participant-chests-container {
+        flex-direction: column;
+        gap: 1.25rem;
+        align-items: center;
+    }
+    
+    #participant-chests-container .treasure-chest {
+        padding: 0.75rem;
+        width: 12rem;
+    }
+    
+    #participant-chests-container .treasure-chest img {
+        width: 8rem;
+    }
+    
+    #participant-chests-container .treasure-chest span {
+        font-size: 1.5rem;
+    }
+    
+    .score-reveal-above {
+        font-size: 2rem;
+    }
+    
+    .score-reveal-above.selected-score {
+        font-size: 2.5rem;
+    }
+    
+    #participant-boxes-message {
+        font-size: 1.2rem;
     }
 }
