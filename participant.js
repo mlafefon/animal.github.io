@@ -365,4 +365,23 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('beforeunload', () => {
         unsubscribeAllRealtime();
     });
+
+    // Fetch and display the app version
+    fetch('metadata.json')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const version = data.version;
+            if (version) {
+                const versionElement = document.querySelector('.app-version');
+                if (versionElement) {
+                    versionElement.textContent = `גרסה ${version}`;
+                }
+            }
+        })
+        .catch(error => console.error('Error fetching app version:', error));
 });
