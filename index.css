@@ -2797,50 +2797,58 @@ input:disabled + .slider:before {
 /* Styles for Host View Game Code */
 .game-code-box {
     text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
 }
 .game-code-box p {
     font-size: 1.1rem;
     margin-bottom: 0.625rem;
     color: rgba(240, 248, 255, 0.8);
 }
-#game-code-display {
-    font-size: 5rem;
+.game-code-display {
+    font-size: 4rem;
     font-weight: bold;
     color: #ffeb3b;
     background: rgba(0,0,0,0.3);
-    padding: 0.625rem 1.875rem;
+    padding: 0.625rem 1.25rem;
     border-radius: 0.625rem;
-    letter-spacing: 0.9375rem;
+    letter-spacing: 0.625rem;
     cursor: copy;
     border: 2px dashed rgba(255,255,255,0.4);
     transition: background-color 0.2s;
 }
-#game-code-display:hover {
+.game-code-display:hover {
     background-color: rgba(0,0,0,0.5);
 }
 
-#joined-teams-container {
+#joined-participants-container {
     display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
     gap: 0.75rem;
     margin-top: 1.25rem;
-    min-height: 4rem;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
+    min-height: 3.125rem; /* Reserve space for one row of icons */
+    padding: 0 0.625rem;
 }
 
-.joined-team-icon {
-    width: 3.5rem;
-    height: 3.5rem;
+.participant-icon {
+    width: 2.8rem;
+    height: 2.8rem;
     border-radius: 50%;
-    border: 3px solid white;
-    background-color: #fff;
-    padding: 2px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    border: 0.125rem solid #ffeb3b;
+    padding: 0.125rem;
+    background-color: rgba(0,0,0,0.4);
+    animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     object-fit: cover;
+}
+
+@keyframes pop-in {
+    from {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 

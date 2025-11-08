@@ -3,55 +3,37 @@
 import { getSavedState } from './gameState.js';
 import { TEAMS_MASTER_DATA } from './game.js';
 import { showNotification } from './ui.js';
-import { createGameSession, getAccount, subscribeToActions, updateGameSession, unsubscribeAllRealtime } from './appwriteService.js';
+import { createGameSession, getAccount } from './appwriteService.js';
 
 const groupList = document.getElementById('group-list');
 const startButton = document.getElementById('start-btn');
 const setupScreen = document.getElementById('setup-screen');
 const setupGameTitle = document.getElementById('setup-game-title');
+const joinedParticipantsContainer = document.getElementById('joined-participants-container');
 
 
 let selectedGameDocument = null;
 let selectedGameData = null;
 let currentSessionDoc = null;
-let teamsForSession = []; // To hold the state of teams for the current session
+
 
 /**
- * Handles the 'selectTeam' action from a participant.
- * @param {object} payload - The action payload from Appwrite.
+ * Updates the display of joined participant icons on the setup screen.
+ * @param {Array<object>} teams - The array of team objects from the game state.
  */
-async function handleParticipantJoinAction(payload) {
-    try {
-        const actionData = JSON.parse(payload.actionData);
-        if (actionData.type === 'selectTeam') {
-            const team = teamsForSession.find(t => t.index === actionData.teamIndex);
-            
-            // Server-side check for race conditions
-            if (team && !team.isTaken) {
-                team.isTaken = true;
-
-                // Update UI on host screen
-                const joinedTeamsContainer = document.getElementById('joined-teams-container');
-                const teamIcon = document.createElement('img');
-                teamIcon.src = team.icon;
-                teamIcon.alt = team.name;
-                teamIcon.className = 'joined-team-icon';
-                teamIcon.title = `${team.name} הצטרפו`;
-                joinedTeamsContainer.appendChild(teamIcon);
-
-                // Update Appwrite session to broadcast to other participants
-                const sessionData = {
-                    gameCode: selectedGameDocument.gameCode,
-                    gameName: selectedGameDocument.game_name,
-                    teams: teamsForSession,
-                    gameState: 'setup',
-                };
-                await updateGameSession(currentSessionDoc.$id, sessionData);
-            }
-        }
-    } catch (e) {
-        console.error('Error handling participant action in host:', e);
-    }
+export function updateJoinedTeamsDisplay(teams) {
+    if (!joinedParticipantsContainer) return;
+    joinedParticipantsContainer.innerHTML = '';
+    const joinedTeams = teams.filter(t => t.isTaken);
+    
+    joinedTeams.forEach(team => {
+        const img = document.createElement('img');
+        img.src = team.icon;
+        img.alt = team.name;
+        img.title = team.name;
+        img.className = 'participant-icon';
+        joinedParticipantsContainer.appendChild(img);
+    });
 }
 
 
@@ -65,8 +47,7 @@ async function createOrUpdateParticipantSession() {
     const selectedGroup = groupList.querySelector('.selected');
     const numberOfGroups = selectedGroup ? parseInt(selectedGroup.textContent, 10) : 4;
     
-    // Use the module-level variable to store the teams for this session
-    teamsForSession = TEAMS_MASTER_DATA.slice(0, numberOfGroups).map((team, index) => ({
+    const teamsForParticipants = TEAMS_MASTER_DATA.slice(0, numberOfGroups).map((team, index) => ({
         ...team,
         index,
         isTaken: false
@@ -75,7 +56,7 @@ async function createOrUpdateParticipantSession() {
     const sessionData = {
         gameCode,
         gameName,
-        teams: teamsForSession,
+        teams: teamsForParticipants,
         gameState: 'setup',
     };
 
@@ -85,6 +66,8 @@ async function createOrUpdateParticipantSession() {
             const newDoc = await createGameSession(gameCode, user.$id, sessionData);
             currentSessionDoc = newDoc;
         }
+        // Note: For this flow, we don't need to update an existing session document
+        // because a new session is created for each new game setup screen.
     } catch (error) {
         console.error("Failed to create game session:", error);
         showNotification("שגיאה ביצירת סשן המשחק. המשתתפים לא יוכלו להצטרף.", "error");
@@ -199,26 +182,21 @@ export async function showSetupScreenForGame(gameDoc) {
         setupGameTitle.textContent = selectedGameDocument.game_name;
     }
 
+    if (joinedParticipantsContainer) {
+        joinedParticipantsContainer.innerHTML = ''; // Clear on new game setup
+    }
+
     const gameCode = Math.floor(100000 + Math.random() * 900000).toString();
     const gameCodeDisplay = document.getElementById('game-code-display');
     if (gameCodeDisplay) {
         gameCodeDisplay.textContent = gameCode;
     }
     selectedGameDocument.gameCode = gameCode; // Attach to the document object for later use
-    
-    // Clear previous session's joined teams display
-    document.getElementById('joined-teams-container').innerHTML = '';
 
     refreshSetupScreenState(); // Handles the "continue" checkbox state
     setupScreen.classList.remove('hidden');
     updateQuestionStats();
-    
-    await createOrUpdateParticipantSession(); // Create session and populate teamsForSession
-    
-    // Subscribe to participant join actions for this new session
-    if (selectedGameDocument.gameCode) {
-        subscribeToActions(selectedGameDocument.gameCode, handleParticipantJoinAction);
-    }
+    await createOrUpdateParticipantSession(); // Create session *before* returning, ensuring it's ready.
 }
 
 
@@ -245,6 +223,7 @@ export function initializeSetupScreen(onStart) {
     groupList.addEventListener('click', (e) => {
         handleSelection(groupList, e);
         updateQuestionStats();
+        // createOrUpdateParticipantSession(); // This is now handled on game load
     });
 
     const gameCodeDisplay = document.getElementById('game-code-display');
@@ -274,7 +253,6 @@ export function initializeSetupScreen(onStart) {
             return;
         }
 
-        unsubscribeAllRealtime(); // Stop listening for new joins once game starts
         setupScreen.classList.add('hidden');
         
         const selectedGroup = groupList.querySelector('.selected');

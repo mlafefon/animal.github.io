@@ -80,40 +80,38 @@ async function handleTeamSelection(teamIndex) {
         teamSelectError.classList.remove('hidden');
         return;
     }
-    
+
     // --- Optimistic UI Update ---
+    // 1. Set myTeam object
     myTeam = {
         ...selectedTeamData,
         icon: IMAGE_URLS[selectedTeamData.iconKey]
     };
+    
+    // 2. Update my info display (for the next screen)
     myTeamName.textContent = `אתם קבוצת ${myTeam.name}`;
     myTeamIcon.src = myTeam.icon;
     
+    // 3. Switch to the game screen with a waiting message
     showScreen('game');
-    questionText.textContent = `הצטרפתם! ממתינים למנחה שיתחיל את המשחק...`;
-    
-    // Disable team selection grid to prevent changes while action is in flight
-    teamSelectionGrid.style.pointerEvents = 'none';
+    questionText.textContent = `הצטרפת לקבוצת ${myTeam.name}! ממתין למנחה שיתחיל את המשחק...`;
+    participantControls.classList.add('hidden');
+    waitingMessage.classList.add('hidden');
 
+    // 4. Send the action to the host
     try {
         await sendAction(gameCode, {
             type: 'selectTeam',
             teamIndex: teamIndex,
             participantId: participantId
         });
-        // Action sent successfully. The UI is already updated.
-        // The next state update from the host will confirm it.
-        teamSelectError.classList.add('hidden');
-        
+        // Now we just wait for host broadcasts to update the view.
     } catch (error) {
-         // Revert UI on failure
-         myTeam = null;
-         showScreen('teamSelect');
-         teamSelectError.textContent = 'שגיאה בבחירת קבוצה. נסה שוב.';
-         teamSelectError.classList.remove('hidden');
-         // Re-render to re-enable buttons and reflect latest state
-         renderTeamSelectScreen(currentHostState);
-         teamSelectionGrid.style.pointerEvents = 'auto';
+        // --- Revert UI on error ---
+        showNotification('שגיאה בבחירת קבוצה. נסה שוב.', 'error');
+        myTeam = null; // Unset team
+        showScreen('teamSelect'); // Go back
+        renderTeamSelectScreen(currentHostState); // Re-render the grid with latest data
     }
 }
 
@@ -221,24 +219,15 @@ function updateGameView(state) {
         return;
     }
 
-    // If I haven't selected a team, I should be on the team select screen.
-    // Re-render it with the latest team taken status.
+    // This logic runs if the participant has NOT yet chosen a team.
+    // It keeps the team selection screen up-to-date.
     if (!myTeam) {
-        if (screens.join.offsetParent === null) { // Only render if past the join screen
-            renderTeamSelectScreen(state);
-            showScreen('teamSelect');
-        }
+        renderTeamSelectScreen(state);
         return;
     }
     
-    // If I HAVE selected a team, but am still seeing the team select screen,
-    // it means my selection was confirmed. Move to the game screen.
-    const myTeamInNewState = state.teams.find(t => t.index === myTeam.index);
-    if (myTeamInNewState && myTeamInNewState.isTaken && screens.teamSelect.offsetParent !== null) {
-         showScreen('game');
-    }
-
-    // Main game logic starts here, assuming a team is selected.
+    // This logic runs AFTER the participant has chosen a team.
+    
     // Use == to protect against potential type mismatch (string vs number) from state updates.
     const isMyTurn = state.activeTeamIndex == myTeam.index;
     const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
@@ -283,10 +272,8 @@ function updateGameView(state) {
             break;
         
         case 'setup':
-             if (myTeam) { // If I've chosen a team, show the game screen with a waiting message
-                showScreen('game');
-                questionText.textContent = `הצטרפתם! ממתינים למנחה שיתחיל את המשחק...`;
-            }
+            showScreen('game');
+            questionText.textContent = "המשחק יתחיל בקרוב...";
             break;
 
         case 'waiting':

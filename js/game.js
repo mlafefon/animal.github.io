@@ -5,6 +5,7 @@ import * as gameState from './gameState.js';
 import { subscribeToActions, updateGameSession, unsubscribeAllRealtime } from './appwriteService.js';
 import { triggerManualGrading } from './question.js';
 import { revealChest } from './boxes.js';
+import { updateJoinedTeamsDisplay } from './setup.js';
 
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
@@ -187,6 +188,10 @@ async function handleParticipantAction(actionPayload) {
             if (team && !team.isTaken) {
                 team.isTaken = true;
                 gameState.setTeams(currentState.teams); // Update internal state
+                
+                // Update the host's UI to show the joined team icon
+                updateJoinedTeamsDisplay(currentState.teams);
+
                 await broadcastGameState(); // Broadcast change to all participants
             }
         } else if (actionData.type === 'stopTimer') {
