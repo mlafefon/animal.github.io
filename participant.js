@@ -255,13 +255,19 @@ function updateGameView(state) {
                 participantControls.classList.add('hidden');
                 waitingMessage.classList.remove('hidden');
             }
-        } else if (state.gameState === 'grading' && isMyTurn) {
-            questionText.textContent = 'ממתין לניקוד מהמנחה...';
+        } else if (state.gameState === 'grading') {
+             if (isMyTurn) {
+                questionText.textContent = 'ממתין לניקוד מהמנחה...';
+            } else {
+                const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
+                const activeTeamName = activeTeam ? activeTeam.name : 'הקבוצה';
+                questionText.textContent = `ממתין לניקוד של קבוצת ${activeTeamName}...`;
+            }
             participantControls.classList.add('hidden');
             waitingMessage.classList.add('hidden');
         }
-        else {
-            questionText.textContent = 'ממתין לשאלה מהמנחה...';
+        else { // This block is now primarily for the 'waiting' state
+            questionText.textContent = 'ממתין לתור הקבוצה';
             participantControls.classList.add('hidden');
             waitingMessage.classList.add('hidden');
         }
