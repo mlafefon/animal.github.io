@@ -56,7 +56,7 @@ function renderTeamSelectScreen(state) {
         teamElement.dataset.index = team.index;
         teamElement.innerHTML = `
             <div class="team-icon">
-                <img src="${team.icon}" alt="${team.name}">
+                <img src="${IMAGE_URLS[team.iconKey]}" alt="${team.name}">
             </div>
             <p class="team-name">${team.name}</p>
         `;
@@ -73,13 +73,19 @@ function renderTeamSelectScreen(state) {
 }
 
 async function handleTeamSelection(teamIndex) {
-    myTeam = currentHostState.teams.find(t => t.index === teamIndex);
+    const selectedTeamData = currentHostState.teams.find(t => t.index === teamIndex);
 
-    if (!myTeam || myTeam.isTaken) {
+    if (!selectedTeamData || selectedTeamData.isTaken) {
         teamSelectError.textContent = 'קבוצה זו נתפסה. אנא בחר קבוצה אחרת.';
         teamSelectError.classList.remove('hidden');
         return;
     }
+
+    // Create the full `myTeam` object for local use, rehydrating the icon URL
+    myTeam = {
+        ...selectedTeamData,
+        icon: IMAGE_URLS[selectedTeamData.iconKey]
+    };
     
     // Disable all buttons to prevent double-selection
     teamSelectionGrid.querySelectorAll('.team-member').forEach(el => {

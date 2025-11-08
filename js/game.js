@@ -15,11 +15,11 @@ const setupScreen = document.getElementById('setup-screen');
 // --- Data ---
 // This is now only used for initializing state
 export const TEAMS_MASTER_DATA = [
-    { name: 'ינשופים', icon: IMAGE_URLS.TEAM_OWL },
-    { name: 'שועלים', icon: IMAGE_URLS.TEAM_FOX },
-    { name: 'פילים', icon: IMAGE_URLS.TEAM_ELEPHANT },
-    { name: 'צפרדעים', icon: IMAGE_URLS.TEAM_FROG },
-    { name: 'אריות', icon: IMAGE_URLS.TEAM_LION }
+    { name: 'ינשופים', icon: IMAGE_URLS.TEAM_OWL, iconKey: 'TEAM_OWL' },
+    { name: 'שועלים', icon: IMAGE_URLS.TEAM_FOX, iconKey: 'TEAM_FOX' },
+    { name: 'פילים', icon: IMAGE_URLS.TEAM_ELEPHANT, iconKey: 'TEAM_ELEPHANT' },
+    { name: 'צפרדעים', icon: IMAGE_URLS.TEAM_FROG, iconKey: 'TEAM_FROG' },
+    { name: 'אריות', icon: IMAGE_URLS.TEAM_LION, iconKey: 'TEAM_LION' }
 ];
 
 // --- State ---
@@ -147,10 +147,19 @@ async function broadcastGameState() {
         questionForParticipant = { q: q.q }; // Only send the question text
     }
 
+    // Create a "lean" version of the teams array to reduce payload size.
+    const leanTeams = teams.map(team => ({
+        index: team.index,
+        name: team.name,
+        iconKey: team.iconKey,
+        score: team.score,
+        isTaken: team.isTaken
+    }));
+
     const sessionData = {
         gameCode,
         gameName,
-        teams, // This now includes the `isTaken` flag
+        teams: leanTeams, // Send the lean version
         activeTeamIndex,
         gameState: currentGameState,
         currentQuestion: questionForParticipant,
