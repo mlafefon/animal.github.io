@@ -214,9 +214,8 @@ async function handleParticipantChestSelection(index) {
  * @param {object} state The latest game state broadcasted by the host.
  */
 function updateGameView(state) {
-    currentHostState = state; // Update global state
+    currentHostState = state;
 
-    // If the game is over, reset the view to the join screen
     if (state.gameState === 'finished') {
         unsubscribeAllRealtime();
         showNotification('המשחק הסתיים. תודה שהשתתפתם!', 'success');
@@ -224,72 +223,77 @@ function updateGameView(state) {
         return;
     }
 
-    // If I haven't selected a team, I should be on the team select screen.
     if (!myTeam) {
-        if (screens.join.offsetParent === null) { // Ensure we are past the join screen
-            showScreen('teamSelect');
-            renderTeamSelectScreen(state);
+        if (!screens.join.classList.contains('hidden')) {
+             return;
         }
+        showScreen('teamSelect');
+        renderTeamSelectScreen(state);
         return;
     }
 
-    // Once a team is selected, if we are still on the team select screen, move to game screen.
-    if (screens.teamSelect.offsetParent !== null) {
-        showScreen('game');
+    const myTeamData = state.teams.find(t => t.index === myTeam.index);
+    if (myTeamData) {
+        myTeamName.textContent = `אתם קבוצת ${myTeamData.name}`;
+        myTeamIcon.src = IMAGE_URLS[myTeamData.iconKey];
     }
 
     const isMyTurn = state.activeTeamIndex === myTeam.index;
+    const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
+    const activeTeamName = activeTeam ? activeTeam.name : 'הקבוצה הפעילה';
 
-    // Handle the distinct "boxes" screen view
-    if (state.gameState === 'boxes' || state.gameState === 'boxes-revealed') {
-        if (isMyTurn) {
-            showScreen('boxes');
-            renderBoxesScreen(state);
-        } else {
-            showScreen('game');
-            const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
-            const activeTeamName = activeTeam ? activeTeam.name : 'הקבוצה';
-            questionText.textContent = `ממתין לקבוצת ${activeTeamName} לבחור תיבה...`;
-            participantControls.classList.add('hidden');
-            waitingMessage.classList.add('hidden');
-        }
-        return; // End processing for this state
-    }
-    
-    // All other states render on the main game screen
-    showScreen('game');
+    switch (state.gameState) {
+        case 'boxes':
+        case 'boxes-revealed':
+            if (isMyTurn) {
+                showScreen('boxes');
+                renderBoxesScreen(state);
+            } else {
+                showScreen('game');
+                questionText.textContent = `ממתינים לקבוצת ${activeTeamName} לבחור תיבה...`;
+                participantControls.classList.add('hidden');
+                waitingMessage.classList.add('hidden');
+            }
+            break;
 
-    // Default UI state for the main game screen
-    participantControls.classList.add('hidden');
-    waitingMessage.classList.add('hidden');
-    stopBtn.disabled = false;
-
-    switch(state.gameState) {
         case 'question':
+            showScreen('game');
             questionText.textContent = state.currentQuestion.q;
             if (isMyTurn) {
                 participantControls.classList.remove('hidden');
+                stopBtn.disabled = false;
+                waitingMessage.classList.add('hidden');
             } else {
+                participantControls.classList.add('hidden');
                 waitingMessage.classList.remove('hidden');
-                const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
-                const activeTeamName = activeTeam ? activeTeam.name : 'הקבוצה';
-                waitingMessage.querySelector('p').textContent = `התור של קבוצת ${activeTeamName}`;
+                waitingMessage.querySelector('p').textContent = `התור של קבוצת ${activeTeamName}.`;
             }
             break;
 
         case 'grading':
-            if (isMyTurn) {
+            showScreen('game');
+            participantControls.classList.add('hidden');
+            waitingMessage.classList.add('hidden');
+             if (isMyTurn) {
                 questionText.textContent = 'ממתין לניקוד מהמנחה...';
             } else {
-                const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
-                const activeTeamName = activeTeam ? activeTeam.name : 'הקבוצה';
                 questionText.textContent = `המנחה מעניק ניקוד לקבוצת ${activeTeamName}...`;
             }
             break;
-        
+
+        case 'setup':
+            showScreen('game');
+            questionText.textContent = 'המשחק יתחיל בקרוב, המתן למנחה...';
+            participantControls.classList.add('hidden');
+            waitingMessage.classList.add('hidden');
+            break;
+            
         case 'waiting':
         default:
+            showScreen('game');
             questionText.textContent = 'השאלה הבאה תופיע בקרוב...';
+            participantControls.classList.add('hidden');
+            waitingMessage.classList.add('hidden');
             break;
     }
 }
@@ -327,7 +331,6 @@ function initializeJoinScreen() {
             
             // Initial render and switch to team select screen
             updateGameView(sessionData);
-            showScreen('teamSelect');
 
         } catch (error) {
             console.error("Failed to join game:", error);

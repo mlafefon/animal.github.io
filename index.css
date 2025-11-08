@@ -2959,6 +2959,10 @@ input:disabled + .slider:before {
     }
     .participant-container h1 { font-size: 2.2rem; }
     .participant-container h2 { font-size: 1.5rem; }
+    #participant-game-screen, #participant-boxes-screen {
+        padding: 1rem;
+    }
+
 
     /* Join Screen */
     #game-code-input {
@@ -2989,7 +2993,7 @@ input:disabled + .slider:before {
     /* Main Game Screen */
     #participant-game-screen {
         justify-content: flex-start; /* Align content to top */
-        padding-bottom: 1rem;
+        padding-bottom: 8rem; /* Make space for fixed button */
     }
     #participant-game-screen .game-header {
         flex-direction: column; /* Stack team info and question */
@@ -3000,6 +3004,7 @@ input:disabled + .slider:before {
         margin-bottom: 1rem;
         justify-content: center;
         width: 100%;
+        text-align: center;
     }
     .participant-team-info img {
         width: 3.5rem;
@@ -3038,22 +3043,22 @@ input:disabled + .slider:before {
     /* Boxes Screen */
     #participant-boxes-screen {
         justify-content: flex-start;
-        padding: 1rem;
     }
     #participant-boxes-screen .boxes-content {
         gap: 1.5rem;
     }
     .boxes-content h1 { font-size: 2rem; }
     #participant-chests-container {
-        gap: 1.5rem; /* Chests will stack naturally */
-        flex-direction: row; /* Allow 2 chests per row if space allows */
+        gap: 1rem;
+        flex-direction: row;
         flex-wrap: wrap;
         justify-content: center;
     }
     .treasure-chest {
         padding: 0.75rem;
+        flex-basis: 40%;
     }
-    .treasure-chest img { width: 8rem; }
+    .treasure-chest img { width: 100%; max-width: 8rem; }
     .treasure-chest:hover { transform: scale(1.05); }
     #participant-boxes-message { font-size: 1.2rem; }
 }
