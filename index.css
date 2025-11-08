@@ -2949,3 +2949,125 @@ input:disabled + .slider:before {
         font-size: 1.8rem;
     }
 }
+
+/* --- Participant View Responsive Overrides --- */
+@media (max-width: 768px) {
+    /* General */
+    .participant-container {
+        padding: 1.5rem;
+        gap: 1rem;
+    }
+    .participant-container h1 { font-size: 2.2rem; }
+    .participant-container h2 { font-size: 1.5rem; }
+
+    /* Join Screen */
+    #game-code-input {
+        padding: 0.75rem;
+        font-size: 2rem;
+        letter-spacing: 0.4rem;
+    }
+    #join-game-btn {
+        font-size: 1.2rem;
+        padding: 0.75rem 2rem;
+    }
+
+    /* Team Select Screen */
+    #team-selection-grid {
+        gap: 1rem; /* Tighter gap */
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    #team-selection-grid .team-member {
+        flex-basis: 40%; /* 2 per row */
+    }
+    #team-selection-grid .team-member .team-icon {
+        width: 6rem; /* Smaller icons */
+        height: 6rem;
+    }
+    #team-selection-grid .team-member .team-name { font-size: 1rem; }
+    
+    /* Main Game Screen */
+    #participant-game-screen {
+        justify-content: flex-start; /* Align content to top */
+        padding-bottom: 1rem;
+    }
+    #participant-game-screen .game-header {
+        flex-direction: column; /* Stack team info and question */
+        align-items: center; /* Center them horizontally */
+    }
+    .participant-team-info {
+        position: static; /* Remove absolute positioning */
+        margin-bottom: 1rem;
+        justify-content: center;
+        width: 100%;
+    }
+    .participant-team-info img {
+        width: 3.5rem;
+        height: 3.5rem;
+    }
+    #participant-game-screen #q-a-wrapper {
+        margin-top: 0;
+        width: 100%;
+    }
+    #participant-game-screen #question-container {
+        min-height: 30vh; /* Make sure it has some height */
+    }
+    #participant-question-text { font-size: 1.8rem; }
+
+    /* Reposition controls to bottom for easier access */
+    #participant-controls {
+        position: fixed; /* Fix to viewport bottom */
+        bottom: 1.5rem;
+        left: 0;
+        right: 0;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+    #participant-stop-btn.btn-large {
+        width: 100%;
+        max-width: 25rem;
+        font-size: 1.5rem;
+        padding: 1rem 2rem;
+    }
+    .waiting-message {
+        font-size: 1.5rem;
+        padding: 1rem;
+    }
+
+    /* Boxes Screen */
+    #participant-boxes-screen {
+        justify-content: flex-start;
+        padding: 1rem;
+    }
+    #participant-boxes-screen .boxes-content {
+        gap: 1.5rem;
+    }
+    .boxes-content h1 { font-size: 2rem; }
+    #participant-chests-container {
+        gap: 1.5rem; /* Chests will stack naturally */
+        flex-direction: row; /* Allow 2 chests per row if space allows */
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .treasure-chest {
+        padding: 0.75rem;
+    }
+    .treasure-chest img { width: 8rem; }
+    .treasure-chest:hover { transform: scale(1.05); }
+    #participant-boxes-message { font-size: 1.2rem; }
+}
+
+/* Specific tweaks for very small phones */
+@media (max-width: 375px) {
+    .participant-container { padding: 1rem; }
+    #game-code-input {
+        font-size: 1.8rem;
+        letter-spacing: 0.2rem;
+    }
+    #team-selection-grid .team-member .team-icon {
+        width: 5rem;
+        height: 5rem;
+    }
+    #participant-question-text { font-size: 1.5rem; }
+}
