@@ -273,7 +273,13 @@ function updateGameView(state) {
             waitingMessage.classList.add('hidden');
         }
         else { // This block is now primarily for the 'waiting' state
-            questionText.textContent = 'ממתין לתור הקבוצה';
+            const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
+            const activeTeamName = activeTeam ? activeTeam.name : 'הקבוצה';
+            if (isMyTurn) {
+                 questionText.textContent = 'הקבוצה ממתינה לתורה';
+            } else {
+                 questionText.textContent = `ממתינים לתור של קבוצת ${activeTeamName}...`;
+            }
             participantControls.classList.add('hidden');
             waitingMessage.classList.add('hidden');
         }
