@@ -187,6 +187,7 @@ async function handleParticipantChestSelection(index) {
         await sendAction(gameCode, {
             type: 'selectChest',
             chestIndex: index,
+            teamIndex: myTeam.index,
             participantId: participantId
         });
         // The host will get this and broadcast the new state with the selection revealed.

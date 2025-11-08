@@ -2,7 +2,7 @@ import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTe
 import { showBoxesScreen } from './boxes.js';
 import { playSound, stopSound } from './audio.js';
 import { showLinkModal } from './ui.js';
-import { getState } from './gameState.js';
+import { getState, setParticipantState } from './gameState.js';
 import { updateGameSession } from './appwriteService.js';
 
 // --- Elements ---
@@ -121,22 +121,9 @@ export function triggerManualGrading() {
     // Update Appwrite state for participants
     const state = getState();
     if (!state.sessionDocumentId) return;
-
-    // We need to construct the sessionData object to update
-    // This is a simplified version of broadcastGameState
-    const { gameCode, gameName, teams, activeTeamIndex } = state;
-    const currentQuestion = getCurrentQuestion();
-    const questionForParticipant = { q: currentQuestion.q };
-
-    const sessionData = {
-        gameCode,
-        gameName,
-        teams,
-        activeTeamIndex,
-        gameState: 'grading', // Host is grading
-        currentQuestion: questionForParticipant,
-    };
-    updateGameSession(state.sessionDocumentId, sessionData);
+    
+    setParticipantState('grading');
+    document.dispatchEvent(new Event('gamestatechange'));
 }
 
 
@@ -149,6 +136,10 @@ export function triggerManualGrading() {
 export function showQuestionScreen(startTime = 30) {
     const currentQuestion = getCurrentQuestion();
     questionText.textContent = currentQuestion.q;
+
+    // Set state for participants and broadcast it
+    setParticipantState('question');
+    document.dispatchEvent(new Event('gamestatechange'));
 
     // Reset shrunk state and data for a new question
     questionContainer.classList.remove('shrunk');

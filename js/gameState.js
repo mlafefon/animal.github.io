@@ -220,3 +220,12 @@ export function clearBoxesState() {
     _state.gameStateForParticipant = 'waiting'; // Or whatever the next state should be
     _saveState();
 }
+
+/**
+ * Sets the high-level state for the participant view (e.g., 'waiting', 'question', 'grading').
+ * @param {string} newState The new state for participants.
+ */
+export function setParticipantState(newState) {
+    _state.gameStateForParticipant = newState;
+    _saveState();
+}
