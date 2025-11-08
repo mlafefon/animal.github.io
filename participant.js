@@ -234,7 +234,8 @@ function updateGameView(state) {
     }
 
     // Main game logic starts here, assuming a team is selected.
-    const isMyTurn = state.activeTeamIndex === myTeam.index;
+    // Use == to protect against potential type mismatch (string vs number) from state updates.
+    const isMyTurn = state.activeTeamIndex == myTeam.index;
     const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
     const activeTeamName = activeTeam ? activeTeam.name : 'הקבוצה';
 
@@ -285,7 +286,7 @@ function updateGameView(state) {
         default:
             showScreen('game');
             if (isMyTurn) {
-                questionText.textContent = 'הקבוצה ממתינה לתורה';
+                questionText.textContent = 'מוכנים? השאלה הבאה אליכם';
             } else {
                 questionText.textContent = `התור הבא הוא של קבוצת ${activeTeamName}. השאלה תופיע בקרוב...`;
             }
