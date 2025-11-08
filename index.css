@@ -2962,6 +2962,11 @@ input:disabled + .slider:before {
 
 /* --- Responsive Styles for Participant View --- */
 @media (max-width: 600px) {
+    body.participant-view {
+        align-items: flex-start;
+        padding-top: 2rem;
+    }
+    
     /* Join and Team Select Screens */
     .participant-container {
         padding: 1rem; /* Reduced padding for compact view */
