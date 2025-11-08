@@ -1,4 +1,4 @@
-import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTeam, startRemoteBoxSelection } from './game.js';
+import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTeam } from './game.js';
 import { showBoxesScreen } from './boxes.js';
 import { playSound, stopSound } from './audio.js';
 import { showLinkModal } from './ui.js';
@@ -177,32 +177,6 @@ export function showQuestionScreen(startTime = 30) {
     
     // Reset failure box button text for the new question
     failureBoxBtn.textContent = 'תיבת כישלון';
-
-    // --- NEW: Broadcast state to participants when question is shown ---
-    const broadcastQuestionState = () => {
-        const state = getState();
-        if (!state.sessionDocumentId) return;
-
-        const { gameCode, gameName, teams, activeTeamIndex } = state;
-        const questionForParticipant = { q: currentQuestion.q };
-
-        const sessionData = {
-            gameCode,
-            gameName,
-            teams,
-            activeTeamIndex,
-            gameState: 'question', // We are now in the 'question' state
-            currentQuestion: questionForParticipant,
-        };
-        
-        try {
-            updateGameSession(state.sessionDocumentId, sessionData);
-        } catch (error) {
-            console.error("Failed to broadcast question state:", error);
-        }
-    };
-    broadcastQuestionState();
-    // --- END NEW LOGIC ---
 
     timerContainer.classList.remove('low-time'); // Reset on new question
     stopTimer();
@@ -471,7 +445,11 @@ export function initializeQuestionScreen(onComplete) {
             onQuestionCompleteCallback();
         }
         const victoryType = gameScreen.dataset.victoryType;
-        startRemoteBoxSelection(victoryType === 'half' ? 'half-victory' : 'victory');
+        if (victoryType === 'half') {
+            showBoxesScreen({ mode: 'half-victory' });
+        } else {
+            showBoxesScreen({ mode: 'victory' });
+        }
     });
 
     answerLinkBtn.addEventListener('click', () => {

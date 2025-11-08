@@ -1,7 +1,9 @@
 import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState } from './game.js';
 import { playSound } from './audio.js';
 import { showLinkModal } from './ui.js';
-import { unsubscribeAllRealtime } from './appwriteService.js';
+import { unsubscribeAllRealtime, updateGameSession } from './appwriteService.js';
+import { getState } from './gameState.js';
+
 
 // --- Elements ---
 const bettingScreen = document.getElementById('betting-screen');
@@ -356,7 +358,18 @@ export function initializeFinalRound() {
         }
     });
 
-    endGameBtn.addEventListener('click', () => {
+    endGameBtn.addEventListener('click', async () => {
+        // Notify participants that the game is over
+        const { sessionDocumentId } = getState();
+        if (sessionDocumentId) {
+            try {
+                // We update with a minimal payload just to trigger the realtime event
+                await updateGameSession(sessionDocumentId, { gameState: 'finished' });
+            } catch (error) {
+                console.warn("Could not notify participants of game end:", error);
+            }
+        }
+
         // 1. Hide the final screen and the game footer.
         finalQuestionScreen.classList.add('hidden');
         mainGameFooter.classList.remove('visible');
@@ -364,6 +377,9 @@ export function initializeFinalRound() {
 
         // Stop listening to Appwrite events for this game
         unsubscribeAllRealtime();
+        // Remove the global event listener for broadcasting
+        document.removeEventListener('gamestatechange', () => {});
+
 
         // 2. Show the main start screen and header.
         startScreen.classList.remove('hidden');

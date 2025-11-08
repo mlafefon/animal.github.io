@@ -4,7 +4,7 @@ import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen, showSetupScreenForGame } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
 import { initializePreQuestionScreen } from './js/preq.js';
-import { initializeQuestionScreen, showQuestionScreen, stopTimer, triggerManualGrading } from './js/question.js';
+import { initializeQuestionScreen, showQuestionScreen, stopTimer } from './js/question.js';
 import { initializeBoxesScreen } from './js/boxes.js';
 import { initializeEditGameScreen, showEditScreen, checkForUnsavedChangesAndProceed } from './js/edit_game.js';
 import { initializeFinalRound, showBettingScreen } from './js/final.js';

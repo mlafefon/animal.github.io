@@ -33,8 +33,8 @@ function _resetInternalState() {
         options: {},
         gameCode: null,
         sessionDocumentId: null, // To store the Appwrite document ID
-        boxScores: [], // To hold scores for remote box selection
-        victoryType: 'victory',
+        gameStateForParticipant: 'waiting', // The high-level state for participant view
+        boxesData: null, // To hold scores and selection for the boxes screen
     };
 }
 
@@ -179,5 +179,44 @@ export function setIsQuestionPassed(value) {
  */
 export function setTeams(teamsArray) {
     _state.teams = teamsArray;
+    _saveState();
+}
+
+/**
+ * Sets the state for the boxes screen.
+ * @param {Array<number>} scores The shuffled scores for the boxes.
+ * @param {string} mode The type of box ('victory', 'failure', etc.).
+ */
+export function setBoxesState(scores, mode) {
+    _state.gameStateForParticipant = 'boxes';
+    _state.boxesData = {
+        scores: scores,
+        mode: mode,
+        selectedIndex: null,
+        selectedScore: null
+    };
+    _saveState();
+}
+
+/**
+ * Updates the state after a chest has been selected.
+ * @param {number} index The index of the selected chest.
+ * @param {number} score The score value of the selected chest.
+ */
+export function updateSelectedChest(index, score) {
+    if (_state.boxesData) {
+        _state.boxesData.selectedIndex = index;
+        _state.boxesData.selectedScore = score;
+        _state.gameStateForParticipant = 'boxes-revealed';
+        _saveState();
+    }
+}
+
+/**
+ * Clears the boxes data from the state when leaving the screen.
+ */
+export function clearBoxesState() {
+    _state.boxesData = null;
+    _state.gameStateForParticipant = 'waiting'; // Or whatever the next state should be
     _saveState();
 }
