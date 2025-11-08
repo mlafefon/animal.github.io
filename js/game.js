@@ -346,7 +346,8 @@ export async function startGame(options) {
         const savedState = gameState.getSavedState();
         if (savedState) {
             gameState.loadStateFromObject(savedState);
-             // Subscribe to actions for the existing game session
+             // Unsubscribe from any old listeners and subscribe for the new game session
+            unsubscribeAllRealtime();
             subscribeToActions(savedState.gameCode, handleParticipantAction);
             
             // Restore UI from loaded state
@@ -374,6 +375,8 @@ export async function startGame(options) {
     }
 
     // --- START NEW GAME ---
+    // The subscription is now started from the setup screen via an event.
+    // No need to subscribe again here.
     const { gameDataString } = options;
     if (!gameDataString) {
         alert('משחק לא תקין נבחר.');
@@ -392,9 +395,6 @@ export async function startGame(options) {
         return;
     }
     
-    // Subscribe to actions from participants for the new game
-    subscribeToActions(options.gameCode, handleParticipantAction);
-
     // Render UI from new state
     generateTeams();
     updateActiveTeam();
@@ -418,6 +418,16 @@ export async function startGame(options) {
 }
 
 export function initializeScoreControls() {
+    // Listen for the setup screen being ready to start listening for participants
+    document.addEventListener('setupready', (e) => {
+        const { gameCode } = e.detail;
+        if (gameCode) {
+            // Unsubscribe from any previous game/setup listeners before starting a new one.
+            unsubscribeAllRealtime();
+            subscribeToActions(gameCode, handleParticipantAction);
+        }
+    });
+
     const scoreControls = document.querySelector('.score-controls');
     if (!scoreControls) return;
 

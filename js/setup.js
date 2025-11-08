@@ -193,6 +193,9 @@ export async function showSetupScreenForGame(gameDoc) {
     }
     selectedGameDocument.gameCode = gameCode; // Attach to the document object for later use
 
+    // Dispatch event to notify other modules that setup is ready for listening
+    document.dispatchEvent(new CustomEvent('setupready', { detail: { gameCode } }));
+
     refreshSetupScreenState(); // Handles the "continue" checkbox state
     setupScreen.classList.remove('hidden');
     updateQuestionStats();
