@@ -2964,16 +2964,17 @@ input:disabled + .slider:before {
 @media (max-width: 600px) {
     /* Join and Team Select Screens */
     .participant-container {
-        padding: 1.5rem;
+        padding: 1rem; /* Reduced padding for compact view */
         width: 95%;
+        gap: 0.75rem; /* Reduced gap */
     }
 
     .participant-container h1 {
-        font-size: 2.2rem;
+        font-size: clamp(2.2rem, 9vw, 3rem); /* Larger, responsive title */
     }
 
     .participant-container h2 {
-        font-size: 1.5rem;
+        font-size: clamp(1.5rem, 6vw, 2rem); /* Larger, responsive subtitle */
     }
 
     #game-code-input {
@@ -2982,23 +2983,35 @@ input:disabled + .slider:before {
         padding: 0.75rem;
     }
 
+    /* NEW: Redesigned Team Selection List */
     #team-selection-grid {
-        grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
-        gap: 1.25rem;
+        display: flex;
+        flex-direction: column; /* Vertical list layout */
+        gap: 0.75rem; /* Tighter gap */
+        width: 100%;
+        margin-top: 1rem;
     }
 
     #team-selection-grid .team-member {
-        gap: 0.4rem;
+        flex-direction: row; /* Horizontal layout for icon + name */
+        align-items: center;
+        gap: 1rem; /* Space between icon and name */
+        padding: 0.5rem;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        background-color: rgba(0, 0, 0, 0.1);
+        border-radius: 50px; /* Pill shape */
     }
     
     #team-selection-grid .team-icon {
-        width: 5rem;
-        height: 5rem;
-        border-width: 0.2rem;
+        width: 4rem; /* Adjusted icon size */
+        height: 4rem;
+        border-width: 0.15rem;
+        flex-shrink: 0; /* Prevent icon from shrinking */
     }
     
     #team-selection-grid .team-name {
-        font-size: 1rem;
+        font-size: clamp(1.3rem, 5vw, 1.6rem); /* Larger, responsive font */
+        font-weight: bold;
     }
 
     /* Participant Game Screen */
