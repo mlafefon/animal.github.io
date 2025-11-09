@@ -135,7 +135,7 @@ function prepareForFinalRound() {
 /**
  * Gathers the current game state and broadcasts it to participants via Appwrite.
  */
-async function broadcastGameState() {
+export async function broadcastGameState() {
     const { sessionDocumentId, gameCode, gameName, teams, activeTeamIndex, gameStateForParticipant, finalQuestionData, boxesData } = gameState.getState();
     if (!sessionDocumentId) return;
 

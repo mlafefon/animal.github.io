@@ -291,6 +291,7 @@ function updateGameView(state) {
 function initializeJoinScreen() {
     joinForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        unsubscribeAllRealtime(); // Unsubscribe from any previous sessions first for stability.
         const code = gameCodeInput.value.trim();
         if (!code || code.length !== 6) {
             joinError.textContent = 'יש להזין קוד משחק בן 6 ספרות.';

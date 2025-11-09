@@ -1,4 +1,4 @@
-import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState } from './game.js';
+import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState, broadcastGameState } from './game.js';
 import { playSound } from './audio.js';
 import { showLinkModal } from './ui.js';
 import { unsubscribeAllRealtime, updateGameSession } from './appwriteService.js';
@@ -377,8 +377,8 @@ export function initializeFinalRound() {
 
         // Stop listening to Appwrite events for this game
         unsubscribeAllRealtime();
-        // Remove the global event listener for broadcasting
-        document.removeEventListener('gamestatechange', () => {});
+        // Remove the global event listener for broadcasting correctly
+        document.removeEventListener('gamestatechange', broadcastGameState);
 
 
         // 2. Show the main start screen and header.
