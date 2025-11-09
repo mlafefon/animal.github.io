@@ -1,5 +1,4 @@
 
-
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen, showSetupScreenForGame } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
@@ -11,9 +10,8 @@ import { initializeFinalRound, showBettingScreen } from './js/final.js';
 import { initKeyboardNav } from './js/keyboardNav.js';
 import { preloadGameAssets } from './js/assets.js';
 import { initializeAuth } from './js/auth.js';
-import { clearAllCaches, logout, getAccount, unsubscribeAllRealtime } from './js/appwriteService.js';
+import { clearAllCaches, logout, getAccount } from './js/appwriteService.js';
 import { initializeConfirmModal, initializeLinkModal, showNotification, initializeQuestionPreviewModal, initializeNotification } from './js/ui.js';
-import { getState } from './js/gameState.js';
 
 
 /**
@@ -73,7 +71,6 @@ function initializeGlobalHomeButton() {
     homeBtn.addEventListener('click', () => {
         const goHome = () => {
             stopTimer(); // Stop any active game timer
-            unsubscribeAllRealtime(); // Unsubscribe from Appwrite channels
 
             // Hide all potential screens
             const allScreens = [
@@ -259,7 +256,6 @@ export function initializeApp() {
 document.addEventListener('DOMContentLoaded', () => {
     // On every page refresh, clear the session cache to get the latest data.
     clearAllCaches();
-    unsubscribeAllRealtime(); // Ensure no lingering subscriptions on reload
     
     // Initialize all application logic and event listeners.
     initializeApp();
@@ -289,8 +285,4 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         })
         .catch(error => console.error('Error fetching app version:', error));
-    
-    // This helps ensure that if the host closes the tab, they unsubscribe from realtime events,
-    // preventing orphaned listeners and improving connection stability.
-    window.addEventListener('beforeunload', unsubscribeAllRealtime);
 });

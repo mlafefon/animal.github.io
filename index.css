@@ -536,6 +536,84 @@ h1, h2, h3, h4, h5, h6 {
     margin: 0 auto;
 }
 
+/* --- Lobby Screen --- */
+#lobby-screen {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 1.5rem;
+    padding: 1.25rem;
+}
+
+#lobby-screen h1 {
+    font-size: 3rem;
+    color: #ffeb3b;
+}
+
+#lobby-screen p {
+    font-size: 1.2rem;
+    color: rgba(240, 248, 255, 0.8);
+}
+
+#lobby-game-code-display {
+    font-size: 5rem;
+    font-weight: bold;
+    color: #ffeb3b;
+    background: rgba(0,0,0,0.3);
+    padding: 1rem 2rem;
+    border-radius: 0.75rem;
+    letter-spacing: 0.75rem;
+    cursor: copy;
+    border: 2px dashed rgba(255,255,255,0.4);
+    transition: background-color 0.2s;
+    margin-bottom: 1rem;
+    user-select: all;
+}
+#lobby-game-code-display:hover {
+    background-color: rgba(0,0,0,0.5);
+}
+
+#lobby-teams-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+    min-height: 8rem;
+    margin-bottom: 1.5rem;
+}
+
+.lobby-team-slot {
+    width: 7rem;
+    height: 7rem;
+    border-radius: 50%;
+    background-color: rgba(0,0,0,0.2);
+    border: 4px dashed rgba(255,255,255,0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+.lobby-team-slot.filled {
+    background-color: rgba(0,0,0,0.4);
+    border-style: solid;
+    border-color: #ffeb3b;
+    padding: 0.5rem;
+}
+
+.lobby-team-slot.filled img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+
 /* --- Pre-Question Screen --- */
 #pre-question-screen {
     width: 100vw;
@@ -2795,30 +2873,6 @@ input:disabled + .slider:before {
 }
 
 /* Styles for Host View Game Code */
-.game-code-box {
-    text-align: center;
-}
-.game-code-box p {
-    font-size: 1.1rem;
-    margin-bottom: 0.625rem;
-    color: rgba(240, 248, 255, 0.8);
-}
-.game-code-display {
-    font-size: 4rem;
-    font-weight: bold;
-    color: #ffeb3b;
-    background: rgba(0,0,0,0.3);
-    padding: 0.625rem 1.25rem;
-    border-radius: 0.625rem;
-    letter-spacing: 0.625rem;
-    cursor: copy;
-    border: 2px dashed rgba(255,255,255,0.4);
-    transition: background-color 0.2s;
-}
-.game-code-display:hover {
-    background-color: rgba(0,0,0,0.5);
-}
-
 #joined-participants-container {
     display: flex;
     justify-content: center;

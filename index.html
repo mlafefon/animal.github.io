@@ -78,13 +78,6 @@
                 </div>
             </div>
 
-            <div class="setup-box game-code-box">
-                <h2>קוד הצטרפות למשחק</h2>
-                <p>שתף קוד זה עם המשתתפים</p>
-                <div id="game-code-display" title="לחץ להעתקה">......</div>
-                <div id="joined-participants-container"></div>
-            </div>
-
             <div class="setup-box">
                 <h2>בחר מספר קבוצות</h2>
                 <ul id="group-list" class="selection-list">
@@ -114,6 +107,16 @@
         </footer>
         
         <button id="start-btn" class="btn btn-primary">התחל</button>
+    </div>
+
+    <div id="lobby-screen" class="container hidden">
+        <h1>קוד הצטרפות למשחק</h1>
+        <p>שתף קוד זה עם המשתתפים</p>
+        <div id="lobby-game-code-display" title="לחץ להעתקה">......</div>
+        <div id="lobby-teams-container">
+            <!-- Team slots will be injected here by JS -->
+        </div>
+        <button id="lobby-start-game-btn" class="btn btn-primary btn-large">התחל משחק</button>
     </div>
 
     <div id="pre-question-screen" class="hidden">

@@ -9,7 +9,6 @@ const groupList = document.getElementById('group-list');
 const startButton = document.getElementById('start-btn');
 const setupScreen = document.getElementById('setup-screen');
 const setupGameTitle = document.getElementById('setup-game-title');
-const joinedParticipantsContainer = document.getElementById('joined-participants-container');
 
 
 let selectedGameDocument = null;
@@ -22,17 +21,17 @@ let currentSessionDoc = null;
  * @param {Array<object>} teams - The array of team objects from the game state.
  */
 export function updateJoinedTeamsDisplay(teams) {
-    if (!joinedParticipantsContainer) return;
-    joinedParticipantsContainer.innerHTML = '';
-    const joinedTeams = teams.filter(t => t.isTaken);
-    
-    joinedTeams.forEach(team => {
-        const img = document.createElement('img');
-        img.src = team.icon;
-        img.alt = team.name;
-        img.title = team.name;
-        img.className = 'participant-icon';
-        joinedParticipantsContainer.appendChild(img);
+    // This function will now update the lobby screen's team slots.
+    const lobbyContainer = document.getElementById('lobby-teams-container');
+    if (!lobbyContainer || lobbyContainer.children.length === 0) return;
+
+    teams.forEach(team => {
+        const slot = lobbyContainer.querySelector(`.lobby-team-slot[data-index="${team.index}"]`);
+        if (slot && team.isTaken && !slot.classList.contains('filled')) {
+            // Team just joined
+            slot.innerHTML = `<img src="${team.icon}" alt="${team.name}" class="participant-icon">`;
+            slot.classList.add('filled');
+        }
     });
 }
 
@@ -190,15 +189,7 @@ export async function showSetupScreenForGame(gameDoc) {
         setupGameTitle.textContent = selectedGameDocument.game_name;
     }
 
-    if (joinedParticipantsContainer) {
-        joinedParticipantsContainer.innerHTML = ''; // Clear on new game setup
-    }
-
     const gameCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const gameCodeDisplay = document.getElementById('game-code-display');
-    if (gameCodeDisplay) {
-        gameCodeDisplay.textContent = gameCode;
-    }
     selectedGameDocument.gameCode = gameCode; // Attach to the document object for later use
 
     // Dispatch event to notify other modules that setup is ready for listening
@@ -226,28 +217,13 @@ export function initializeSetupScreen(onStart) {
     continueCheckbox.addEventListener('change', (e) => {
         const isChecked = e.target.checked;
         toggleSetupControls(isChecked);
-        // The logic to apply selections has been removed, as it's not relevant in this flow.
-        // If the user wants to continue, they will press Start and the game logic will handle it.
         updateQuestionStats();
     });
 
     groupList.addEventListener('click', (e) => {
         handleSelection(groupList, e);
         updateQuestionStats();
-        // createOrUpdateParticipantSession(); // This is now handled on game load
     });
-
-    const gameCodeDisplay = document.getElementById('game-code-display');
-    if(gameCodeDisplay) {
-        gameCodeDisplay.addEventListener('click', () => {
-            navigator.clipboard.writeText(gameCodeDisplay.textContent).then(() => {
-                showNotification('הקוד הועתק!', 'success');
-            }).catch(err => {
-                console.error('Failed to copy code: ', err);
-                showNotification('שגיאה בהעתקת הקוד', 'error');
-            });
-        });
-    }
 
     startButton.addEventListener('click', () => {
         const actualQuestionsText = document.getElementById('actual-questions-stat').textContent;
@@ -264,28 +240,65 @@ export function initializeSetupScreen(onStart) {
             return;
         }
 
+        // --- NEW LOBBY FLOW ---
         setupScreen.classList.add('hidden');
-        
+        const lobbyScreen = document.getElementById('lobby-screen');
+        lobbyScreen.classList.remove('hidden');
+
         const selectedGroup = groupList.querySelector('.selected');
         const numberOfGroups = selectedGroup ? parseInt(selectedGroup.textContent, 10) : 4;
-        
-        const documentId = selectedGameDocument ? selectedGameDocument.$id : null;
-        const gameDataString = selectedGameDocument ? selectedGameDocument.game_data : '{}';
-        const gameName = selectedGameDocument ? selectedGameDocument.game_name : '';
-        const gameCode = selectedGameDocument ? selectedGameDocument.gameCode : null;
-        
-        const shuffleQuestions = document.getElementById('shuffle-questions').checked;
-        
-        onStart({ 
-            numberOfGroups, 
-            documentId, 
-            gameDataString, 
-            shuffleQuestions, 
-            actualQuestions, 
-            continueLastPoint, 
-            gameName, 
-            gameCode,
-            sessionDocumentId: currentSessionDoc ? currentSessionDoc.$id : null
+
+        // Populate lobby
+        const lobbyCodeDisplay = document.getElementById('lobby-game-code-display');
+        lobbyCodeDisplay.textContent = selectedGameDocument.gameCode;
+
+        const lobbyTeamsContainer = document.getElementById('lobby-teams-container');
+        lobbyTeamsContainer.innerHTML = ''; // Clear previous
+        for (let i = 0; i < numberOfGroups; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'lobby-team-slot';
+            slot.dataset.index = i;
+            lobbyTeamsContainer.appendChild(slot);
+        }
+
+        // Add listener for the final start button
+        const lobbyStartBtn = document.getElementById('lobby-start-game-btn');
+
+        // This handler will be set only once
+        const lobbyStartHandler = () => {
+            lobbyScreen.classList.add('hidden');
+            
+            const documentId = selectedGameDocument ? selectedGameDocument.$id : null;
+            const gameDataString = selectedGameDocument ? selectedGameDocument.game_data : '{}';
+            const gameName = selectedGameDocument ? selectedGameDocument.game_name : '';
+            const gameCode = selectedGameDocument ? selectedGameDocument.gameCode : null;
+            const shuffleQuestions = document.getElementById('shuffle-questions').checked;
+            
+            onStart({ 
+                numberOfGroups, 
+                documentId, 
+                gameDataString, 
+                shuffleQuestions, 
+                actualQuestions, 
+                continueLastPoint, 
+                gameName, 
+                gameCode,
+                sessionDocumentId: currentSessionDoc ? currentSessionDoc.$id : null
+            });
+        };
+
+        // Remove old listener to prevent duplicates, then add the new one.
+        lobbyStartBtn.removeEventListener('click', lobbyStartHandler);
+        lobbyStartBtn.addEventListener('click', lobbyStartHandler);
+
+        // Copy code functionality
+        lobbyCodeDisplay.addEventListener('click', () => {
+            navigator.clipboard.writeText(lobbyCodeDisplay.textContent).then(() => {
+                showNotification('הקוד הועתק!', 'success');
+            }).catch(err => {
+                console.error('Failed to copy code: ', err);
+                showNotification('שגיאה בהעתקת הקוד', 'error');
+            });
         });
     });
 }
