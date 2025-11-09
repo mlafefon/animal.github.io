@@ -1,84 +1,96 @@
-
-
 import { getSavedState, setTeamsForSetup } from './gameState.js';
 import { TEAMS_MASTER_DATA } from './game.js';
 import { showNotification } from './ui.js';
 import { createGameSession, getAccount } from './appwriteService.js';
 
+// --- Elements from Setup Screen ---
 const groupList = document.getElementById('group-list');
 const startButton = document.getElementById('start-btn');
 const setupScreen = document.getElementById('setup-screen');
 const setupGameTitle = document.getElementById('setup-game-title');
+const joinedParticipantsContainer = document.getElementById('joined-participants-container');
+const setupGameCodeDisplay = document.getElementById('setup-game-code-display');
 
+// --- Elements from Join Host Screen ---
+const joinHostScreen = document.getElementById('join-host-screen');
+const startGameFromJoinBtn = document.getElementById('start-game-from-join-btn');
+const joinHostCodeDisplay = document.getElementById('join-host-code-display');
+const joinHostTeamsContainer = document.getElementById('join-host-teams-container');
 
+// --- State ---
 let selectedGameDocument = null;
 let selectedGameData = null;
-let currentSessionDoc = null;
+let _gameOptionsForStart = null;
 
+// --- Functions for Join Host Screen ---
 
 /**
- * Updates the display of joined participant icons on the setup screen.
- * @param {Array<object>} teams - The array of team objects from the game state.
+ * Renders the empty team slots on the join screen.
+ * @param {number} count The number of teams.
  */
-export function updateJoinedTeamsDisplay(teams) {
-    // This function will now update the lobby screen's team slots.
-    const lobbyContainer = document.getElementById('lobby-teams-container');
-    if (!lobbyContainer || lobbyContainer.children.length === 0) return;
+function renderEmptyTeamSlots(count) {
+    joinHostTeamsContainer.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'team-slot';
+        slot.dataset.index = i;
+        const teamMaster = TEAMS_MASTER_DATA[i % TEAMS_MASTER_DATA.length];
+        slot.innerHTML = `<img src="${teamMaster.icon}" alt="${teamMaster.name}" style="display: none;">`;
+        joinHostTeamsContainer.appendChild(slot);
+    }
+}
 
-    teams.forEach(team => {
-        const slot = lobbyContainer.querySelector(`.lobby-team-slot[data-index="${team.index}"]`);
-        if (slot && team.isTaken && !slot.classList.contains('filled')) {
-            // Team just joined
-            slot.innerHTML = `<img src="${team.icon}" alt="${team.name}" class="participant-icon">`;
+/**
+ * Updates the team slots UI on the join screen when a participant joins.
+ * @param {Event} event The 'participantjoined' custom event.
+ */
+function updateTeamSlotsOnJoinScreen(event) {
+    if (joinHostScreen.classList.contains('hidden')) return;
+    const { teams } = event.detail;
+    const slots = joinHostTeamsContainer.querySelectorAll('.team-slot');
+    slots.forEach(slot => {
+        const teamIndex = parseInt(slot.dataset.index, 10);
+        const teamData = teams.find(t => t.index === teamIndex);
+        if (teamData && teamData.isTaken && !slot.classList.contains('filled')) {
+            const img = slot.querySelector('img');
+            img.style.display = 'block';
             slot.classList.add('filled');
         }
     });
 }
 
+/**
+ * Shows the join screen for the host.
+ * @param {object} options Game options from the setup screen.
+ */
+function showJoinHostScreen(options) {
+    _gameOptionsForStart = options;
+    setupScreen.classList.add('hidden');
+    joinHostCodeDisplay.textContent = options.gameCode;
+    renderEmptyTeamSlots(options.numberOfGroups);
+    joinHostScreen.classList.remove('hidden');
+    startGameFromJoinBtn.focus();
+}
+
+// --- Functions for Setup Screen ---
 
 /**
- * Creates or updates the session document in Appwrite for participants.
+ * Updates the display of joined participant icons on the setup screen.
+ * @param {Array<object>} teams - The array of team objects from the game state.
  */
-async function createOrUpdateParticipantSession() {
-    if (!selectedGameDocument || !selectedGameDocument.gameCode) return;
-
-    const { gameCode, game_name: gameName } = selectedGameDocument;
-    const selectedGroup = groupList.querySelector('.selected');
-    const numberOfGroups = selectedGroup ? parseInt(selectedGroup.textContent, 10) : 4;
+export function updateSetupParticipantsDisplay(teams) {
+    if (!joinedParticipantsContainer) return;
+    joinedParticipantsContainer.innerHTML = '';
+    const joinedTeams = teams.filter(t => t.isTaken);
     
-    const teamsForParticipants = TEAMS_MASTER_DATA.slice(0, numberOfGroups).map((team, index) => ({
-        ...team,
-        index,
-        isTaken: false
-    }));
-    
-    // Set the teams in the temporary game state so the host can react to joins.
-    setTeamsForSetup(teamsForParticipants);
-
-    const sessionData = {
-        gameCode,
-        gameName,
-        teams: teamsForParticipants.map(t => ({
-            index: t.index,
-            name: t.name,
-            iconKey: t.iconKey,
-            isTaken: t.isTaken,
-        })),
-        gameState: 'setup',
-    };
-
-    try {
-        if (!currentSessionDoc) {
-            const user = await getAccount();
-            const newDoc = await createGameSession(gameCode, user.$id, sessionData);
-            currentSessionDoc = newDoc;
-        }
-        // Note: For this flow, we don't need to update an existing session document
-        // because a new session is created for each new game setup screen.
-    } catch (error) {
-        console.error("Failed to create game session:", error);
-        showNotification("שגיאה ביצירת סשן המשחק. המשתתפים לא יוכלו להצטרף.", "error");
-    }
+    joinedTeams.forEach(team => {
+        const img = document.createElement('img');
+        img.src = team.icon;
+        img.alt = team.name;
+        img.title = team.name;
+        img.className = 'participant-icon';
+        joinedParticipantsContainer.appendChild(img);
+    });
 }
 
 /**
@@ -176,7 +188,6 @@ export async function refreshSetupScreenState() {
  */
 export async function showSetupScreenForGame(gameDoc) {
     selectedGameDocument = gameDoc;
-    currentSessionDoc = null; // Reset session for the new game
     try {
         selectedGameData = JSON.parse(gameDoc.game_data);
     } catch (e) {
@@ -189,16 +200,18 @@ export async function showSetupScreenForGame(gameDoc) {
         setupGameTitle.textContent = selectedGameDocument.game_name;
     }
 
+    if (joinedParticipantsContainer) {
+        joinedParticipantsContainer.innerHTML = ''; // Clear on new game setup
+    }
+
     const gameCode = Math.floor(100000 + Math.random() * 900000).toString();
-    selectedGameDocument.gameCode = gameCode; // Attach to the document object for later use
-
-    // Dispatch event to notify other modules that setup is ready for listening
-    document.dispatchEvent(new CustomEvent('setupready', { detail: { gameCode } }));
-
-    refreshSetupScreenState(); // Handles the "continue" checkbox state
+    if (setupGameCodeDisplay) {
+        setupGameCodeDisplay.textContent = gameCode;
+    }
+    
+    refreshSetupScreenState();
     setupScreen.classList.remove('hidden');
     updateQuestionStats();
-    await createOrUpdateParticipantSession(); // Create session *before* returning, ensuring it's ready.
 }
 
 
@@ -225,7 +238,25 @@ export function initializeSetupScreen(onStart) {
         updateQuestionStats();
     });
 
-    startButton.addEventListener('click', () => {
+    if(setupGameCodeDisplay) {
+        setupGameCodeDisplay.addEventListener('click', () => {
+            navigator.clipboard.writeText(setupGameCodeDisplay.textContent).then(() => {
+                showNotification('הקוד הועתק!', 'success');
+            }).catch(err => {
+                console.error('Failed to copy code: ', err);
+                showNotification('שגיאה בהעתקת הקוד', 'error');
+            });
+        });
+    }
+
+    // Listen for participant joins to update BOTH screens if needed
+    document.addEventListener('participantjoined', (e) => {
+        updateSetupParticipantsDisplay(e.detail.teams);
+        updateTeamSlotsOnJoinScreen(e);
+    });
+
+    // Start Button from Setup Screen
+    startButton.addEventListener('click', async () => {
         const actualQuestionsText = document.getElementById('actual-questions-stat').textContent;
         const actualQuestions = parseInt(actualQuestionsText.split(':')[1].trim(), 10) || 0;
         const continueLastPoint = document.getElementById('continue-last-point').checked;
@@ -235,70 +266,66 @@ export function initializeSetupScreen(onStart) {
             return;
         }
 
-        if ((!selectedGameDocument || !currentSessionDoc) && !continueLastPoint) {
-            alert('אירעה שגיאה. לא נוצר סשן למשחק.');
+        const selectedGroup = groupList.querySelector('.selected');
+        const numberOfGroups = selectedGroup ? parseInt(selectedGroup.textContent, 10) : 4;
+        
+        const options = { 
+            numberOfGroups, 
+            documentId: selectedGameDocument ? selectedGameDocument.$id : null, 
+            gameDataString: selectedGameDocument ? selectedGameDocument.game_data : '{}', 
+            shuffleQuestions: document.getElementById('shuffle-questions').checked, 
+            actualQuestions, 
+            continueLastPoint, 
+            gameName: selectedGameDocument ? selectedGameDocument.game_name : ''
+        };
+
+        if (continueLastPoint) {
+            setupScreen.classList.add('hidden');
+            onStart(options);
             return;
         }
 
-        // --- NEW LOBBY FLOW ---
-        setupScreen.classList.add('hidden');
-        const lobbyScreen = document.getElementById('lobby-screen');
-        lobbyScreen.classList.remove('hidden');
-
-        const selectedGroup = groupList.querySelector('.selected');
-        const numberOfGroups = selectedGroup ? parseInt(selectedGroup.textContent, 10) : 4;
-
-        // Populate lobby
-        const lobbyCodeDisplay = document.getElementById('lobby-game-code-display');
-        lobbyCodeDisplay.textContent = selectedGameDocument.gameCode;
-
-        const lobbyTeamsContainer = document.getElementById('lobby-teams-container');
-        lobbyTeamsContainer.innerHTML = ''; // Clear previous
-        for (let i = 0; i < numberOfGroups; i++) {
-            const slot = document.createElement('div');
-            slot.className = 'lobby-team-slot';
-            slot.dataset.index = i;
-            lobbyTeamsContainer.appendChild(slot);
+        if (!selectedGameDocument) {
+            alert('יש לבחור משחק.');
+            return;
         }
 
-        // Add listener for the final start button
-        const lobbyStartBtn = document.getElementById('lobby-start-game-btn');
+        // --- New Game Flow ---
+        const gameCode = Math.floor(100000 + Math.random() * 900000).toString();
+        options.gameCode = gameCode;
 
-        // This handler will be set only once
-        const lobbyStartHandler = () => {
-            lobbyScreen.classList.add('hidden');
+        try {
+            const user = await getAccount();
+            const teamsForSession = TEAMS_MASTER_DATA.slice(0, options.numberOfGroups).map((t, i) => ({ index: i, name: t.name, iconKey: t.iconKey, isTaken: false }));
+            setTeamsForSetup(teamsForSession);
             
-            const documentId = selectedGameDocument ? selectedGameDocument.$id : null;
-            const gameDataString = selectedGameDocument ? selectedGameDocument.game_data : '{}';
-            const gameName = selectedGameDocument ? selectedGameDocument.game_name : '';
-            const gameCode = selectedGameDocument ? selectedGameDocument.gameCode : null;
-            const shuffleQuestions = document.getElementById('shuffle-questions').checked;
+            const sessionData = { gameCode, gameName: options.gameName, teams: teamsForSession, gameState: 'setup' };
+            const sessionDoc = await createGameSession(gameCode, user.$id, sessionData);
+            options.sessionDocumentId = sessionDoc.$id;
             
-            onStart({ 
-                numberOfGroups, 
-                documentId, 
-                gameDataString, 
-                shuffleQuestions, 
-                actualQuestions, 
-                continueLastPoint, 
-                gameName, 
-                gameCode,
-                sessionDocumentId: currentSessionDoc ? currentSessionDoc.$id : null
-            });
-        };
+            document.dispatchEvent(new CustomEvent('setupready', { detail: { gameCode } }));
+            showJoinHostScreen(options);
+        } catch (error) {
+            console.error("Failed to create game session:", error);
+            showNotification("שגיאה ביצירת סשן המשחק.", "error");
+        }
+    });
 
-        // Remove old listener to prevent duplicates, then add the new one.
-        lobbyStartBtn.removeEventListener('click', lobbyStartHandler);
-        lobbyStartBtn.addEventListener('click', lobbyStartHandler);
+    // Start Button from Join Screen
+    startGameFromJoinBtn.addEventListener('click', () => {
+        joinHostScreen.classList.add('hidden');
+        if (onStart && _gameOptionsForStart) {
+            onStart(_gameOptionsForStart);
+        }
+    });
 
-        // Copy code functionality
-        lobbyCodeDisplay.addEventListener('click', () => {
-            navigator.clipboard.writeText(lobbyCodeDisplay.textContent).then(() => {
-                showNotification('הקוד הועתק!', 'success');
-            }).catch(err => {
-                console.error('Failed to copy code: ', err);
-                showNotification('שגיאה בהעתקת הקוד', 'error');
-            });
+    // Code copy from Join screen
+    joinHostCodeDisplay.addEventListener('click', () => {
+        navigator.clipboard.writeText(joinHostCodeDisplay.textContent).then(() => {
+            showNotification('הקוד הועתק!', 'success');
+        }).catch(err => {
+            console.error('Failed to copy code: ', err);
+            showNotification('שגיאה בהעתקת הקוד', 'error');
         });
     });
 }

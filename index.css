@@ -536,8 +536,8 @@ h1, h2, h3, h4, h5, h6 {
     margin: 0 auto;
 }
 
-/* --- Lobby Screen --- */
-#lobby-screen {
+/* --- Join Host Screen --- */
+#join-host-screen {
     width: 100vw;
     height: 100vh;
     display: flex;
@@ -545,74 +545,78 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: center;
     align-items: center;
     text-align: center;
-    gap: 1.5rem;
-    padding: 1.25rem;
 }
 
-#lobby-screen h1 {
+.join-host-content {
+    background: rgba(0, 0, 0, 0.25);
+    border: 0.0625rem solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.9375rem;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 50rem; /* Wider for more teams */
+    box-shadow: 0 0.5rem 1.875rem rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.join-host-content h1 {
     font-size: 3rem;
     color: #ffeb3b;
 }
 
-#lobby-screen p {
+.join-host-content p {
     font-size: 1.2rem;
-    color: rgba(240, 248, 255, 0.8);
+    margin-bottom: -0.5rem; /* reduce space */
 }
 
-#lobby-game-code-display {
-    font-size: 5rem;
-    font-weight: bold;
-    color: #ffeb3b;
-    background: rgba(0,0,0,0.3);
-    padding: 1rem 2rem;
-    border-radius: 0.75rem;
-    letter-spacing: 0.75rem;
-    cursor: copy;
-    border: 2px dashed rgba(255,255,255,0.4);
-    transition: background-color 0.2s;
-    margin-bottom: 1rem;
-    user-select: all;
-}
-#lobby-game-code-display:hover {
-    background-color: rgba(0,0,0,0.5);
-}
-
-#lobby-teams-container {
+#join-host-teams-container {
     display: flex;
     justify-content: center;
-    align-items: center;
+    flex-wrap: wrap;
     gap: 1.5rem;
-    min-height: 8rem;
-    margin-bottom: 1.5rem;
+    margin: 1.25rem 0;
+    width: 100%;
 }
 
-.lobby-team-slot {
-    width: 7rem;
-    height: 7rem;
+.team-slot {
+    width: 7.5rem;
+    height: 7.5rem;
     border-radius: 50%;
-    background-color: rgba(0,0,0,0.2);
-    border: 4px dashed rgba(255,255,255,0.4);
+    border: 0.3125rem dashed rgba(255, 255, 255, 0.4);
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: background-color 0.3s, border-color 0.3s;
+    transition: all 0.3s ease-in-out;
 }
 
-.lobby-team-slot.filled {
-    background-color: rgba(0,0,0,0.4);
+.team-slot.filled {
     border-style: solid;
     border-color: #ffeb3b;
-    padding: 0.5rem;
+    padding: 0.3125rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
 }
 
-.lobby-team-slot.filled img {
+.team-slot img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
     border-radius: 50%;
-    animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    object-fit: cover;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.3s ease-in-out;
 }
 
+.team-slot.filled img {
+    opacity: 1;
+    transform: scale(1);
+}
+
+#start-game-from-join-btn {
+    margin-top: 1rem;
+}
 
 /* --- Pre-Question Screen --- */
 #pre-question-screen {
@@ -2873,6 +2877,30 @@ input:disabled + .slider:before {
 }
 
 /* Styles for Host View Game Code */
+.game-code-box {
+    text-align: center;
+}
+.game-code-box p {
+    font-size: 1.1rem;
+    margin-bottom: 0.625rem;
+    color: rgba(240, 248, 255, 0.8);
+}
+.game-code-display {
+    font-size: 4rem;
+    font-weight: bold;
+    color: #ffeb3b;
+    background: rgba(0,0,0,0.3);
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.625rem;
+    letter-spacing: 0.625rem;
+    cursor: copy;
+    border: 2px dashed rgba(255,255,255,0.4);
+    transition: background-color 0.2s;
+}
+.game-code-display:hover {
+    background-color: rgba(0,0,0,0.5);
+}
+
 #joined-participants-container {
     display: flex;
     justify-content: center;
@@ -3188,5 +3216,16 @@ input:disabled + .slider:before {
     
     #participant-boxes-message {
         font-size: 1.2rem;
+    }
+
+    /* Responsive for join screen */
+    .join-host-content {
+        padding: 1.5rem;
+        gap: 1rem;
+    }
+    .team-slot {
+        width: 5rem;
+        height: 5rem;
+        border-width: 0.2rem;
     }
 }
