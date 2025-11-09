@@ -1,6 +1,6 @@
 
 
-import { getSavedState } from './gameState.js';
+import { getSavedState, setTeamsForSetup } from './gameState.js';
 import { TEAMS_MASTER_DATA } from './game.js';
 import { showNotification } from './ui.js';
 import { createGameSession, getAccount } from './appwriteService.js';
@@ -52,11 +52,19 @@ async function createOrUpdateParticipantSession() {
         index,
         isTaken: false
     }));
+    
+    // Set the teams in the temporary game state so the host can react to joins.
+    setTeamsForSetup(teamsForParticipants);
 
     const sessionData = {
         gameCode,
         gameName,
-        teams: teamsForParticipants,
+        teams: teamsForParticipants.map(t => ({
+            index: t.index,
+            name: t.name,
+            iconKey: t.iconKey,
+            isTaken: t.isTaken,
+        })),
         gameState: 'setup',
     };
 

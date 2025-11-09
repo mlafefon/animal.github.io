@@ -184,6 +184,15 @@ export function setTeams(teamsArray) {
 }
 
 /**
+ * Sets the teams array in the state *without* saving to localStorage.
+ * Used during the setup phase before the game officially starts.
+ * @param {Array<object>} teamsArray The teams for the current setup.
+ */
+export function setTeamsForSetup(teamsArray) {
+    _state.teams = teamsArray;
+}
+
+/**
  * Sets the state for the boxes screen.
  * @param {Array<number>} scores The shuffled scores for the boxes.
  * @param {string} mode The type of box ('victory', 'failure', etc.).

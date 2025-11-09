@@ -187,7 +187,7 @@ async function handleParticipantAction(actionPayload) {
             const team = currentState.teams.find(t => t.index === actionData.teamIndex);
             if (team && !team.isTaken) {
                 team.isTaken = true;
-                gameState.setTeams(currentState.teams); // Update internal state
+                gameState.setTeamsForSetup(currentState.teams); // Update internal state without saving
                 
                 // Update the host's UI to show the joined team icon
                 updateJoinedTeamsDisplay(currentState.teams);
