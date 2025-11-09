@@ -27,6 +27,65 @@ export const TEAMS_MASTER_DATA = [
 // All state variables have been moved to gameState.js.
 let scoreAnimationId = null;
 
+// --- Realtime Broadcasting with Debounce ---
+let broadcastTimeout = null;
+
+/**
+ * The core logic for broadcasting the game state. This is called by the debounced wrapper.
+ * @private
+ */
+async function _broadcastGameState() {
+    const { sessionDocumentId, gameCode, gameName, teams, activeTeamIndex, gameStateForParticipant, finalQuestionData, boxesData } = gameState.getState();
+    if (!sessionDocumentId) return;
+
+    // Determine the high-level state for participants
+    let currentGameState = gameStateForParticipant || 'waiting'; // Use state if available
+    let questionForParticipant = null;
+    
+    if (currentGameState === 'question') {
+        const q = getCurrentQuestion();
+        questionForParticipant = { q: q.q }; // Only send the question text
+    }
+
+    // Create a "lean" version of the teams array to reduce payload size.
+    const leanTeams = teams.map(team => ({
+        index: team.index,
+        name: team.name,
+        iconKey: team.iconKey,
+        score: team.score,
+        isTaken: team.isTaken
+    }));
+
+    const sessionData = {
+        gameCode,
+        gameName,
+        teams: leanTeams, // Send the lean version
+        activeTeamIndex,
+        gameState: currentGameState,
+        currentQuestion: questionForParticipant,
+        boxesData: boxesData,
+    };
+
+    try {
+        await updateGameSession(sessionDocumentId, sessionData);
+    } catch (error) {
+        console.error("Failed to broadcast game state:", error);
+    }
+}
+
+/**
+ * Gathers the current game state and broadcasts it to participants via Appwrite.
+ * This function is debounced to prevent rapid-fire updates, improving stability.
+ */
+export const broadcastGameState = () => {
+    if (broadcastTimeout) {
+        clearTimeout(broadcastTimeout);
+    }
+    // Set a 150ms debounce. This batches rapid successive calls into a single update.
+    broadcastTimeout = setTimeout(_broadcastGameState, 150);
+};
+
+
 // --- Private UI Functions ---
 
 /**
@@ -133,48 +192,6 @@ function prepareForFinalRound() {
 }
 
 /**
- * Gathers the current game state and broadcasts it to participants via Appwrite.
- */
-export async function broadcastGameState() {
-    const { sessionDocumentId, gameCode, gameName, teams, activeTeamIndex, gameStateForParticipant, finalQuestionData, boxesData } = gameState.getState();
-    if (!sessionDocumentId) return;
-
-    // Determine the high-level state for participants
-    let currentGameState = gameStateForParticipant || 'waiting'; // Use state if available
-    let questionForParticipant = null;
-    
-    if (currentGameState === 'question') {
-        const q = getCurrentQuestion();
-        questionForParticipant = { q: q.q }; // Only send the question text
-    }
-
-    // Create a "lean" version of the teams array to reduce payload size.
-    const leanTeams = teams.map(team => ({
-        index: team.index,
-        name: team.name,
-        iconKey: team.iconKey,
-        score: team.score,
-        isTaken: team.isTaken
-    }));
-
-    const sessionData = {
-        gameCode,
-        gameName,
-        teams: leanTeams, // Send the lean version
-        activeTeamIndex,
-        gameState: currentGameState,
-        currentQuestion: questionForParticipant,
-        boxesData: boxesData,
-    };
-
-    try {
-        await updateGameSession(sessionDocumentId, sessionData);
-    } catch (error) {
-        console.error("Failed to broadcast game state:", error);
-    }
-}
-
-/**
  * Handles actions received from participants via Appwrite Realtime.
  * @param {object} actionPayload - The payload from the `game_actions` document.
  */
@@ -192,7 +209,7 @@ async function handleParticipantAction(actionPayload) {
                 // Update the host's UI to show the joined team icon
                 updateJoinedTeamsDisplay(currentState.teams);
 
-                await broadcastGameState(); // Broadcast change to all participants
+                broadcastGameState(); // Broadcast change to all participants
             }
         } else if (actionData.type === 'stopTimer') {
             if (actionData.teamIndex === currentState.activeTeamIndex) {
