@@ -1,4 +1,3 @@
-
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -190,7 +189,7 @@ async function handleParticipantAction(actionPayload) {
             if (team && !team.isTaken) {
                 team.isTaken = true;
                 team.participantId = actionData.participantId;
-                gameState.setTeamsForSetup(currentState.teams); // Update internal state without saving
+                gameState.setTeams(currentState.teams); // Persist the updated teams array
                 
                 // Fire event for UI updates on setup/join screens
                 document.dispatchEvent(new CustomEvent('participantjoined', { detail: { teams: currentState.teams } }));

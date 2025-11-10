@@ -1,4 +1,3 @@
-
 // --- Constants ---
 const GAME_STATE_KEY = 'animalGameState';
 
@@ -78,10 +77,10 @@ export function initializeState(options, gameData, teamsMasterData) {
             index: i,
             name: team.name,
             icon: team.icon,
-            iconKey: team.iconKey,
+            iconKey: team.iconKey, // Add the icon key to the state
             score: 0,
-            isTaken: false,
-            participantId: null
+            isTaken: false, // Add isTaken flag for participants
+            participantId: null 
         });
     }
 

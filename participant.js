@@ -1,4 +1,3 @@
-
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
@@ -212,7 +211,7 @@ async function handleParticipantChestSelection(index) {
 function updateGameView(state) {
     currentHostState = state; // Update global state
 
-    // Handle game finish event first
+    // If the game is over, reset the view to the join screen
     if (state.gameState === 'finished') {
         unsubscribeAllRealtime();
         showNotification('המשחק הסתיים. תודה שהשתתפתם!', 'success');
@@ -220,24 +219,36 @@ function updateGameView(state) {
         return;
     }
 
-    // If I thought I had a team, verify it
+    // If participant thinks they have a team, verify with the new state
     if (myTeam) {
         const myTeamInNewState = state.teams.find(t => t.index === myTeam.index);
-        // If my team in the new state is taken by someone else, I lost the race.
-        if (myTeamInNewState && myTeamInNewState.isTaken && myTeamInNewState.participantId !== participantId) {
-            showNotification(`קבוצת ${myTeam.name} נתפסה זה עתה. אנא בחר קבוצה אחרת.`, 'error');
-            myTeam = null; // Reset my state
+        
+        // Check if the team is still taken by THIS participant.
+        // If not, it means we lost the race.
+        if (!myTeamInNewState || !myTeamInNewState.isTaken || myTeamInNewState.participantId !== participantId) {
+            myTeam = null; // We no longer have a team
+            showScreen('teamSelect');
+            renderTeamSelectScreen(state); // Re-render with updated availability
+            teamSelectError.textContent = 'הקבוצה שבחרת נתפסה. אנא בחר קבוצה אחרת.';
+            teamSelectError.classList.remove('hidden');
+            return; // Stop further processing
         }
     }
 
-    // Now, decide which screen to show based on whether I have a confirmed team.
+    // This logic runs if the participant has NOT yet chosen a team.
     if (!myTeam) {
-        showScreen('teamSelect');
+        // If we are not on the team select screen, go there.
+        if (screens.teamSelect.classList.contains('hidden')) {
+             showScreen('teamSelect');
+        }
         renderTeamSelectScreen(state);
         return;
     }
     
-    // If we reach here, I have a confirmed team. Proceed with game logic.
+    // This logic runs AFTER the participant has chosen a team AND verified they still have it.
+    teamSelectError.classList.add('hidden'); // Hide any previous error
+    
+    // Use == to protect against potential type mismatch (string vs number) from state updates.
     const isMyTurn = state.activeTeamIndex == myTeam.index;
     const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
     const activeTeamName = activeTeam ? activeTeam.name : 'הקבוצה';
