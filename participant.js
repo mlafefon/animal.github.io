@@ -1,4 +1,3 @@
-
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
