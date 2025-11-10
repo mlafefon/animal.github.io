@@ -1,3 +1,4 @@
+
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
@@ -211,7 +212,7 @@ async function handleParticipantChestSelection(index) {
 function updateGameView(state) {
     currentHostState = state; // Update global state
 
-    // If the game is over, reset the view to the join screen
+    // Handle game finish event first
     if (state.gameState === 'finished') {
         unsubscribeAllRealtime();
         showNotification('המשחק הסתיים. תודה שהשתתפתם!', 'success');
@@ -219,16 +220,24 @@ function updateGameView(state) {
         return;
     }
 
-    // This logic runs if the participant has NOT yet chosen a team.
-    // It keeps the team selection screen up-to-date.
+    // If I thought I had a team, verify it
+    if (myTeam) {
+        const myTeamInNewState = state.teams.find(t => t.index === myTeam.index);
+        // If my team in the new state is taken by someone else, I lost the race.
+        if (myTeamInNewState && myTeamInNewState.isTaken && myTeamInNewState.participantId !== participantId) {
+            showNotification(`קבוצת ${myTeam.name} נתפסה זה עתה. אנא בחר קבוצה אחרת.`, 'error');
+            myTeam = null; // Reset my state
+        }
+    }
+
+    // Now, decide which screen to show based on whether I have a confirmed team.
     if (!myTeam) {
+        showScreen('teamSelect');
         renderTeamSelectScreen(state);
         return;
     }
     
-    // This logic runs AFTER the participant has chosen a team.
-    
-    // Use == to protect against potential type mismatch (string vs number) from state updates.
+    // If we reach here, I have a confirmed team. Proceed with game logic.
     const isMyTurn = state.activeTeamIndex == myTeam.index;
     const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
     const activeTeamName = activeTeam ? activeTeam.name : 'הקבוצה';

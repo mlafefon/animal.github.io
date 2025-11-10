@@ -1,3 +1,4 @@
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -154,7 +155,8 @@ async function broadcastGameState() {
         name: team.name,
         iconKey: team.iconKey,
         score: team.score,
-        isTaken: team.isTaken
+        isTaken: team.isTaken,
+        participantId: team.participantId
     }));
 
     const sessionData = {
@@ -187,6 +189,7 @@ async function handleParticipantAction(actionPayload) {
             const team = currentState.teams.find(t => t.index === actionData.teamIndex);
             if (team && !team.isTaken) {
                 team.isTaken = true;
+                team.participantId = actionData.participantId;
                 gameState.setTeamsForSetup(currentState.teams); // Update internal state without saving
                 
                 // Fire event for UI updates on setup/join screens
