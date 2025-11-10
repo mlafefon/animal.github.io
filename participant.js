@@ -28,8 +28,9 @@ const waitingMessage = document.getElementById('waiting-message');
 
 
 // --- State ---
-let participantId = `participant_${Math.random().toString(36).substr(2, 9)}`;
-let myTeam = null;
+const participantId = `participant_${Math.random().toString(36).substr(2, 9)}`;
+let myTeam = null; // Will be set only after the host CONFIRMS the selection.
+let selectionAttempt = null; // Stores the team we are currently trying to select.
 let gameCode = null;
 let currentHostState = null;
 let sessionDocumentId = null;
@@ -73,45 +74,43 @@ function renderTeamSelectScreen(state) {
 }
 
 async function handleTeamSelection(teamIndex) {
-    const selectedTeamData = currentHostState.teams.find(t => t.index === teamIndex);
-
-    if (!selectedTeamData || selectedTeamData.isTaken) {
-        teamSelectError.textContent = 'קבוצה זו נתפסה. אנא בחר קבוצה אחרת.';
-        teamSelectError.classList.remove('hidden');
+    // Final client-side check before sending action
+    if (currentHostState.teams.find(t => t.index === teamIndex)?.isTaken) {
+        showNotification('קבוצה זו נתפסה זה עתה.', 'error');
         return;
     }
 
-    // --- Optimistic UI Update ---
-    // 1. Set myTeam object
-    myTeam = {
+    // --- Enter Pending State ---
+    teamSelectError.classList.add('hidden');
+    teamSelectionGrid.querySelectorAll('.team-member').forEach(el => {
+        // Disable all teams to prevent further clicks during verification
+        el.classList.add('taken'); 
+        if (parseInt(el.dataset.index, 10) === teamIndex) {
+            // Add a visual indicator to the one being attempted
+            el.classList.add('pending');
+        }
+    });
+    
+    // Store the attempted selection. This is crucial for the update logic.
+    const selectedTeamData = currentHostState.teams.find(t => t.index === teamIndex);
+    selectionAttempt = {
         ...selectedTeamData,
         icon: IMAGE_URLS[selectedTeamData.iconKey]
     };
-    
-    // 2. Update my info display (for the next screen)
-    myTeamName.textContent = `אתם קבוצת ${myTeam.name}`;
-    myTeamIcon.src = myTeam.icon;
-    
-    // 3. Switch to the game screen with a waiting message
-    showScreen('game');
-    questionText.textContent = `הצטרפת לקבוצת ${myTeam.name}! ממתין למנחה שיתחיל את המשחק...`;
-    participantControls.classList.add('hidden');
-    waitingMessage.classList.add('hidden');
 
-    // 4. Send the action to the host
+    // Send the selection action to the host for verification
     try {
         await sendAction(gameCode, {
             type: 'selectTeam',
             teamIndex: teamIndex,
             participantId: participantId
         });
-        // Now we just wait for host broadcasts to update the view.
+        // Now we wait for the realtime update from the host. 
+        // `updateGameView` will handle success or failure.
     } catch (error) {
-        // --- Revert UI on error ---
         showNotification('שגיאה בבחירת קבוצה. נסה שוב.', 'error');
-        myTeam = null; // Unset team
-        showScreen('teamSelect'); // Go back
-        renderTeamSelectScreen(currentHostState); // Re-render the grid with latest data
+        selectionAttempt = null; 
+        renderTeamSelectScreen(currentHostState); // Revert UI on error
     }
 }
 
@@ -209,9 +208,8 @@ async function handleParticipantChestSelection(index) {
 
 
 function updateGameView(state) {
-    currentHostState = state; // Update global state
+    currentHostState = state; // Always keep the latest state
 
-    // If the game is over, reset the view to the join screen
     if (state.gameState === 'finished') {
         unsubscribeAllRealtime();
         showNotification('המשחק הסתיים. תודה שהשתתפתם!', 'success');
@@ -219,33 +217,46 @@ function updateGameView(state) {
         return;
     }
 
-    // This logic runs if the participant has NOT yet chosen a team.
-    // It keeps the team selection screen up-to-date.
-    if (!myTeam) {
-        renderTeamSelectScreen(state);
-        showScreen('teamSelect');
-        return;
-    }
-    
-    // VERIFY SELECTION: If I thought I picked a team, check if the official state agrees.
-    const myTeamInNewState = state.teams.find(t => t.index === myTeam.index);
-    if (!myTeamInNewState || myTeamInNewState.participantId !== participantId) {
-        // My selection was pre-empted by another player.
-        showNotification('הקבוצה שבחרת נתפסה. אנא בחר קבוצה אחרת.', 'info');
-        myTeam = null; // Reset my choice
-        showScreen('teamSelect'); // Go back to team select
-        renderTeamSelectScreen(state); // Re-render with the correct state
-        return;
+    // --- SETUP PHASE LOGIC ---
+    // This block handles the entire team selection flow, including race conditions.
+    if (state.gameState === 'setup') {
+        // If I am currently trying to select a team
+        if (selectionAttempt) {
+            const myAttemptedTeam = state.teams.find(t => t.index === selectionAttempt.index);
+            // Check for SUCCESS: The team is now taken AND it's taken by me.
+            if (myAttemptedTeam && myAttemptedTeam.participantId === participantId) {
+                myTeam = selectionAttempt; // Confirm my team choice
+                selectionAttempt = null;    // Clear the attempt state
+
+                // Update UI for the game screen
+                myTeamName.textContent = `אתם קבוצת ${myTeam.name}`;
+                myTeamIcon.src = myTeam.icon;
+                
+                // Transition to the game screen (waiting state)
+                showScreen('game');
+                questionText.textContent = `הצטרפת לקבוצת ${myTeam.name}! ממתין למנחה שיתחיל את המשחק...`;
+            } else {
+                // FAILURE: The team was taken by someone else (or another state change occurred).
+                showNotification('הקבוצה שבחרת נתפסה. אנא בחר קבוצה אחרת.', 'info');
+                selectionAttempt = null; // Clear the attempt state
+                renderTeamSelectScreen(state); // Re-render the selection screen with the latest data
+                showScreen('teamSelect');
+            }
+        } else {
+            // If I'm not attempting a selection, just display the latest team availability.
+            renderTeamSelectScreen(state);
+            showScreen('teamSelect');
+        }
+        return; // IMPORTANT: Stop execution here for the setup phase.
     }
 
-    // This logic runs AFTER the participant has chosen a team.
+    // --- GAMEPLAY PHASE LOGIC ---
+    // At this point, `myTeam` is confirmed and the game has started.
     
-    // Use == to protect against potential type mismatch (string vs number) from state updates.
     const isMyTurn = state.activeTeamIndex == myTeam.index;
     const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
     const activeTeamName = activeTeam ? activeTeam.name : 'הקבוצה';
 
-    // Default UI state: hide controls and waiting messages.
     participantControls.classList.add('hidden');
     waitingMessage.classList.add('hidden');
 
@@ -255,21 +266,18 @@ function updateGameView(state) {
             questionText.textContent = state.currentQuestion.q;
             if (isMyTurn) {
                 participantControls.classList.remove('hidden');
-                stopBtn.disabled = false; // Ensure button is enabled for new question
+                stopBtn.disabled = false;
             } else {
-                const otherTeamMessage = `התור של קבוצת ${activeTeamName}.`;
-                waitingMessage.querySelector('p').textContent = otherTeamMessage;
+                waitingMessage.querySelector('p').textContent = `התור של קבוצת ${activeTeamName}.`;
                 waitingMessage.classList.remove('hidden');
             }
             break;
 
         case 'grading':
             showScreen('game');
-            if (isMyTurn) {
-                questionText.textContent = 'התשובה התקבלה. ממתין לניקוד מהמנחה...';
-            } else {
-                questionText.textContent = `המנחה בודק את התשובה של קבוצת ${activeTeamName}...`;
-            }
+            questionText.textContent = isMyTurn 
+                ? 'התשובה התקבלה. ממתין לניקוד מהמנחה...'
+                : `המנחה בודק את התשובה של קבוצת ${activeTeamName}...`;
             break;
             
         case 'boxes':
@@ -283,19 +291,12 @@ function updateGameView(state) {
             }
             break;
         
-        case 'setup':
-            showScreen('game');
-            questionText.textContent = "המשחק יתחיל בקרוב...";
-            break;
-
         case 'waiting':
         default:
             showScreen('game');
-            if (isMyTurn) {
-                questionText.textContent = 'מוכנים? השאלה הבאה אליכם';
-            } else {
-                questionText.textContent = `התור הבא הוא של קבוצת ${activeTeamName}. השאלה תופיע בקרוב...`;
-            }
+            questionText.textContent = isMyTurn
+                ? 'מוכנים? השאלה הבאה אליכם'
+                : `התור הבא הוא של קבוצת ${activeTeamName}. השאלה תופיע בקרוב...`;
             break;
     }
 }
@@ -332,7 +333,6 @@ function initializeJoinScreen() {
             
             // Initial render and switch to team select screen
             updateGameView(sessionData);
-            showScreen('teamSelect');
 
         } catch (error) {
             console.error("Failed to join game:", error);
@@ -344,7 +344,6 @@ function initializeJoinScreen() {
 
 function initializeGameScreen() {
     stopBtn.addEventListener('click', async () => {
-        // Disable button immediately to prevent multiple clicks
         stopBtn.disabled = true; 
         try {
             await sendAction(gameCode, {
@@ -352,10 +351,9 @@ function initializeGameScreen() {
                 teamIndex: myTeam.index,
                 participantId: participantId
             });
-            // Host will receive this and update state, which will hide the button via the listener.
         } catch (error) {
             showNotification('שגיאה בשליחת הפעולה.', 'error');
-            stopBtn.disabled = false; // Re-enable on error
+            stopBtn.disabled = false;
         }
     });
 }
@@ -368,19 +366,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeJoinScreen();
     initializeGameScreen();
 
-    // Clean up subscriptions when the user closes the page
     window.addEventListener('beforeunload', () => {
         unsubscribeAllRealtime();
     });
 
-    // Fetch and display the app version
     fetch('metadata.json')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
+        .then(response => response.ok ? response.json() : Promise.reject('Failed to load metadata'))
         .then(data => {
             const version = data.version;
             if (version) {
