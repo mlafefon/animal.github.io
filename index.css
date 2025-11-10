@@ -2840,18 +2840,6 @@ input:disabled + .slider:before {
     filter: grayscale(80%);
 }
 
-#team-selection-grid .team-member.pending .team-icon {
-    outline: 0.25rem solid #ffeb3b; /* Bright yellow */
-    animation: pulse-pending 1.5s infinite;
-}
-
-@keyframes pulse-pending {
-    0% { box-shadow: 0 0 0 0 rgba(255, 235, 59, 0.7); }
-    70% { box-shadow: 0 0 0 0.625rem rgba(255, 235, 59, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 235, 59, 0); }
-}
-
-
 #participant-game-screen {
     width: 100vw;
     height: 100vh;
