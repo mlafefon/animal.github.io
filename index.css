@@ -2830,15 +2830,28 @@ input:disabled + .slider:before {
     transition: transform 0.2s, opacity 0.2s;
 }
 
-#team-selection-grid .team-member:hover:not(.taken) {
+#team-selection-grid .team-member:hover:not(.taken):not(.disabled) {
     transform: scale(1.1);
 }
 
-#team-selection-grid .team-member.taken {
+#team-selection-grid .team-member.taken,
+#team-selection-grid .team-member.disabled {
     opacity: 0.4;
     cursor: not-allowed;
     filter: grayscale(80%);
+    pointer-events: none;
 }
+
+@keyframes selecting-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 235, 59, 0.7); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 235, 59, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 235, 59, 0); }
+}
+
+#team-selection-grid .team-member.selecting {
+    animation: selecting-pulse 1.5s infinite;
+}
+
 
 #participant-game-screen {
     width: 100vw;
