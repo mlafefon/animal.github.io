@@ -296,7 +296,7 @@ export function initializeSetupScreen(onStart) {
 
         try {
             const user = await getAccount();
-            const teamsForSession = TEAMS_MASTER_DATA.slice(0, options.numberOfGroups).map((t, i) => ({ index: i, name: t.name, iconKey: t.iconKey, isTaken: false, participantId: null }));
+            const teamsForSession = TEAMS_MASTER_DATA.slice(0, options.numberOfGroups).map((t, i) => ({ index: i, name: t.name, iconKey: t.iconKey, isTaken: false }));
             setTeamsForSetup(teamsForSession);
             
             const sessionData = { gameCode, gameName: options.gameName, teams: teamsForSession, gameState: 'setup' };

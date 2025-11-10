@@ -1,4 +1,3 @@
-
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -155,8 +154,7 @@ async function broadcastGameState() {
         name: team.name,
         iconKey: team.iconKey,
         score: team.score,
-        isTaken: team.isTaken,
-        participantId: team.participantId
+        isTaken: team.isTaken
     }));
 
     const sessionData = {
@@ -183,29 +181,20 @@ async function broadcastGameState() {
 async function handleParticipantAction(actionPayload) {
     try {
         const actionData = JSON.parse(actionPayload.actionData);
-        
+        const currentState = gameState.getState();
+
         if (actionData.type === 'selectTeam') {
-            const currentTeams = gameState.getState().teams;
-            const teamToTake = currentTeams.find(t => t.index === actionData.teamIndex);
-
-            // Check if the team is available before processing
-            if (teamToTake && !teamToTake.isTaken) {
-                // Create a new array with the updated team member (immutable update)
-                const updatedTeams = currentTeams.map(team => 
-                    team.index === actionData.teamIndex 
-                        ? { ...team, isTaken: true, participantId: actionData.participantId } 
-                        : team
-                );
-
-                gameState.setTeams(updatedTeams); // Persist the new array
+            const team = currentState.teams.find(t => t.index === actionData.teamIndex);
+            if (team && !team.isTaken) {
+                team.isTaken = true;
+                gameState.setTeamsForSetup(currentState.teams); // Update internal state without saving
                 
-                // Fire event for local UI updates on host's setup/join screens
-                document.dispatchEvent(new CustomEvent('participantjoined', { detail: { teams: updatedTeams } }));
+                // Fire event for UI updates on setup/join screens
+                document.dispatchEvent(new CustomEvent('participantjoined', { detail: { teams: currentState.teams } }));
 
                 await broadcastGameState(); // Broadcast change to all participants
             }
         } else if (actionData.type === 'stopTimer') {
-            const currentState = gameState.getState();
             if (actionData.teamIndex === currentState.activeTeamIndex) {
                 // Check if the timer is actually running
                 if (document.getElementById('stop-game-btn').offsetParent !== null) {
@@ -213,7 +202,6 @@ async function handleParticipantAction(actionPayload) {
                 }
             }
         } else if (actionData.type === 'selectChest') {
-            const currentState = gameState.getState();
             if (actionData.teamIndex === currentState.activeTeamIndex) {
                  // Check if we are in the boxes screen
                 if (document.getElementById('boxes-screen').offsetParent !== null) {

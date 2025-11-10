@@ -79,8 +79,7 @@ export function initializeState(options, gameData, teamsMasterData) {
             icon: team.icon,
             iconKey: team.iconKey, // Add the icon key to the state
             score: 0,
-            isTaken: false, // Add isTaken flag for participants
-            participantId: null 
+            isTaken: false // Add isTaken flag for participants
         });
     }
 

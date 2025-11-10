@@ -219,34 +219,14 @@ function updateGameView(state) {
         return;
     }
 
-    // If participant thinks they have a team, verify with the new state
-    if (myTeam) {
-        const myTeamInNewState = state.teams.find(t => t.index === myTeam.index);
-        
-        // Check if the team is still taken by THIS participant.
-        // If not, it means we lost the race.
-        if (!myTeamInNewState || !myTeamInNewState.isTaken || myTeamInNewState.participantId !== participantId) {
-            myTeam = null; // We no longer have a team
-            showScreen('teamSelect');
-            renderTeamSelectScreen(state); // Re-render with updated availability
-            teamSelectError.textContent = 'הקבוצה שבחרת נתפסה. אנא בחר קבוצה אחרת.';
-            teamSelectError.classList.remove('hidden');
-            return; // Stop further processing
-        }
-    }
-
     // This logic runs if the participant has NOT yet chosen a team.
+    // It keeps the team selection screen up-to-date.
     if (!myTeam) {
-        // If we are not on the team select screen, go there.
-        if (screens.teamSelect.classList.contains('hidden')) {
-             showScreen('teamSelect');
-        }
         renderTeamSelectScreen(state);
         return;
     }
     
-    // This logic runs AFTER the participant has chosen a team AND verified they still have it.
-    teamSelectError.classList.add('hidden'); // Hide any previous error
+    // This logic runs AFTER the participant has chosen a team.
     
     // Use == to protect against potential type mismatch (string vs number) from state updates.
     const isMyTurn = state.activeTeamIndex == myTeam.index;
