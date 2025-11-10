@@ -1,3 +1,4 @@
+
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
@@ -223,9 +224,21 @@ function updateGameView(state) {
     // It keeps the team selection screen up-to-date.
     if (!myTeam) {
         renderTeamSelectScreen(state);
+        showScreen('teamSelect');
         return;
     }
     
+    // VERIFY SELECTION: If I thought I picked a team, check if the official state agrees.
+    const myTeamInNewState = state.teams.find(t => t.index === myTeam.index);
+    if (!myTeamInNewState || myTeamInNewState.participantId !== participantId) {
+        // My selection was pre-empted by another player.
+        showNotification('הקבוצה שבחרת נתפסה. אנא בחר קבוצה אחרת.', 'info');
+        myTeam = null; // Reset my choice
+        showScreen('teamSelect'); // Go back to team select
+        renderTeamSelectScreen(state); // Re-render with the correct state
+        return;
+    }
+
     // This logic runs AFTER the participant has chosen a team.
     
     // Use == to protect against potential type mismatch (string vs number) from state updates.
