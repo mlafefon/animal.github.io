@@ -1,4 +1,5 @@
 
+
 import { getSavedState, setTeamsForSetup } from './gameState.js';
 import { TEAMS_MASTER_DATA } from './game.js';
 import { showNotification } from './ui.js';
@@ -9,8 +10,9 @@ const groupList = document.getElementById('group-list');
 const startButton = document.getElementById('start-btn');
 const setupScreen = document.getElementById('setup-screen');
 const setupGameTitle = document.getElementById('setup-game-title');
-const joinedParticipantsContainer = document.getElementById('joined-participants-container');
-const setupGameCodeDisplay = document.getElementById('setup-game-code-display');
+const questionBankStat = document.getElementById('question-bank-stat');
+const actualQuestionsStat = document.getElementById('actual-questions-stat');
+
 
 // --- Elements from Join Host Screen ---
 const joinHostScreen = document.getElementById('join-host-screen');
@@ -36,7 +38,7 @@ function renderEmptyTeamSlots(count) {
         slot.className = 'team-slot';
         slot.dataset.index = i;
         const teamMaster = TEAMS_MASTER_DATA[i % TEAMS_MASTER_DATA.length];
-        slot.innerHTML = `<img src="${teamMaster.icon}" alt="${teamMaster.name}" style="display: none;">`;
+        slot.innerHTML = `<img src="${teamMaster.icon}" alt="${teamMaster.name}">`;
         joinHostTeamsContainer.appendChild(slot);
     }
 }
@@ -53,8 +55,6 @@ function updateTeamSlotsOnJoinScreen(event) {
         const teamIndex = parseInt(slot.dataset.index, 10);
         const teamData = teams.find(t => t.index === teamIndex);
         if (teamData && teamData.isTaken && !slot.classList.contains('filled')) {
-            const img = slot.querySelector('img');
-            img.style.display = 'block';
             slot.classList.add('filled');
         }
     });
@@ -76,34 +76,12 @@ function showJoinHostScreen(options) {
 // --- Functions for Setup Screen ---
 
 /**
- * Updates the display of joined participant icons on the setup screen.
- * @param {Array<object>} teams - The array of team objects from the game state.
- */
-export function updateSetupParticipantsDisplay(teams) {
-    if (!joinedParticipantsContainer) return;
-    joinedParticipantsContainer.innerHTML = '';
-    const joinedTeams = teams.filter(t => t.isTaken);
-    
-    joinedTeams.forEach(team => {
-        const img = document.createElement('img');
-        img.src = team.icon;
-        img.alt = team.name;
-        img.title = team.name;
-        img.className = 'participant-icon';
-        joinedParticipantsContainer.appendChild(img);
-    });
-}
-
-/**
  * Updates the UI with the number of questions in the bank and the calculated
  * number of questions that will actually be used in the game. It also enables/disables
  * the start button based on the number of actual questions.
  */
 function updateQuestionStats() {
     const selectedGroupLi = groupList.querySelector('.selected');
-    const questionBankStat = document.getElementById('question-bank-stat');
-    const actualQuestionsStat = document.getElementById('actual-questions-stat');
-
     if (!selectedGroupLi || !questionBankStat || !actualQuestionsStat) {
         return;
     }
@@ -201,15 +179,6 @@ export async function showSetupScreenForGame(gameDoc) {
         setupGameTitle.textContent = selectedGameDocument.game_name;
     }
 
-    if (joinedParticipantsContainer) {
-        joinedParticipantsContainer.innerHTML = ''; // Clear on new game setup
-    }
-
-    const gameCode = Math.floor(100000 + Math.random() * 900000).toString();
-    if (setupGameCodeDisplay) {
-        setupGameCodeDisplay.textContent = gameCode;
-    }
-    
     refreshSetupScreenState();
     setupScreen.classList.remove('hidden');
     updateQuestionStats();
@@ -239,22 +208,8 @@ export function initializeSetupScreen(onStart) {
         updateQuestionStats();
     });
 
-    if(setupGameCodeDisplay) {
-        setupGameCodeDisplay.addEventListener('click', () => {
-            navigator.clipboard.writeText(setupGameCodeDisplay.textContent).then(() => {
-                showNotification('הקוד הועתק!', 'success');
-            }).catch(err => {
-                console.error('Failed to copy code: ', err);
-                showNotification('שגיאה בהעתקת הקוד', 'error');
-            });
-        });
-    }
-
-    // Listen for participant joins to update BOTH screens if needed
-    document.addEventListener('participantjoined', (e) => {
-        updateSetupParticipantsDisplay(e.detail.teams);
-        updateTeamSlotsOnJoinScreen(e);
-    });
+    // Listen for participant joins to update the join screen UI
+    document.addEventListener('participantjoined', updateTeamSlotsOnJoinScreen);
 
     // Start Button from Setup Screen
     startButton.addEventListener('click', async () => {

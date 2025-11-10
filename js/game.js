@@ -1,4 +1,5 @@
 
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -6,7 +7,6 @@ import * as gameState from './gameState.js';
 import { subscribeToActions, updateGameSession, unsubscribeAllRealtime } from './appwriteService.js';
 import { triggerManualGrading } from './question.js';
 import { revealChest } from './boxes.js';
-import { updateSetupParticipantsDisplay } from './setup.js';
 
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');

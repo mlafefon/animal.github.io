@@ -1,5 +1,7 @@
 
 
+
+
 import { initializeStartScreen } from './js/start.js';
 import { initializeSetupScreen, showSetupScreenForGame } from './js/setup.js';
 import { startGame, initializeScoreControls, adjustScore, switchToNextTeam } from './js/game.js';
@@ -78,6 +80,7 @@ function initializeGlobalHomeButton() {
             // Hide all potential screens
             const allScreens = [
                 document.getElementById('setup-screen'),
+                document.getElementById('join-host-screen'),
                 document.getElementById('pre-question-screen'),
                 document.getElementById('game-screen'),
                 document.getElementById('boxes-screen'),
