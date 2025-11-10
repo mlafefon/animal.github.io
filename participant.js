@@ -1,5 +1,4 @@
 
-
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
@@ -51,7 +50,6 @@ function showScreen(screenName) {
 function renderTeamSelectScreen(state) {
     teamSelectGameName.textContent = state.gameName;
     teamSelectionGrid.innerHTML = '';
-    teamSelectError.classList.add('hidden'); // Hide error on re-render
 
     state.teams.forEach(team => {
         const teamElement = document.createElement('div');
@@ -78,7 +76,6 @@ function renderTeamSelectScreen(state) {
 async function handleTeamSelection(teamIndex) {
     const selectedTeamData = currentHostState.teams.find(t => t.index === teamIndex);
 
-    // Initial client-side check to avoid unnecessary API calls
     if (!selectedTeamData || selectedTeamData.isTaken) {
         teamSelectError.textContent = 'קבוצה זו נתפסה. אנא בחר קבוצה אחרת.';
         teamSelectError.classList.remove('hidden');
@@ -86,34 +83,36 @@ async function handleTeamSelection(teamIndex) {
     }
 
     // --- Optimistic UI Update ---
+    // 1. Set myTeam object
     myTeam = {
         ...selectedTeamData,
         icon: IMAGE_URLS[selectedTeamData.iconKey]
     };
     
+    // 2. Update my info display (for the next screen)
     myTeamName.textContent = `אתם קבוצת ${myTeam.name}`;
     myTeamIcon.src = myTeam.icon;
     
+    // 3. Switch to the game screen with a waiting message
     showScreen('game');
     questionText.textContent = `הצטרפת לקבוצת ${myTeam.name}! ממתין למנחה שיתחיל את המשחק...`;
     participantControls.classList.add('hidden');
     waitingMessage.classList.add('hidden');
 
-    // --- Send Action to Host ---
+    // 4. Send the action to the host
     try {
         await sendAction(gameCode, {
             type: 'selectTeam',
             teamIndex: teamIndex,
             participantId: participantId
         });
-        // Now, we wait for the host's broadcast to confirm our selection.
-        // The updateGameView function will handle the confirmation logic.
+        // Now we just wait for host broadcasts to update the view.
     } catch (error) {
         // --- Revert UI on error ---
         showNotification('שגיאה בבחירת קבוצה. נסה שוב.', 'error');
         myTeam = null; // Unset team
         showScreen('teamSelect'); // Go back
-        renderTeamSelectScreen(currentHostState); // Re-render with latest data
+        renderTeamSelectScreen(currentHostState); // Re-render the grid with latest data
     }
 }
 

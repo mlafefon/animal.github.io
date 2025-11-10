@@ -1,5 +1,4 @@
 
-
 // --- Constants ---
 const GAME_STATE_KEY = 'animalGameState';
 
