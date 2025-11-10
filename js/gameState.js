@@ -1,4 +1,5 @@
 
+
 // --- Constants ---
 const GAME_STATE_KEY = 'animalGameState';
 
@@ -47,6 +48,9 @@ function _resetInternalState() {
  * @param {Array} teamsMasterData - The array of team names and icons.
  */
 export function initializeState(options, gameData, teamsMasterData) {
+    // Preserve the teams array if it was populated during the join screen phase.
+    const teamsFromSetup = (_state.teams && _state.teams.length > 0) ? [..._state.teams] : null;
+
     _resetInternalState();
     _state.options = options;
     _state.gameName = options.gameName || gameData.game_name;
@@ -71,18 +75,24 @@ export function initializeState(options, gameData, teamsMasterData) {
     
     _state.totalQuestions = _state.loadedQuestions.length;
 
-    // Generate team objects for the state
-    for (let i = 0; i < options.numberOfGroups; i++) {
-        const team = teamsMasterData[i % teamsMasterData.length];
-        _state.teams.push({
-            index: i,
-            name: team.name,
-            icon: team.icon,
-            iconKey: team.iconKey,
-            score: 0,
-            isTaken: false,
-            participantId: null // Track which participant took the team
-        });
+    // Restore teams from setup phase if available, otherwise create a new teams array.
+    if (teamsFromSetup) {
+        // Reset scores to 0, but keep isTaken, participantId, etc.
+        _state.teams = teamsFromSetup.map(team => ({ ...team, score: 0 }));
+    } else {
+        // This is the fallback for starting without a join screen or if no teams were set up
+        for (let i = 0; i < options.numberOfGroups; i++) {
+            const team = teamsMasterData[i % teamsMasterData.length];
+            _state.teams.push({
+                index: i,
+                name: team.name,
+                icon: team.icon,
+                iconKey: team.iconKey,
+                score: 0,
+                isTaken: false,
+                participantId: null // Track which participant took the team
+            });
+        }
     }
 
     _saveState(); // Perform initial save
