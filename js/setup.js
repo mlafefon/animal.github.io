@@ -1,5 +1,6 @@
 
-import { getSavedState, setTeamsForSetup } from './gameState.js';
+
+import { getSavedState, initializeSetupState } from './gameState.js';
 import { TEAMS_MASTER_DATA } from './game.js';
 import { showNotification } from './ui.js';
 import { createGameSession, getAccount } from './appwriteService.js';
@@ -298,10 +299,14 @@ export function initializeSetupScreen(onStart) {
         try {
             const user = await getAccount();
             const teamsForSession = TEAMS_MASTER_DATA.slice(0, options.numberOfGroups).map((t, i) => ({ index: i, name: t.name, iconKey: t.iconKey, isTaken: false, participantId: null }));
-            setTeamsForSetup(teamsForSession);
             
             const sessionData = { gameCode, gameName: options.gameName, teams: teamsForSession, gameState: 'setup' };
             const sessionDoc = await createGameSession(gameCode, user.$id, sessionData);
+
+            // Initialize the state with all necessary info, including the session ID.
+            initializeSetupState(options.gameName, gameCode, sessionDoc.$id, teamsForSession);
+            
+            // The options object still needs the session ID for showJoinHostScreen and later, startGame.
             options.sessionDocumentId = sessionDoc.$id;
             
             document.dispatchEvent(new CustomEvent('setupready', { detail: { gameCode } }));

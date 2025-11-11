@@ -1,9 +1,5 @@
 
 
-
-
-
-
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -11,7 +7,6 @@ import * as gameState from './gameState.js';
 import { subscribeToActions, updateGameSession, unsubscribeAllRealtime } from './appwriteService.js';
 import { triggerManualGrading } from './question.js';
 import { revealChest } from './boxes.js';
-import { updateSetupParticipantsDisplay } from './setup.js';
 
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
@@ -196,23 +191,22 @@ async function handleParticipantAction(actionPayload) {
             // This is the critical check to prevent a "race condition".
             // The host checks ITS OWN state to see if the team is still available.
             if (team && !team.isTaken) {
-                // שלב 1: עדכון המצב הפנימי בזיכרון של המארח.
-                // בשלב זה, האובייקט `currentState` משתנה.
-                // לדוגמה, עבור קבוצת "השועלים", השדה isTaken הופך ל-true.
+                // Step 1: Update the host's internal state in memory.
+                // At this point, the `currentState` object is modified.
                 team.isTaken = true;
                 team.participantId = actionData.participantId;
                 
-                // שמירת המצב המעודכן במודול ה-gameState.
-                // מעכשיו, כל קריאה ל-gameState.getState() תחזיר את המצב החדש.
+                // Save the updated state to the gameState module.
+                // From now on, any call to gameState.getState() will return the new state.
                 gameState.setTeams(currentState.teams); 
                 
-                // שלב 2: עדכון ממשק המשתמש של המארח באופן מיידי.
+                // Step 2: Immediately update the host's UI.
                 document.dispatchEvent(new CustomEvent('participantjoined', { detail: { teams: currentState.teams } }));
 
-                // שלב 3: שידור המצב המעודכן ל-Appwrite.
-                // הפונקציה `broadcastGameState` נקראת *לאחר* שהמצב שונה.
-                // היא תיקח את ה-currentState המעודכן (שבו isTaken: true)
-                // ותשלח אותו ל-Appwrite. זה מבטיח שה-JSON שנשלח הוא החדש, ולא הישן.
+                // Step 3: Broadcast the updated state to Appwrite.
+                // The `broadcastGameState` function is called *after* the state has been changed.
+                // It will take the updated `currentState` (where isTaken: true)
+                // and send it to Appwrite. This ensures the new JSON is sent, not the old one.
                 await broadcastGameState();
             }
         } else if (actionData.type === 'stopTimer') {

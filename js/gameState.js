@@ -1,4 +1,5 @@
 
+
 // --- Constants ---
 const GAME_STATE_KEY = 'animalGameState';
 
@@ -47,6 +48,10 @@ function _resetInternalState() {
  * @param {Array} teamsMasterData - The array of team names and icons.
  */
 export function initializeState(options, gameData, teamsMasterData) {
+    // Check if the current state in memory is from a setup phase for this game.
+    // If so, preserve the team selections made by participants.
+    const setupTeams = (_state.gameCode === options.gameCode) ? _state.teams : [];
+
     _resetInternalState();
     _state.options = options;
     _state.gameName = options.gameName || gameData.game_name;
@@ -73,15 +78,17 @@ export function initializeState(options, gameData, teamsMasterData) {
 
     // Generate team objects for the state
     for (let i = 0; i < options.numberOfGroups; i++) {
-        const team = teamsMasterData[i % teamsMasterData.length];
+        const teamMaster = teamsMasterData[i % teamsMasterData.length];
+        const existingTeam = setupTeams.find(t => t.index === i);
+
         _state.teams.push({
             index: i,
-            name: team.name,
-            icon: team.icon,
-            iconKey: team.iconKey,
+            name: teamMaster.name,
+            icon: teamMaster.icon,
+            iconKey: teamMaster.iconKey,
             score: 0,
-            isTaken: false,
-            participantId: null // Track which participant took the team
+            isTaken: existingTeam ? existingTeam.isTaken : false,
+            participantId: existingTeam ? existingTeam.participantId : null
         });
     }
 
@@ -182,16 +189,29 @@ export function setIsQuestionPassed(value) {
  */
 export function setTeams(teamsArray) {
     _state.teams = teamsArray;
-    _saveState();
+    // Don't save to localStorage during setup phase, only during active game
+    if (_state.gameStateForParticipant !== 'setup') {
+        _saveState();
+    }
 }
 
 /**
- * Sets the teams array in the state *without* saving to localStorage.
- * Used during the setup phase before the game officially starts.
- * @param {Array<object>} teamsArray The teams for the current setup.
+ * Initializes a minimal state for the pre-game setup phase (join screen).
+ * This state is NOT saved to localStorage as it's transient.
+ * @param {string} gameName The name of the game.
+ * @param {string} gameCode The 6-digit join code.
+ * @param {string} sessionDocumentId The Appwrite document ID for the session.
+ * @param {Array<object>} teams The initial array of team objects.
  */
-export function setTeamsForSetup(teamsArray) {
-    _state.teams = teamsArray;
+export function initializeSetupState(gameName, gameCode, sessionDocumentId, teams) {
+    _resetInternalState(); // Clear any previous game state
+    _state.gameName = gameName;
+    _state.gameCode = gameCode;
+    _state.sessionDocumentId = sessionDocumentId;
+    _state.teams = teams;
+    _state.gameStateForParticipant = 'setup';
+    // We don't call _saveState() here because this state is temporary
+    // until the game officially starts. The official start will save it.
 }
 
 /**
