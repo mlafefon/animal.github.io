@@ -1,6 +1,9 @@
 
 
 
+
+
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -193,20 +196,23 @@ async function handleParticipantAction(actionPayload) {
             // This is the critical check to prevent a "race condition".
             // The host checks ITS OWN state to see if the team is still available.
             if (team && !team.isTaken) {
-                // 1. Update the local state in memory (the host's "single source of truth").
-                // This is the first "סימון" (marking) I described.
+                // שלב 1: עדכון המצב הפנימי בזיכרון של המארח.
+                // בשלב זה, האובייקט `currentState` משתנה.
+                // לדוגמה, עבור קבוצת "השועלים", השדה isTaken הופך ל-true.
                 team.isTaken = true;
                 team.participantId = actionData.participantId;
-                gameState.setTeamsForSetup(currentState.teams); 
                 
-                // 2. Update the host's own UI immediately.
+                // שמירת המצב המעודכן במודול ה-gameState.
+                // מעכשיו, כל קריאה ל-gameState.getState() תחזיר את המצב החדש.
+                gameState.setTeams(currentState.teams); 
+                
+                // שלב 2: עדכון ממשק המשתמש של המארח באופן מיידי.
                 document.dispatchEvent(new CustomEvent('participantjoined', { detail: { teams: currentState.teams } }));
 
-                // 3. Broadcast the new state to everyone.
-                // THIS is the line that performs the update in Appwrite's database.
-                // The broadcastGameState() function takes the new state (with the taken team)
-                // and calls updateGameSession() to save it, which triggers the realtime
-                // update for all other participants. This is the second "סימון".
+                // שלב 3: שידור המצב המעודכן ל-Appwrite.
+                // הפונקציה `broadcastGameState` נקראת *לאחר* שהמצב שונה.
+                // היא תיקח את ה-currentState המעודכן (שבו isTaken: true)
+                // ותשלח אותו ל-Appwrite. זה מבטיח שה-JSON שנשלח הוא החדש, ולא הישן.
                 await broadcastGameState();
             }
         } else if (actionData.type === 'stopTimer') {
