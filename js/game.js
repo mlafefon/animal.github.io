@@ -1,5 +1,4 @@
 
-
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -7,6 +6,7 @@ import * as gameState from './gameState.js';
 import { subscribeToActions, updateGameSession, unsubscribeAllRealtime } from './appwriteService.js';
 import { triggerManualGrading } from './question.js';
 import { revealChest } from './boxes.js';
+import { updateSetupParticipantsDisplay } from './setup.js';
 
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
@@ -190,7 +190,7 @@ async function handleParticipantAction(actionPayload) {
             if (team && !team.isTaken) {
                 team.isTaken = true;
                 team.participantId = actionData.participantId; // Claim the team for this participant
-                gameState.setTeams(currentState.teams); // Update internal state
+                gameState.setTeamsForSetup(currentState.teams); // Update internal state without saving
                 
                 // Fire event for UI updates on setup/join screens
                 document.dispatchEvent(new CustomEvent('participantjoined', { detail: { teams: currentState.teams } }));

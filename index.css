@@ -2828,9 +2828,10 @@ input:disabled + .slider:before {
 #team-selection-grid .team-member {
     cursor: pointer;
     transition: transform 0.2s, opacity 0.2s;
+    position: relative; /* For pending overlay */
 }
 
-#team-selection-grid .team-member:hover:not(.taken) {
+#team-selection-grid .team-member:hover:not(.taken):not(.loading):not(.pending) {
     transform: scale(1.1);
 }
 
@@ -2838,6 +2839,35 @@ input:disabled + .slider:before {
     opacity: 0.4;
     cursor: not-allowed;
     filter: grayscale(80%);
+}
+
+/* Styles for pessimistic UI update */
+#team-selection-grid .team-member.loading {
+    opacity: 0.6;
+    cursor: wait;
+    pointer-events: none;
+}
+
+#team-selection-grid .team-member.pending {
+    cursor: wait;
+    transform: scale(1.1); /* Highlight the pending choice */
+    pointer-events: none;
+}
+
+#team-selection-grid .team-member.pending::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-top: -1.25rem;
+    margin-left: -1.25rem;
+    border: 0.3125rem solid rgba(255, 255, 255, 0.2);
+    border-top-color: #ffeb3b;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 10;
 }
 
 #participant-game-screen {

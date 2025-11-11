@@ -1,5 +1,4 @@
 
-
 import { getSavedState, setTeamsForSetup } from './gameState.js';
 import { TEAMS_MASTER_DATA } from './game.js';
 import { showNotification } from './ui.js';
@@ -10,8 +9,8 @@ const groupList = document.getElementById('group-list');
 const startButton = document.getElementById('start-btn');
 const setupScreen = document.getElementById('setup-screen');
 const setupGameTitle = document.getElementById('setup-game-title');
-// const joinedParticipantsContainer = document.getElementById('joined-participants-container');
-// const setupGameCodeDisplay = document.getElementById('setup-game-code-display');
+const joinedParticipantsContainer = document.getElementById('joined-participants-container');
+const setupGameCodeDisplay = document.getElementById('setup-game-code-display');
 
 // --- Elements from Join Host Screen ---
 const joinHostScreen = document.getElementById('join-host-screen');
@@ -37,7 +36,7 @@ function renderEmptyTeamSlots(count) {
         slot.className = 'team-slot';
         slot.dataset.index = i;
         const teamMaster = TEAMS_MASTER_DATA[i % TEAMS_MASTER_DATA.length];
-        slot.innerHTML = `<img src="${teamMaster.icon}" alt="${teamMaster.name}">`;
+        slot.innerHTML = `<img src="${teamMaster.icon}" alt="${teamMaster.name}" style="display: none;">`;
         joinHostTeamsContainer.appendChild(slot);
     }
 }
@@ -53,7 +52,9 @@ function updateTeamSlotsOnJoinScreen(event) {
     slots.forEach(slot => {
         const teamIndex = parseInt(slot.dataset.index, 10);
         const teamData = teams.find(t => t.index === teamIndex);
-        if (teamData && teamData.isTaken) {
+        if (teamData && teamData.isTaken && !slot.classList.contains('filled')) {
+            const img = slot.querySelector('img');
+            img.style.display = 'block';
             slot.classList.add('filled');
         }
     });
@@ -79,8 +80,18 @@ function showJoinHostScreen(options) {
  * @param {Array<object>} teams - The array of team objects from the game state.
  */
 export function updateSetupParticipantsDisplay(teams) {
-    // This function is kept for potential future use on the main setup screen,
-    // but the primary display is now on the join-host-screen.
+    if (!joinedParticipantsContainer) return;
+    joinedParticipantsContainer.innerHTML = '';
+    const joinedTeams = teams.filter(t => t.isTaken);
+    
+    joinedTeams.forEach(team => {
+        const img = document.createElement('img');
+        img.src = team.icon;
+        img.alt = team.name;
+        img.title = team.name;
+        img.className = 'participant-icon';
+        joinedParticipantsContainer.appendChild(img);
+    });
 }
 
 /**
@@ -187,7 +198,16 @@ export async function showSetupScreenForGame(gameDoc) {
     }
 
     if (setupGameTitle) {
-        setupGameTitle.textContent = `הגדרות: ${selectedGameDocument.game_name}`;
+        setupGameTitle.textContent = selectedGameDocument.game_name;
+    }
+
+    if (joinedParticipantsContainer) {
+        joinedParticipantsContainer.innerHTML = ''; // Clear on new game setup
+    }
+
+    const gameCode = Math.floor(100000 + Math.random() * 900000).toString();
+    if (setupGameCodeDisplay) {
+        setupGameCodeDisplay.textContent = gameCode;
     }
     
     refreshSetupScreenState();
@@ -218,6 +238,17 @@ export function initializeSetupScreen(onStart) {
         handleSelection(groupList, e);
         updateQuestionStats();
     });
+
+    if(setupGameCodeDisplay) {
+        setupGameCodeDisplay.addEventListener('click', () => {
+            navigator.clipboard.writeText(setupGameCodeDisplay.textContent).then(() => {
+                showNotification('הקוד הועתק!', 'success');
+            }).catch(err => {
+                console.error('Failed to copy code: ', err);
+                showNotification('שגיאה בהעתקת הקוד', 'error');
+            });
+        });
+    }
 
     // Listen for participant joins to update BOTH screens if needed
     document.addEventListener('participantjoined', (e) => {
@@ -266,7 +297,7 @@ export function initializeSetupScreen(onStart) {
 
         try {
             const user = await getAccount();
-            const teamsForSession = TEAMS_MASTER_DATA.slice(0, options.numberOfGroups).map((t, i) => ({ index: i, name: t.name, iconKey: t.iconKey, score: 0, isTaken: false, participantId: null }));
+            const teamsForSession = TEAMS_MASTER_DATA.slice(0, options.numberOfGroups).map((t, i) => ({ index: i, name: t.name, iconKey: t.iconKey, isTaken: false, participantId: null }));
             setTeamsForSetup(teamsForSession);
             
             const sessionData = { gameCode, gameName: options.gameName, teams: teamsForSession, gameState: 'setup' };
