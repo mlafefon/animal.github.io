@@ -221,29 +221,41 @@ async function handleParticipantChestSelection(index) {
 function updateGameView(state) {
     currentHostState = state; // Update global state
     
-    // Check if our pending selection has been resolved by this update
+    // This block handles the critical logic for resolving a pending team selection.
     if (pendingTeamIndex !== null) {
         const myAttemptedTeam = state.teams.find(t => t.index === pendingTeamIndex);
 
         if (myAttemptedTeam && myAttemptedTeam.participantId === participantId) {
-            // SUCCESS! My selection was confirmed.
+            // SUCCESS! My selection was confirmed by the host.
             myTeam = { ...myAttemptedTeam, icon: IMAGE_URLS[myAttemptedTeam.iconKey] };
             
             myTeamName.textContent = `אתם קבוצת ${myTeam.name}`;
             myTeamIcon.src = myTeam.icon;
+            
+            teamSelectError.classList.add('hidden'); // Hide any previous errors
+            clearPendingState();
+
             showScreen('game');
             questionText.textContent = `הצטרפת לקבוצת ${myTeam.name}! ממתין למנחה שיתחיל את המשחק...`;
             participantControls.classList.add('hidden');
             waitingMessage.classList.add('hidden');
-            
-            clearPendingState();
-            return; // We're done with this update.
+            return; // Exit, as the view is now correctly set.
+
         } else if (myAttemptedTeam && myAttemptedTeam.isTaken) {
-            // FAILURE! Someone else got it first.
+            // FAILURE! Someone else claimed the team first.
             teamSelectError.textContent = 'הקבוצה שבחרת נתפסה. אנא בחר קבוצה אחרת.';
             teamSelectError.classList.remove('hidden');
+            
+            // Clear pending state and immediately re-render to reflect the taken team.
             clearPendingState();
-            // Fall through to re-render the team select screen with the updated state.
+            renderTeamSelectScreen(state);
+            return; // Exit, the selection screen has been updated.
+        } else {
+            // UNEXPECTED STATE: The update didn't resolve the pending request.
+            // This is a safety net to prevent a stuck UI. Clear the pending state
+            // and fall through to re-render with the latest data.
+            console.warn('Received an update while pending, but it did not resolve the selection. Resetting.');
+            clearPendingState();
         }
     }
 
