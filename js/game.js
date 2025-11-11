@@ -1,4 +1,5 @@
 
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -183,31 +184,36 @@ async function broadcastGameState() {
 async function handleParticipantAction(actionPayload) {
     try {
         const actionData = JSON.parse(actionPayload.actionData);
-        const currentState = gameState.getState();
 
         if (actionData.type === 'selectTeam') {
+            const currentState = gameState.getState();
             const team = currentState.teams.find(t => t.index === actionData.teamIndex);
+
+            // Attempt to claim the team if it's available
             if (team && !team.isTaken) {
                 team.isTaken = true;
-                team.participantId = actionData.participantId; // Claim the team for this participant
-                gameState.setTeamsForSetup(currentState.teams); // Update internal state without saving
+                team.participantId = actionData.participantId;
+                gameState.setTeamsForSetup(currentState.teams);
                 
-                // Fire event for UI updates on setup/join screens
+                // Fire local event for host UI update
                 document.dispatchEvent(new CustomEvent('participantjoined', { detail: { teams: currentState.teams } }));
-
-                await broadcastGameState(); // Broadcast change to all participants
             }
+            
+            // ALWAYS broadcast the current state after an attempt. This resolves the race condition.
+            // If successful, it confirms the choice. If failed, it sends the "denial" by showing who took the team.
+            await broadcastGameState();
+            
         } else if (actionData.type === 'stopTimer') {
+            const currentState = gameState.getState();
             if (actionData.teamIndex === currentState.activeTeamIndex) {
-                // Check if the timer is actually running
                 if (document.getElementById('stop-game-btn').offsetParent !== null) {
-                    triggerManualGrading(); // This function will handle its own broadcast
+                    triggerManualGrading();
                 }
             }
         } else if (actionData.type === 'selectChest') {
+            const currentState = gameState.getState();
             if (actionData.teamIndex === currentState.activeTeamIndex) {
-                 // Check if we are in the boxes screen
-                if (document.getElementById('boxes-screen').offsetParent !== null) {
+                 if (document.getElementById('boxes-screen').offsetParent !== null) {
                     await revealChest(actionData.chestIndex);
                 }
             }
