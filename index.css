@@ -2933,6 +2933,14 @@ input:disabled + .slider:before {
     }
 }
 
+body.participant-view .app-version {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    bottom: auto; /* Override the default from the start screen */
+    z-index: 10001;
+}
+
 
 /* --- Responsive Overrides --- */
 
