@@ -1,4 +1,6 @@
 
+
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -187,15 +189,25 @@ async function handleParticipantAction(actionPayload) {
 
         if (actionData.type === 'selectTeam') {
             const team = currentState.teams.find(t => t.index === actionData.teamIndex);
+            
+            // This is the critical check to prevent a "race condition".
+            // The host checks ITS OWN state to see if the team is still available.
             if (team && !team.isTaken) {
+                // 1. Update the local state in memory (the host's "single source of truth").
+                // This is the first "סימון" (marking) I described.
                 team.isTaken = true;
-                team.participantId = actionData.participantId; // Claim the team for this participant
-                gameState.setTeamsForSetup(currentState.teams); // Update internal state without saving
+                team.participantId = actionData.participantId;
+                gameState.setTeamsForSetup(currentState.teams); 
                 
-                // Fire event for UI updates on setup/join screens
+                // 2. Update the host's own UI immediately.
                 document.dispatchEvent(new CustomEvent('participantjoined', { detail: { teams: currentState.teams } }));
 
-                await broadcastGameState(); // Broadcast change to all participants
+                // 3. Broadcast the new state to everyone.
+                // THIS is the line that performs the update in Appwrite's database.
+                // The broadcastGameState() function takes the new state (with the taken team)
+                // and calls updateGameSession() to save it, which triggers the realtime
+                // update for all other participants. This is the second "סימון".
+                await broadcastGameState();
             }
         } else if (actionData.type === 'stopTimer') {
             if (actionData.teamIndex === currentState.activeTeamIndex) {
