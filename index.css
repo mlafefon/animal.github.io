@@ -3144,10 +3144,24 @@ body.participant-view .app-version {
     /* Participant Game Screen */
     #participant-game-screen {
         padding: 1rem;
+        /* Ensure the screen is a flex column that fills the viewport */
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
+
+    #participant-game-screen .game-header {
+        flex-grow: 1; /* Make the content area take all available vertical space */
+        display: flex; /* This is necessary for its children to use flexbox properly */
+        flex-direction: column;
+        min-height: 0; /* Fix for potential flexbox overflow issues */
     }
 
     #participant-game-screen #q-a-wrapper {
         margin-top: 5rem; /* Adjust for smaller header */
+        flex-grow: 1; /* Make the wrapper grow inside the header */
+        display: flex;
+        flex-direction: column;
     }
     
     .participant-team-info {
@@ -3167,8 +3181,12 @@ body.participant-view .app-version {
     
     #participant-game-screen #question-container,
     #participant-game-screen #answer-container {
-        min-height: 50vh;
+        flex-grow: 1; /* This makes the question box itself expand to fill space */
         padding: 1rem;
+    }
+
+    #participant-game-screen #participant-controls {
+        flex-shrink: 0; /* Prevent button from shrinking */
     }
 
     #participant-question-text {
