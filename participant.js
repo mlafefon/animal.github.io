@@ -225,6 +225,7 @@ function updateGameView(state) {
     if (pendingTeamIndex !== null) {
         const myAttemptedTeam = state.teams.find(t => t.index === pendingTeamIndex);
 
+        // Check for SUCCESS: The host confirmed *my* specific participantId for the team.
         if (myAttemptedTeam && myAttemptedTeam.participantId === participantId) {
             // SUCCESS! My selection was confirmed by the host.
             myTeam = { ...myAttemptedTeam, icon: IMAGE_URLS[myAttemptedTeam.iconKey] };
@@ -240,22 +241,19 @@ function updateGameView(state) {
             participantControls.classList.add('hidden');
             waitingMessage.classList.add('hidden');
             return; // Exit, as the view is now correctly set.
-
-        } else if (myAttemptedTeam && myAttemptedTeam.isTaken) {
-            // FAILURE! Someone else claimed the team first.
+        } 
+        // Check for FAILURE: An update arrived, but it wasn't for me.
+        // This could be because someone else got the team, or some other state update happened.
+        // Either way, my pending state is now invalid.
+        else {
+            // FAILURE! Someone else claimed the team first, or the state is otherwise out of sync.
             teamSelectError.textContent = 'הקבוצה שבחרת נתפסה. אנא בחר קבוצה אחרת.';
             teamSelectError.classList.remove('hidden');
             
-            // Clear pending state and immediately re-render to reflect the taken team.
+            // Clear pending state and immediately re-render to reflect the latest state.
             clearPendingState();
             renderTeamSelectScreen(state);
             return; // Exit, the selection screen has been updated.
-        } else {
-            // UNEXPECTED STATE: The update didn't resolve the pending request.
-            // This is a safety net to prevent a stuck UI. Clear the pending state
-            // and fall through to re-render with the latest data.
-            console.warn('Received an update while pending, but it did not resolve the selection. Resetting.');
-            clearPendingState();
         }
     }
 
