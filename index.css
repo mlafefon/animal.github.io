@@ -2843,6 +2843,7 @@ input:disabled + .slider:before {
 #participant-game-screen {
     width: 100vw;
     height: 100vh;
+    height: 100dvh; /* Use dynamic viewport height to account for browser UI */
     display: flex;
     flex-direction: column;
     padding: 1.25rem;
@@ -3148,6 +3149,10 @@ body.participant-view .app-version {
 
     #participant-game-screen #q-a-wrapper {
         margin-top: 5rem; /* Adjust for smaller header */
+        flex-grow: 1; /* Ensure wrapper takes available space */
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
     }
     
     .participant-team-info {
@@ -3167,7 +3172,8 @@ body.participant-view .app-version {
     
     #participant-game-screen #question-container,
     #participant-game-screen #answer-container {
-        min-height: 50vh;
+        min-height: 0; /* Allow the container to shrink to fit content */
+        flex-grow: 1; /* Make the container fill the available flexible space */
         padding: 1rem;
     }
 
@@ -3177,8 +3183,13 @@ body.participant-view .app-version {
 
     .waiting-message {
         font-size: 1.5rem;
+        flex-shrink: 0;
     }
 
+    #participant-controls {
+        flex-shrink: 0; /* Prevent the button container from shrinking */
+    }
+    
     #participant-stop-btn.btn-large {
         padding: 1rem 3rem;
         font-size: 1.5rem;
