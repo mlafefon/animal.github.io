@@ -17,7 +17,7 @@ function showAuthError(message) {
 }
 
 /**
- * Initializes all authentication-related event listeners and checks for OAuth redirects.
+ * Initializes all authentication-related event listeners.
  * @param {function} onLoginSuccess - A callback function to execute upon successful login.
  */
 export function initializeAuth(onLoginSuccess) {
@@ -45,19 +45,9 @@ export function initializeAuth(onLoginSuccess) {
     loginForm.addEventListener('submit', handleLogin);
     googleLoginBtn.addEventListener('click', loginWithGoogle);
 
-    // After the page reloads from an OAuth provider (like Google), a session
-    // will be available. We check for it here. If it exists, we trigger
-    // the success callback to take the user directly into the app,
-    // bypassing the start screen.
-    getAccount().then(user => {
-        if (user) {
-            console.log('OAuth redirect session found for:', user.name);
-            document.getElementById('start-screen').classList.add('hidden'); // Hide start screen if visible
-            if (onLoginSuccess) {
-                onLoginSuccess();
-            }
-        }
-    }).catch(() => {
-        // No session found from OAuth, normal flow continues.
-    });
+    // The logic to auto-redirect logged-in users has been removed
+    // to fulfill the requirement of always showing the start screen on page load.
+    // The user must now click the "Start" button to proceed.
+    // OAuth redirects will also land on the start screen, and the user can
+    // click "Start" to enter the main application.
 }
