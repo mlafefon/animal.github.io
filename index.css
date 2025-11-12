@@ -558,7 +558,7 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1.25rem;
 }
 
 .join-host-content h1 {
@@ -568,7 +568,23 @@ h1, h2, h3, h4, h5, h6 {
 
 .join-host-content p {
     font-size: 1.2rem;
-    margin-bottom: -0.5rem; /* reduce space */
+    margin-bottom: 0;
+}
+
+.join-code-container {
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+#qrcode-container {
+    background-color: white;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.15);
+    line-height: 0; /* Prevents extra space from line height */
 }
 
 #join-host-teams-container {

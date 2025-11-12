@@ -470,21 +470,36 @@ async function attemptRejoin() {
 // --- Main Execution ---
 document.addEventListener('DOMContentLoaded', async () => {
     initializeNotification();
-
-    const rejoinAttempted = await attemptRejoin();
-    
-    // Only initialize the join screen listener if we are NOT rejoining.
-    if (!rejoinAttempted) {
-        showScreen('join');
-        initializeJoinScreen();
-    }
-    
+    initializeJoinScreen(); // Always initialize listeners
     initializeGameScreen();
 
     // Clean up subscriptions when the user closes the page
     window.addEventListener('beforeunload', () => {
         unsubscribeAllRealtime();
     });
+
+    // --- Logic to handle joining ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const codeFromUrl = urlParams.get('code');
+
+    if (codeFromUrl && /^\d{6}$/.test(codeFromUrl)) {
+        gameCodeInput.value = codeFromUrl;
+        joinError.textContent = 'מתחבר למשחק...';
+        joinError.classList.remove('hidden');
+        
+        // Short delay to allow DOM to update before simulating submit.
+        setTimeout(() => {
+            // The submit event listener is in initializeJoinScreen
+            joinForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        }, 100);
+    } else {
+        // If no code in URL, try to rejoin from session storage
+        const rejoinAttempted = await attemptRejoin();
+        if (!rejoinAttempted) {
+            // Only show the clean join screen if not rejoining
+            showScreen('join');
+        }
+    }
 
     // Fetch and display the app version
     fetch('metadata.json')

@@ -6,6 +6,7 @@
     <title>משחק חידות ידע</title>
     <link rel="stylesheet" href="index.css">
     <script src="https://cdn.jsdelivr.net/npm/appwrite@11.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script type="importmap">
 {
   "imports": {
@@ -112,8 +113,11 @@
     <div id="join-host-screen" class="container hidden">
         <div class="join-host-content">
             <h1>קוד הצטרפות למשחק</h1>
-            <p>שתף קוד זה עם המשתתפים והמתן להצטרפותם</p>
-            <div id="join-host-code-display" class="game-code-display" title="לחץ להעתקה">......</div>
+            <p>שתף קוד זה עם המשתתפים או סרוק את קוד ה-QR</p>
+            <div class="join-code-container">
+                <div id="join-host-code-display" class="game-code-display" title="לחץ להעתקה">......</div>
+                <div id="qrcode-container"></div>
+            </div>
             <div id="join-host-teams-container">
                 <!-- Team slots will be injected here by JS -->
             </div>

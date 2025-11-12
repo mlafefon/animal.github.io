@@ -72,6 +72,27 @@ function showJoinHostScreen(options) {
     renderEmptyTeamSlots(options.numberOfGroups);
     joinHostScreen.classList.remove('hidden');
     startGameFromJoinBtn.focus();
+
+    // --- Generate QR Code ---
+    const qrContainer = document.getElementById('qrcode-container');
+    if (qrContainer) {
+        qrContainer.innerHTML = ''; // Clear previous QR code if any
+        const participantUrl = `${window.location.origin}/participant.html?code=${options.gameCode}`;
+        
+        try {
+            new QRCode(qrContainer, {
+                text: participantUrl,
+                width: 160,
+                height: 160,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        } catch (e) {
+            console.error("Failed to generate QR Code.", e);
+            qrContainer.textContent = 'שגיאה ביצירת קוד QR.';
+        }
+    }
 }
 
 // --- Functions for Setup Screen ---
