@@ -1,5 +1,6 @@
 
 
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -142,11 +143,14 @@ async function broadcastGameState() {
 
     // Determine the high-level state for participants
     let currentGameState = gameStateForParticipant || 'waiting'; // Use state if available
-    let questionForParticipant = null;
+    let questionDataForParticipant = null; // Renamed for clarity
     
     if (currentGameState === 'question') {
         const q = getCurrentQuestion();
-        questionForParticipant = { q: q.q }; // Only send the question text
+        questionDataForParticipant = { q: q.q }; // Only send the question text for a new question
+    } else if (currentGameState === 'correctAnswer') { // When answer is correct
+        const q_and_a = getCurrentQuestion();
+        questionDataForParticipant = { q: q_and_a.q, a: q_and_a.a }; // Send Q and A
     }
 
     // Create a "lean" version of the teams array to reduce payload size.
@@ -165,7 +169,7 @@ async function broadcastGameState() {
         teams: leanTeams, // Send the lean version
         activeTeamIndex,
         gameState: currentGameState,
-        currentQuestion: questionForParticipant,
+        currentQuestionData: questionDataForParticipant, // Use new name
         boxesData: boxesData,
     };
 

@@ -1,4 +1,5 @@
 
+
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
@@ -251,9 +252,31 @@ function updateGameView(state) {
     waitingMessage.classList.add('hidden');
 
     switch (state.gameState) {
+        case 'correctAnswer':
+            showScreen('game');
+            const activeTeamForCorrect = state.teams.find(t => t.index === state.activeTeamIndex);
+            if (activeTeamForCorrect) {
+                // Using innerHTML to structure the message with styling
+                questionText.innerHTML = `
+                    <div style="line-height: 1.6;">
+                        <p style="font-size: 2.2rem; color: #4CAF50; font-weight: bold;">כל הכבוד קבוצת ${activeTeamForCorrect.name}!</p>
+                        <p>עניתם תשובה נכונה.</p>
+                        <p style="margin-top: 1rem; font-style: italic;">עכשיו זמן למידה...</p>
+                        <hr style="margin: 1.25rem auto; width: 80%; border-color: rgba(255,255,255,0.2);">
+                        <p style="font-size: 1.8rem; color: #ffeb3b; font-weight: bold;">${state.currentQuestionData.a}</p>
+                    </div>
+                `;
+            } else {
+                 // Fallback if team somehow isn't found
+                 questionText.textContent = `תשובה נכונה! התשובה היא: ${state.currentQuestionData.a}`;
+            }
+            participantControls.classList.add('hidden');
+            waitingMessage.classList.add('hidden');
+            break;
+
         case 'question':
             showScreen('game');
-            questionText.textContent = state.currentQuestion.q;
+            questionText.textContent = state.currentQuestionData.q;
             if (isMyTurn) {
                 participantControls.classList.remove('hidden');
                 stopBtn.disabled = false; // Ensure button is enabled for new question

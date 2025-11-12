@@ -250,6 +250,10 @@ export function initializeQuestionScreen(onComplete) {
         victoryBoxBtn.focus();
         undoAnswerChoiceBtn.classList.remove('hidden');
 
+        // Set state for participants to show the correct answer and a message
+        setParticipantState('correctAnswer');
+        document.dispatchEvent(new Event('gamestatechange'));
+
         // Check if this was a passed question to determine victory type
         if (getIsQuestionPassed()) {
             gameScreen.dataset.victoryType = 'half';
