@@ -1,6 +1,4 @@
 
-
-
 import { getSavedState, initializeSetupState } from './gameState.js';
 import { TEAMS_MASTER_DATA } from './game.js';
 import { showNotification } from './ui.js';
@@ -79,13 +77,13 @@ function showJoinHostScreen(options) {
     if (qrContainer) {
         qrContainer.innerHTML = ''; // Clear previous QR code if any
         
-        // Construct a URL relative to the current page's location.
-        // This correctly handles subdirectories like /animal/.
-        const url = new URL('participant.html', window.location.href);
-        url.searchParams.set('code', options.gameCode);
-        const participantUrl = url.href;
-        
         try {
+            // Construct a URL relative to the current page's location.
+            // This correctly handles subdirectories like /animal/.
+            const url = new URL('participant.html', window.location.href);
+            url.searchParams.set('code', options.gameCode);
+            const participantUrl = url.href;
+
             new QRCode(qrContainer, {
                 text: participantUrl,
                 width: 320,
@@ -95,8 +93,8 @@ function showJoinHostScreen(options) {
                 correctLevel : QRCode.CorrectLevel.H
             });
         } catch (e) {
-            console.error("Failed to generate QR Code.", e);
-            qrContainer.textContent = 'שגיאה ביצירת קוד QR.';
+            console.warn("Failed to generate QR Code. Skipping generation.", e);
+            // As per the request, we ignore the error and do not display anything.
         }
     }
 }
