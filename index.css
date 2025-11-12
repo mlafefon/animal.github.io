@@ -547,6 +547,15 @@ h1, h2, h3, h4, h5, h6 {
     text-align: center;
 }
 
+.join-screen-layout {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4rem;
+    width: 100%;
+    max-width: 81.25rem;
+}
+
 .join-host-content {
     background: rgba(0, 0, 0, 0.25);
     border: 0.0625rem solid rgba(255, 255, 255, 0.3);
@@ -581,10 +590,10 @@ h1, h2, h3, h4, h5, h6 {
 
 #qrcode-container {
     background-color: white;
-    padding: 0.5rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.15);
-    line-height: 0; /* Prevents extra space from line height */
+    padding: 1rem;
+    border-radius: 1rem;
+    box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.25);
+    line-height: 0;
 }
 
 #join-host-teams-container {
@@ -2960,6 +2969,14 @@ body.participant-view .app-version {
 
 
 /* --- Responsive Overrides --- */
+
+@media (max-width: 1200px) {
+    .join-screen-layout {
+        flex-direction: column-reverse;
+        gap: 2rem;
+    }
+}
+
 
 /* Betting Screen on smaller/shorter devices */
 @media (max-height: 50rem), (max-width: 48rem) {

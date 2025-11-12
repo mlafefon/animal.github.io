@@ -88,8 +88,8 @@ function showJoinHostScreen(options) {
         try {
             new QRCode(qrContainer, {
                 text: participantUrl,
-                width: 160,
-                height: 160,
+                width: 320,
+                height: 320,
                 colorDark : "#000000",
                 colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H

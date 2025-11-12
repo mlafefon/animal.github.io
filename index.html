@@ -111,17 +111,19 @@
     </div>
 
     <div id="join-host-screen" class="container hidden">
-        <div class="join-host-content">
-            <h1>קוד הצטרפות למשחק</h1>
-            <p>שתף קוד זה עם המשתתפים או סרוק את קוד ה-QR</p>
-            <div class="join-code-container">
-                <div id="join-host-code-display" class="game-code-display" title="לחץ להעתקה">......</div>
-                <div id="qrcode-container"></div>
+        <div class="join-screen-layout">
+            <div class="join-host-content">
+                <h1>קוד הצטרפות למשחק</h1>
+                <p>שתף קוד זה עם המשתתפים או סרוק את קוד ה-QR</p>
+                <div class="join-code-container">
+                    <div id="join-host-code-display" class="game-code-display" title="לחץ להעתקה">......</div>
+                </div>
+                <div id="join-host-teams-container">
+                    <!-- Team slots will be injected here by JS -->
+                </div>
+                <button id="start-game-from-join-btn" class="btn btn-primary btn-large">התחל משחק</button>
             </div>
-            <div id="join-host-teams-container">
-                <!-- Team slots will be injected here by JS -->
-            </div>
-            <button id="start-game-from-join-btn" class="btn btn-primary btn-large">התחל משחק</button>
+            <div id="qrcode-container"></div>
         </div>
     </div>
 
@@ -151,7 +153,7 @@
                     <span id="timer-value">30</span>
                 </div>
                 <button id="answer-link-btn" class="btn-icon-round hidden" title="מידע נוסף">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2zm-3-4h8v2H8v-2z"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24 5-5s2.24 5 5 5h4v-2zm-3-4h8v2H8v-2z"/></svg>
                 </button>
             </div>
             <div id="q-a-wrapper">
@@ -231,7 +233,7 @@
                 <div id="final-answer-container" class="hidden">
                     <p id="final-answer-text"></p>
                      <button id="final-answer-link-btn" class="btn-icon-round hidden" title="מידע נוסף">
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2zm-3-4h8v2H8v-2z"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24 5-5s2.24 5 5 5h4v-2zm-3-4h8v2H8v-2z"/></svg>
                     </button>
                 </div>
             </div>
@@ -325,7 +327,7 @@
                         <div class="input-with-button">
                             <input type="url" id="final-question-url-input" placeholder="הכנס קישור (אופציונלי)">
                             <button type="button" id="final-question-preview-btn" class="btn-icon preview-link-btn" title="תצוגה מקדימה של הקישור" disabled>
-                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2zm-3-4h8v2H8v-2z"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24 5-5s2.24 5 5 5h4v-2zm-3-4h8v2H8v-2z"/></svg>
                             </button>
                         </div>
                     </div>
