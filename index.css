@@ -2849,6 +2849,10 @@ input:disabled + .slider:before {
     position: relative;
 }
 
+#participant-game-screen .game-header {
+    flex: 0 1 auto; /* Prevent header from growing and pushing controls down */
+}
+
 .participant-team-info {
     display: flex;
     align-items: center;
@@ -3144,7 +3148,6 @@ body.participant-view .app-version {
     /* Participant Game Screen */
     #participant-game-screen {
         padding: 1rem;
-        padding-bottom: 5rem; /* הרם את הכפתור מהתחתית במובייל */
     }
 
     #participant-game-screen #q-a-wrapper {
