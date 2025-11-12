@@ -3144,6 +3144,7 @@ body.participant-view .app-version {
     /* Participant Game Screen */
     #participant-game-screen {
         padding: 1rem;
+        padding-bottom: 3rem; /* הרם את הכפתור מהתחתית במובייל */
     }
 
     #participant-game-screen #q-a-wrapper {
