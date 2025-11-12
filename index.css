@@ -2849,10 +2849,6 @@ input:disabled + .slider:before {
     position: relative;
 }
 
-#participant-game-screen .game-header {
-    flex: 0 1 auto; /* Prevent header from growing and pushing controls down */
-}
-
 .participant-team-info {
     display: flex;
     align-items: center;
