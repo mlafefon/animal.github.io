@@ -1,5 +1,6 @@
 
 
+
 import { getSavedState, initializeSetupState } from './gameState.js';
 import { TEAMS_MASTER_DATA } from './game.js';
 import { showNotification } from './ui.js';
@@ -77,7 +78,12 @@ function showJoinHostScreen(options) {
     const qrContainer = document.getElementById('qrcode-container');
     if (qrContainer) {
         qrContainer.innerHTML = ''; // Clear previous QR code if any
-        const participantUrl = `${window.location.protocol}//${window.location.host}/participant.html?code=${options.gameCode}`;
+        
+        // Construct a URL relative to the current page's location.
+        // This correctly handles subdirectories like /animal/.
+        const url = new URL('participant.html', window.location.href);
+        url.searchParams.set('code', options.gameCode);
+        const participantUrl = url.href;
         
         try {
             new QRCode(qrContainer, {
