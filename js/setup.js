@@ -77,7 +77,7 @@ function showJoinHostScreen(options) {
     const qrContainer = document.getElementById('qrcode-container');
     if (qrContainer) {
         qrContainer.innerHTML = ''; // Clear previous QR code if any
-        const participantUrl = `${window.location.origin}/participant.html?code=${options.gameCode}`;
+        const participantUrl = `${window.location.protocol}//${window.location.host}/participant.html?code=${options.gameCode}`;
         
         try {
             new QRCode(qrContainer, {
