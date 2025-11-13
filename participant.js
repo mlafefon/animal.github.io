@@ -265,10 +265,9 @@ function updateGameView(state) {
         case 'learningTime':
             showScreen('game');
             questionText.innerHTML = `
-                <div style="line-height: 1.6;">
-                    <p style="font-size: 2rem; font-weight: bold;">זמן למידה:</p>
-                    <hr style="margin: 1.25rem auto; width: 80%; border-color: rgba(255,255,255,0.2);">
-                    <p style="font-size: 1.8rem; color: #ffeb3b;">${state.currentQuestionData.a}</p>
+                <div style="line-height: 1.6; text-align: center;">
+                    <p style="font-size: 2.2rem; font-weight: bold; margin-bottom: 1.5rem;">זמן למידה:</p>
+                    <p style="font-size: 1.8rem; color: #ffeb3b;">התשובה: ${state.currentQuestionData.a}</p>
                 </div>
             `;
             participantControls.classList.add('hidden');
