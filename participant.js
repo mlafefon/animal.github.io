@@ -262,6 +262,19 @@ function updateGameView(state) {
     waitingMessage.classList.add('hidden');
 
     switch (state.gameState) {
+        case 'learningTime':
+            showScreen('game');
+            questionText.innerHTML = `
+                <div style="line-height: 1.6;">
+                    <p style="font-size: 2rem; font-weight: bold;">זמן למידה:</p>
+                    <hr style="margin: 1.25rem auto; width: 80%; border-color: rgba(255,255,255,0.2);">
+                    <p style="font-size: 1.8rem; color: #ffeb3b;">${state.currentQuestionData.a}</p>
+                </div>
+            `;
+            participantControls.classList.add('hidden');
+            waitingMessage.classList.add('hidden');
+            break;
+            
         case 'incorrectAnswer':
             showScreen('game');
             const activeTeamForIncorrect = state.teams.find(t => t.index === state.activeTeamIndex);

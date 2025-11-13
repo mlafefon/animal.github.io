@@ -384,6 +384,10 @@ export function initializeQuestionScreen(onComplete) {
             
             // Update button text to guide user for the next action
             failureBoxBtn.textContent = 'המשך לתיבה';
+            
+            // Notify participants that it's learning time
+            setParticipantState('learningTime');
+            document.dispatchEvent(new Event('gamestatechange'));
         } else {
             // Second click: Proceed to the boxes screen
             if (onQuestionCompleteCallback) {

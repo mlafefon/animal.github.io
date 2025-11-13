@@ -1,7 +1,3 @@
-
-
-
-
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -149,7 +145,7 @@ async function broadcastGameState() {
     if (currentGameState === 'question') {
         const q = getCurrentQuestion();
         questionDataForParticipant = { q: q.q }; // Only send the question text for a new question
-    } else if (currentGameState === 'correctAnswer') { // When answer is correct
+    } else if (currentGameState === 'correctAnswer' || currentGameState === 'learningTime') { // When answer is correct or it's learning time
         const q_and_a = getCurrentQuestion();
         questionDataForParticipant = { q: q_and_a.q, a: q_and_a.a }; // Send Q and A
     }
