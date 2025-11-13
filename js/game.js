@@ -1,6 +1,7 @@
 
 
 
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -270,6 +271,7 @@ export function getTeamsInfo() {
 export function passQuestionToTeam(targetIndex) {
     gameState.setIsQuestionPassed(true);
     gameState.setActiveTeam(targetIndex);
+    gameState.setParticipantState('question');
     updateActiveTeam(); // Update UI
     broadcastGameState();
 }

@@ -1,5 +1,3 @@
-
-
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
@@ -264,6 +262,31 @@ function updateGameView(state) {
     waitingMessage.classList.add('hidden');
 
     switch (state.gameState) {
+        case 'incorrectAnswer':
+            showScreen('game');
+            const activeTeamForIncorrect = state.teams.find(t => t.index === state.activeTeamIndex);
+            if (activeTeamForIncorrect) {
+                const sadIcon = `
+                    <svg xmlns="http://www.w3.org/2000/svg" height="80px" viewBox="0 0 24 24" width="80px" fill="#FF5252" style="margin-bottom: 1rem;">
+                        <path d="M0 0h24v24H0V0z" fill="none"/>
+                        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-5-6c.78 2.34 2.72 4 5 4s4.22-1.66 5-4H7zM9 13c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/>
+                    </svg>
+                `;
+                questionText.innerHTML = `
+                    <div style="line-height: 1.6; display: flex; flex-direction: column; align-items: center;">
+                        ${sadIcon}
+                        <p style="font-size: 2.2rem; color: #FF5252; font-weight: bold;">תשובה שגויה</p>
+                        <p>ממתין להחלטת המנחה...</p>
+                    </div>
+                `;
+            } else {
+                 // Fallback if team somehow isn't found
+                 questionText.textContent = `תשובה שגויה`;
+            }
+            participantControls.classList.add('hidden');
+            waitingMessage.classList.add('hidden');
+            break;
+
         case 'correctAnswer':
             showScreen('game');
             const activeTeamForCorrect = state.teams.find(t => t.index === state.activeTeamIndex);

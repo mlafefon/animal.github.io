@@ -285,6 +285,9 @@ export function initializeQuestionScreen(onComplete) {
         failureControls.classList.remove('hidden');
         undoAnswerChoiceBtn.classList.remove('hidden');
 
+        setParticipantState('incorrectAnswer');
+        document.dispatchEvent(new Event('gamestatechange'));
+
         // If the question was passed to this team, they can't pass it again.
         if (getIsQuestionPassed()) {
             passQuestionBtn.classList.add('hidden');
