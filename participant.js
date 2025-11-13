@@ -389,6 +389,18 @@ function initializeJoinScreen() {
                 return;
             }
             
+            // Check if the game session has expired (older than 3 hours)
+            const createdAt = new Date(sessionDoc.$createdAt);
+            const now = new Date();
+            const threeHoursInMillis = 3 * 60 * 60 * 1000;
+
+            if (now - createdAt > threeHoursInMillis) {
+                joinError.textContent = 'תוקף המשחק פג. אנא בקש מהמנחה קוד חדש.';
+                joinError.classList.remove('hidden');
+                gameCodeInput.value = ''; // Clear input for new code
+                return;
+            }
+
             gameCode = code;
             sessionDocumentId = sessionDoc.$id;
             const sessionData = JSON.parse(sessionDoc.sessionData);
@@ -453,6 +465,15 @@ async function attemptRejoin() {
             const sessionDoc = await getGameSession(savedCode);
             if (!sessionDoc) {
                 throw new Error('המשחק כבר לא פעיל.');
+            }
+
+            // Check if the game session has expired (older than 3 hours)
+            const createdAt = new Date(sessionDoc.$createdAt);
+            const now = new Date();
+            const threeHoursInMillis = 3 * 60 * 60 * 1000;
+
+            if (now - createdAt > threeHoursInMillis) {
+                throw new Error('תוקף המשחק ששמרת פג.');
             }
 
             gameCode = savedCode;
