@@ -267,7 +267,7 @@ function updateGameView(state) {
             questionText.innerHTML = `
                 <div style="line-height: 1.6; text-align: center;">
                     <p style="font-size: 2.2rem; font-weight: bold; margin-bottom: 1.5rem;">זמן למידה:</p>
-                    <p style="font-size: 1.8rem; color: #ffeb3b;">התשובה: ${state.currentQuestionData.a}</p>
+                    <p style="font-size: 1.8rem; color: #ffeb3b;">${state.currentQuestionData.a}</p>
                 </div>
             `;
             participantControls.classList.add('hidden');
