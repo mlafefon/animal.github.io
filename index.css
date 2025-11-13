@@ -1842,6 +1842,69 @@ h1, h2, h3, h4, h5, h6 {
     width: 6.25rem;
 }
 
+/* --- New styles for Game Questions Summary --- */
+#game-questions-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#question-count-display {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #f0f8ff;
+}
+
+.game-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+#toggle-questions-view-btn {
+    width: 3.5rem;
+    height: 3.5rem;
+}
+
+#toggle-questions-view-btn.btn-action-edit {
+    background-color: #ffeb3b;
+    border-color: #ffeb3b;
+}
+
+#toggle-questions-view-btn.btn-action-edit:hover:not(:disabled) {
+    background-color: #fdd835;
+}
+
+#toggle-questions-view-btn.btn-action-edit svg {
+    fill: #3f51b5;
+}
+
+#toggle-questions-view-btn.btn-action-view {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-color: white;
+}
+
+#toggle-questions-view-btn.btn-action-view:hover:not(:disabled) {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+#toggle-questions-view-btn.btn-action-view svg {
+    fill: #ffffff;
+}
+
+#toggle-questions-view-btn svg {
+    width: 1.8rem;
+    height: 1.8rem;
+}
+
+.edit-icon-svg.hidden,
+.view-icon-svg.hidden {
+    display: none;
+}
+
+
 /* --- Modern Toggle Switch for Public Checkbox --- */
 .public-toggle-container {
     display: flex;

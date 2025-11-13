@@ -20,6 +20,13 @@ const playSelectedGameBtn = document.getElementById('play-selected-game-btn');
 const categoryListContainer = document.getElementById('category-list-container');
 const gameListUl = document.getElementById('game-list-ul');
 
+// New View Elements
+const gameQuestionsSummary = document.getElementById('game-questions-summary');
+const questionCountDisplay = document.getElementById('question-count-display');
+const toggleQuestionsViewBtn = document.getElementById('toggle-questions-view-btn');
+const questionsWrapper = document.getElementById('questions-wrapper');
+
+
 // New Toolbar Elements
 const editorToolbar = document.getElementById('editor-toolbar');
 const toolbarAddQuestionBtn = document.getElementById('toolbar-add-question-btn');
@@ -42,6 +49,7 @@ let saveStateTimeout = null;
 let gameDocumentsCache = {}; // Cache for all fetched game documents
 let gameDataToDuplicate = null;
 let userAcknowledgedUnsavedChanges = false;
+let currentlySelectedGameDoc = null;
 
 
 /**
@@ -231,7 +239,7 @@ function renderQuestionCard(question, index) {
             </div>
             <div class="header-right">
                 <button type="button" class="btn-icon preview-question-btn" title="תצוגת שאלה">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34-3-3-1.34-3-3-3z"/></svg>
                 </button>
                 <button type="button" class="delete-question-btn" title="מחק שאלה"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
                 <svg class="collapse-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
@@ -361,44 +369,49 @@ function renderAllQuestions(questions) {
 }
 
 /**
- * Sets the entire editor form to a read-only or editable state.
+ * Sets the main details form inputs to a read-only or editable state.
  * @param {boolean} isReadOnly - True to make the form read-only, false for editable.
  */
-function setEditorReadOnly(isReadOnly) {
-    gameEditorForm.toggleAttribute('data-readonly', isReadOnly);
-
-    // Disable main form fields
+function setDetailsReadOnly(isReadOnly) {
     gameNameInput.disabled = isReadOnly;
     gameDescriptionInput.disabled = isReadOnly;
     gameCategorySelect.disabled = isReadOnly;
     gamePublicCheckbox.disabled = isReadOnly;
+}
+
+
+/**
+ * Sets the questions panel (questions and toolbar) to read-only or editable.
+ * @param {boolean} isReadOnly - True for read-only, false for editable.
+ */
+function setQuestionsPanelReadOnly(isReadOnly) {
+    // Set read-only state for the main form's data-attribute
+    gameEditorForm.toggleAttribute('data-readonly', isReadOnly);
+
+    // Final question inputs
     finalQuestionQInput.disabled = isReadOnly;
     finalQuestionAInput.disabled = isReadOnly;
     finalQuestionUrlInput.disabled = isReadOnly;
 
-    // Disable inputs and hide action buttons in each question card
+    // Inputs and action buttons in each question card
     questionsEditorContainer.querySelectorAll('.question-card').forEach(card => {
         card.querySelector('.question-input').disabled = isReadOnly;
         card.querySelector('.answer-input').disabled = isReadOnly;
         card.querySelector('.timer-input').disabled = isReadOnly;
         card.querySelector('.url-input').disabled = isReadOnly;
         
-        // Correctly set display property based on CSS. A standard button's default is 'inline-block'.
         card.querySelector('.delete-question-btn').style.display = isReadOnly ? 'none' : 'flex';
         card.querySelector('.reorder-controls').style.display = isReadOnly ? 'none' : 'flex';
-        // The cursor is handled by CSS, no need to override it here.
     });
 
-    // Hide editing-related toolbar buttons for read-only mode, as requested.
+    // Toolbar buttons related to editing
     toolbarAddQuestionBtn.style.display = isReadOnly ? 'none' : 'flex';
     toolbarSaveBtn.style.display = isReadOnly ? 'none' : 'flex';
     
+    // Ensure save button state is correct for read-only mode
     if (isReadOnly) {
-        toolbarSaveBtn.classList.remove('unsaved'); // Ensure no unsaved pulse on read-only view
+        toolbarSaveBtn.classList.remove('unsaved');
     }
-
-    // A visual cue for the whole form
-    gameEditorForm.style.opacity = isReadOnly ? 0.85 : 1;
 }
 
 
@@ -407,6 +420,8 @@ function setEditorReadOnly(isReadOnly) {
  * @param {object} gameDocument - The game document from Appwrite.
  */
 async function loadGameForEditing(gameDocument) {
+    currentlySelectedGameDoc = gameDocument; // Store for later use
+
     if (!gameDocument) {
         gameEditorForm.classList.add('hidden');
         editorToolbar.classList.add('hidden');
@@ -417,51 +432,58 @@ async function loadGameForEditing(gameDocument) {
     }
     try {
         const gameData = JSON.parse(gameDocument.game_data);
+        
+        // --- Populate Details View ---
         gameNameInput.value = gameDocument.game_name || '';
         gameDescriptionInput.value = gameDocument.description || '';
         gameCategorySelect.value = gameDocument.categoryId || '';
         gamePublicCheckbox.checked = gameDocument.is_public || false;
-        renderAllQuestions(gameData.questions);
         
-        if (gameData.final_question) {
-            finalQuestionQInput.value = gameData.final_question.q || '';
-            finalQuestionAInput.value = gameData.final_question.a || '';
-            finalQuestionUrlInput.value = gameData.final_question.url || '';
-        } else {
-            finalQuestionQInput.value = '';
-            finalQuestionAInput.value = '';
-            finalQuestionUrlInput.value = '';
-        }
+        // --- Populate Summary View ---
+        const questionCount = gameData.questions.length;
+        questionCountDisplay.textContent = `${questionCount} שאלות`;
 
-        setTimeout(() => {
-            autoResizeTextarea(gameDescriptionInput);
-            autoResizeTextarea(finalQuestionQInput);
-            autoResizeTextarea(finalQuestionAInput);
-        }, 0);
+        // --- Set UI State ---
+        gameEditorForm.classList.remove('hidden'); // Show the main form container
+        gameQuestionsSummary.classList.remove('hidden'); // Show summary
+        questionsWrapper.classList.add('hidden'); // Hide questions
+        editorToolbar.classList.add('hidden'); // Hide toolbar
         
         const isOwned = gameDocument.isOwned;
-        setEditorReadOnly(!isOwned);
+        const viewIcon = toggleQuestionsViewBtn.querySelector('.view-icon-svg');
+        const editIcon = toggleQuestionsViewBtn.querySelector('.edit-icon-svg');
+
+        if (isOwned) {
+            toggleQuestionsViewBtn.dataset.mode = 'edit';
+            toggleQuestionsViewBtn.title = 'ערוך שאלות';
+            viewIcon.classList.add('hidden');
+            editIcon.classList.remove('hidden');
+            toggleQuestionsViewBtn.classList.add('btn-action-edit');
+            toggleQuestionsViewBtn.classList.remove('btn-action-view');
+        } else {
+            toggleQuestionsViewBtn.dataset.mode = 'view';
+            toggleQuestionsViewBtn.title = 'צפה בשאלות';
+            viewIcon.classList.remove('hidden');
+            editIcon.classList.add('hidden');
+            toggleQuestionsViewBtn.classList.add('btn-action-view');
+            toggleQuestionsViewBtn.classList.remove('btn-action-edit');
+        }
         
-        // Hide delete button completely if not owned, using the correct display property ('flex')
+        setDetailsReadOnly(true); // Always read-only on initial load
         toolbarDeleteBtn.style.display = isOwned ? 'flex' : 'none';
 
-        // Set initial state for all preview buttons
-        gameEditorForm.querySelectorAll('input[type="url"]').forEach(input => {
-            const wrapper = input.closest('.input-with-button');
-            if(wrapper) {
-                const previewBtn = wrapper.querySelector('.preview-link-btn');
-                if (previewBtn) {
-                    previewBtn.disabled = !input.value.trim() || !input.checkValidity();
-                }
-            }
-        });
+        // Set initial state for preview button in final question
+        const finalUrlInput = document.getElementById('final-question-url-input');
+        const finalPreviewBtn = document.getElementById('final-question-preview-btn');
+        if(finalPreviewBtn) {
+            finalPreviewBtn.disabled = !finalUrlInput.value.trim() || !finalUrlInput.checkValidity();
+        }
 
         gameEditorForm.dataset.documentId = gameDocument.$id;
-        gameEditorForm.classList.remove('hidden');
-        editorToolbar.classList.remove('hidden');
         playSelectedGameBtn.disabled = false;
         duplicateSelectedGameBtn.disabled = false;
         setUnsavedState(false);
+
     } catch (error) {
         console.error(`Failed to parse game data for ${gameDocument.game_name}:`, error);
         showNotification(`שגיאה בפענוח נתוני המשחק: ${gameDocument.game_name}. הנתונים עשויים להיות פגומים.`, 'error');
@@ -950,4 +972,38 @@ export function initializeEditGameScreen() {
     finalQuestionQInput.addEventListener('input', () => autoResizeTextarea(finalQuestionQInput));
     finalQuestionAInput.addEventListener('input', () => autoResizeTextarea(finalQuestionAInput));
     newGameDescriptionInput.addEventListener('input', () => autoResizeTextarea(newGameDescriptionInput));
+
+    toggleQuestionsViewBtn.addEventListener('click', () => {
+        if (!currentlySelectedGameDoc) return;
+
+        const mode = toggleQuestionsViewBtn.dataset.mode;
+        
+        const gameData = JSON.parse(currentlySelectedGameDoc.game_data);
+        renderAllQuestions(gameData.questions);
+        
+        // Populate final question for viewing/editing
+        if (gameData.final_question) {
+            finalQuestionQInput.value = gameData.final_question.q || '';
+            finalQuestionAInput.value = gameData.final_question.a || '';
+            finalQuestionUrlInput.value = gameData.final_question.url || '';
+        } else {
+            finalQuestionQInput.value = '';
+            finalQuestionAInput.value = '';
+            finalQuestionUrlInput.value = '';
+        }
+        
+        gameQuestionsSummary.classList.add('hidden');
+        questionsWrapper.classList.remove('hidden');
+        
+        if (mode === 'edit') {
+            setDetailsReadOnly(false); // Make details editable
+            setQuestionsPanelReadOnly(false); // Make questions editable
+            editorToolbar.classList.remove('hidden'); // Show the toolbar
+        } else { // mode === 'view'
+            setDetailsReadOnly(true); // Keep details read-only
+            setQuestionsPanelReadOnly(true); // Set questions to read-only
+            editorToolbar.classList.add('hidden'); // Keep toolbar hidden
+        }
+    });
+
 }
