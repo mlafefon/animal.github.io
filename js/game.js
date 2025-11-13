@@ -1,3 +1,4 @@
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -106,14 +107,26 @@ function generateTeams() {
         name.className = 'team-name';
         name.textContent = team.name;
 
+        const scoreWrapper = document.createElement('div');
+        scoreWrapper.className = 'team-score-wrapper';
+
         const score = document.createElement('p');
         score.className = 'team-score';
         score.textContent = team.score;
         score.dataset.score = team.score;
+        scoreWrapper.appendChild(score);
+
+        if (team.participantId) {
+            const phoneIcon = document.createElement('span');
+            phoneIcon.className = 'participant-phone-icon';
+            phoneIcon.title = 'משתתף מהטלפון';
+            phoneIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>`;
+            scoreWrapper.appendChild(phoneIcon);
+        }
 
         teamElement.appendChild(iconContainer);
         teamElement.appendChild(name);
-        teamElement.appendChild(score);
+        teamElement.appendChild(scoreWrapper);
         mainTeamsContainer.appendChild(teamElement);
     });
 }
