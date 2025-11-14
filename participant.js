@@ -25,6 +25,7 @@ const questionText = document.getElementById('participant-question-text');
 const participantControls = document.getElementById('participant-controls');
 const stopBtn = document.getElementById('participant-stop-btn');
 const waitingMessage = document.getElementById('waiting-message');
+const versionElement = document.querySelector('.app-version');
 
 
 // --- State ---
@@ -46,6 +47,9 @@ function showScreen(screenName) {
     Object.values(screens).forEach(screen => screen.classList.add('hidden'));
     if (screens[screenName]) {
         screens[screenName].classList.remove('hidden');
+    }
+    if (versionElement) {
+        versionElement.classList.toggle('hidden', screenName !== 'join');
     }
 }
 

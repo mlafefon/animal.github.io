@@ -2,8 +2,6 @@
 
 
 
-
-
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -3055,33 +3053,6 @@ body.participant-view .app-version {
     left: 1rem;
     bottom: auto; /* Override the default from the start screen */
     z-index: 10001;
-}
-
-/* NEW: Styles for Participant Timer */
-.participant-timer-display {
-    position: absolute;
-    top: 1.25rem;
-    left: 1.25rem;
-    background-color: rgba(0, 0, 0, 0.5);
-    color: #f0f8ff;
-    font-size: 2.5rem;
-    font-weight: bold;
-    width: 5rem;
-    height: 5rem;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 0.1875rem solid #ffeb3b;
-    z-index: 10;
-    transition: color 0.3s, border-color 0.3s, transform 0.3s;
-    text-shadow: 0 0 0.5rem rgba(0,0,0,0.6);
-}
-
-.participant-timer-display.low-time {
-    color: #DC143C; /* Crimson Red */
-    border-color: #DC143C;
-    animation: pulse-text-warning 1.2s infinite ease-in-out;
 }
 
 
