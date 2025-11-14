@@ -445,88 +445,76 @@ function initializeGameScreen() {
 
 /**
  * Checks sessionStorage for an active game and attempts to rejoin it.
- * @returns {Promise<boolean>} True if a rejoin was attempted, false otherwise.
+ * @returns {Promise<boolean>} True if rejoin was successful, false otherwise.
  */
 async function attemptRejoin() {
     const savedGameJSON = sessionStorage.getItem('activeGame');
     if (!savedGameJSON) {
-        return false; // No saved game, proceed to normal join
+        return false;
     }
     
     const savedGame = JSON.parse(savedGameJSON);
     const { gameCode: savedCode, teamIndex: savedTeamIndex } = savedGame;
 
-    if (savedCode) {
-        showScreen('join');
-        joinError.textContent = 'מנסה להתחבר מחדש למשחק...';
-        joinError.classList.remove('hidden');
-
-        try {
-            const sessionDoc = await getGameSession(savedCode);
-            if (!sessionDoc) {
-                throw new Error('המשחק כבר לא פעיל.');
-            }
-
-            // Check if the game session has expired (older than 3 hours)
-            const createdAt = new Date(sessionDoc.$createdAt);
-            const now = new Date();
-            const threeHoursInMillis = 3 * 60 * 60 * 1000;
-
-            if (now - createdAt > threeHoursInMillis) {
-                throw new Error('תוקף המשחק ששמרת פג.');
-            }
-
-            gameCode = savedCode;
-            sessionDocumentId = sessionDoc.$id;
-            const sessionData = JSON.parse(sessionDoc.sessionData);
-
-            const myTeamInSession = sessionData.teams.find(t => t.index === savedTeamIndex);
-            
-            // Critical check: Is my persistent ID still assigned to the team I think I have?
-            if (myTeamInSession && myTeamInSession.participantId === participantId) {
-                joinError.classList.add('hidden');
-
-                subscribeToSessionUpdates(sessionDocumentId, (response) => {
-                    const updatedData = JSON.parse(response.payload.sessionData);
-                    updateGameView(updatedData);
-                });
-
-                myTeam = {
-                    ...myTeamInSession,
-                    icon: IMAGE_URLS[myTeamInSession.iconKey]
-                };
-                myTeamName.textContent = `אתם קבוצת ${myTeam.name}`;
-                myTeamIcon.src = myTeam.icon;
-                
-                updateGameView(sessionData); // Initial render with fetched state
-                showNotification('התחברת מחדש בהצלחה!', 'success');
-
-            } else {
-                throw new Error('הקבוצה שלך כבר לא שמורה. אנא הצטרף מחדש.');
-            }
-
-        } catch (error) {
-            sessionStorage.removeItem('activeGame'); // Clear invalid state
-            joinError.textContent = error.message || 'שגיאה בהתחברות מחדש.';
-            joinError.classList.remove('hidden');
-            // Show the regular join form after a delay
-            setTimeout(() => {
-                joinError.classList.add('hidden');
-                gameCodeInput.value = '';
-            }, 3500);
-        }
-        
-        return true; // Rejoin was attempted (success or fail)
+    if (!savedCode) {
+        sessionStorage.removeItem('activeGame');
+        return false;
     }
 
-    return false; // No valid saved code
+    showScreen('join');
+    joinError.textContent = 'מנסה להתחבר מחדש למשחק...';
+    joinError.classList.remove('hidden');
+
+    try {
+        const sessionDoc = await getGameSession(savedCode);
+        if (!sessionDoc) {
+            throw new Error('המשחק כבר לא פעיל.');
+        }
+
+        const createdAt = new Date(sessionDoc.$createdAt);
+        const now = new Date();
+        const threeHoursInMillis = 3 * 60 * 60 * 1000;
+        if (now - createdAt > threeHoursInMillis) {
+            throw new Error('תוקף המשחק ששמרת פג.');
+        }
+
+        gameCode = savedCode;
+        sessionDocumentId = sessionDoc.$id;
+        const sessionData = JSON.parse(sessionDoc.sessionData);
+        const myTeamInSession = sessionData.teams.find(t => t.index === savedTeamIndex);
+        
+        if (myTeamInSession && myTeamInSession.participantId === participantId) {
+            joinError.classList.add('hidden');
+            subscribeToSessionUpdates(sessionDocumentId, (response) => {
+                const updatedData = JSON.parse(response.payload.sessionData);
+                updateGameView(updatedData);
+            });
+            myTeam = { ...myTeamInSession, icon: IMAGE_URLS[myTeamInSession.iconKey] };
+            myTeamName.textContent = `אתם קבוצת ${myTeam.name}`;
+            myTeamIcon.src = myTeam.icon;
+            updateGameView(sessionData);
+            showNotification('התחברת מחדש בהצלחה!', 'success');
+            return true; // SUCCESS
+        } else {
+            throw new Error('הקבוצה שלך כבר לא שמורה. אנא הצטרף מחדש.');
+        }
+    } catch (error) {
+        sessionStorage.removeItem('activeGame');
+        joinError.textContent = error.message || 'שגיאה בהתחברות מחדש.';
+        joinError.classList.remove('hidden');
+        setTimeout(() => {
+            joinError.classList.add('hidden');
+            gameCodeInput.value = '';
+        }, 3500);
+        return false; // FAILURE
+    }
 }
 
 
 // --- Main Execution ---
 document.addEventListener('DOMContentLoaded', async () => {
     initializeNotification();
-    initializeJoinScreen(); // Always initialize listeners
+    initializeJoinScreen();
     initializeGameScreen();
 
     // Clean up subscriptions when the user closes the page
@@ -534,11 +522,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         unsubscribeAllRealtime();
     });
 
-    // --- Logic to handle joining ---
+    // --- New Join/Rejoin Logic ---
     const urlParams = new URLSearchParams(window.location.search);
     const codeFromUrl = urlParams.get('code');
+    const savedGameJSON = sessionStorage.getItem('activeGame');
+    const savedGame = savedGameJSON ? JSON.parse(savedGameJSON) : null;
+    
+    let successfullyRejoined = false;
 
-    if (codeFromUrl && /^\d{6}$/.test(codeFromUrl)) {
+    // Priority 1: A saved game session exists. Try to rejoin it,
+    // unless the URL is for a different game.
+    if (savedGame) {
+        if (!codeFromUrl || codeFromUrl === savedGame.gameCode) {
+            successfullyRejoined = await attemptRejoin();
+        }
+    }
+
+    // Priority 2: If no successful rejoin, and there's a code in the URL, join it fresh.
+    if (!successfullyRejoined && codeFromUrl && /^\d{6}$/.test(codeFromUrl)) {
+        // Clear any old session storage that might conflict
+        sessionStorage.removeItem('activeGame'); 
+
         gameCodeInput.value = codeFromUrl;
         joinError.textContent = 'מתחבר למשחק...';
         joinError.classList.remove('hidden');
@@ -548,13 +552,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             // The submit event listener is in initializeJoinScreen
             joinForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
         }, 100);
-    } else {
-        // If no code in URL, try to rejoin from session storage
-        const rejoinAttempted = await attemptRejoin();
-        if (!rejoinAttempted) {
-            // Only show the clean join screen if not rejoining
-            showScreen('join');
-        }
+    
+    // Priority 3: No rejoin, no URL code. Just show the clean join screen.
+    } else if (!successfullyRejoined) {
+         showScreen('join');
     }
 
     // Fetch and display the app version

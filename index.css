@@ -1,6 +1,7 @@
 
 
 
+
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -3236,7 +3237,9 @@ body.participant-view .app-version {
         display: flex;
         flex-direction: column; /* Vertical list layout */
         gap: 0.75rem; /* Tighter gap */
-        width: 100%;
+        width: 90%;
+        margin-left: auto; /* Push to the right in RTL */
+        margin-right: 0;
         margin-top: 1rem;
     }
 
@@ -3316,6 +3319,14 @@ body.participant-view .app-version {
     }
     
     /* Participant Boxes Screen */
+    #participant-boxes-screen {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh; /* Use dynamic viewport height */
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+    }
     #participant-boxes-screen .boxes-content {
         gap: 1.5rem;
         padding-top: 1rem;
@@ -3366,5 +3377,31 @@ body.participant-view .app-version {
         width: 5rem;
         height: 5rem;
         border-width: 0.2rem;
+    }
+}
+
+#participant-stop-btn.btn-large {
+    background-color: #e74c3c; /* Alizarin Red */
+    color: white;
+    border-bottom-color: #c0392b; /* Darker red */
+    box-shadow: 0 0.3125rem 0.9375rem rgba(0,0,0,0.2), 0 0 1rem rgba(231, 76, 60, 0.5);
+    animation: pulse-stop-btn 2s infinite ease-in-out;
+}
+#participant-stop-btn.btn-large:hover:not(:disabled) {
+    background-color: #c0392b;
+}
+
+@keyframes pulse-stop-btn {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0.3125rem 0.9375rem rgba(0,0,0,0.2), 0 0 1rem rgba(231, 76, 60, 0.5);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0.5rem 1.25rem rgba(0,0,0,0.3), 0 0 1.5rem rgba(231, 76, 60, 0.8);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0.3125rem 0.9375rem rgba(0,0,0,0.2), 0 0 1rem rgba(231, 76, 60, 0.5);
     }
 }
