@@ -350,7 +350,7 @@ function updateGameView(state) {
                     <div style="line-height: 1.6; display: flex; flex-direction: column; align-items: center;">
                         ${sadIcon}
                         <p style="font-size: 2.2rem; color: #FF5252; font-weight: bold;">תשובה שגויה</p>
-                        <p>ממתין להחלטת המנחה...</p>
+                        <p>במה תבחרו?</p>
                     </div>
                 `;
             } else {
