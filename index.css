@@ -1571,34 +1571,11 @@ h1, h2, h3, h4, h5, h6 {
     color: #ffeb3b;
 }
 
-.edit-sticky-actions {
-    position: sticky;
-    top: 1.25rem;
-    z-index: 500;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1.25rem;
-    padding: 0.9375rem 1.5625rem;
-    margin-bottom: 1.25rem;
-    background-color: rgba(40, 50, 70, 0.85);
-    backdrop-filter: blur(0.625rem);
-    -webkit-backdrop-filter: blur(0.625rem);
-    border: 0.0625rem solid rgba(255, 255, 255, 0.2);
-    border-radius: 0.75rem;
-    box-shadow: 0 0.25rem 0.9375rem rgba(0,0,0,0.2);
-}
-
-.main-edit-actions {
-    display: flex;
-    gap: 1.25rem;
-    align-items: center;
-}
 
 /* --- New Edit Screen Layout --- */
 .edit-game-layout {
     display: flex;
-    flex-direction: row-reverse; /* For RTL: Cat -> Game -> Editor */
+    flex-direction: row; /* For RTL with correct HTML order */
     gap: 1.5rem;
     flex-grow: 1;
     overflow: hidden; /* Prevent parent from scrolling */
@@ -1634,7 +1611,163 @@ h1, h2, h3, h4, h5, h6 {
     flex-direction: column;
     overflow: hidden; /* Contain the scrolling form */
     padding-left: 0.625rem;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 0.75rem;
 }
+
+#editor-placeholder {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    height: 100%;
+    color: rgba(255, 255, 255, 0.6);
+}
+#editor-placeholder svg {
+    opacity: 0.5;
+    margin-bottom: 1rem;
+}
+#editor-placeholder h2 {
+    font-size: 1.8rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* --- Game View Panel --- */
+#game-view-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.view-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.875rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+}
+
+.view-panel-header h2 {
+    font-size: 2rem;
+    color: #ffeb3b;
+    margin: 0;
+}
+
+.view-panel-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.view-panel-body {
+    padding: 1.5rem 1.875rem;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.game-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 2rem;
+    margin-bottom: 1.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1rem;
+}
+.game-meta strong {
+    color: #f0f8ff;
+}
+.view-panel-icon-actions {
+    margin-right: auto;
+    display: flex;
+    gap: 0.75rem;
+}
+
+#view-game-description {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    white-space: pre-wrap;
+}
+
+.view-questions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.view-questions-header h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0;
+}
+
+.view-question-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+
+#view-questions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.view-question-item {
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+.view-question-header {
+    padding: 0.9375rem 1.25rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.view-question-header:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+.view-question-header p {
+    font-size: 1.2rem;
+    margin: 0;
+}
+.view-question-header svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    transition: transform 0.3s ease-in-out;
+}
+.view-question-item.open .view-question-header svg {
+    transform: rotate(180deg);
+}
+
+.view-question-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+    padding: 0 1.25rem;
+}
+.view-question-item.open .view-question-body {
+    max-height: 25rem; /* Arbitrary large value */
+    padding: 0.625rem 1.25rem 1.25rem;
+}
+.view-question-answer {
+    padding-top: 0.9375rem;
+    margin-top: 0.9375rem;
+    border-top: 1px solid rgba(255, 235, 59, 0.4);
+    font-size: 1.1rem;
+    color: #ffeb3b;
+    font-weight: bold;
+}
+
 
 /* --- Redesigned Category List in Edit Screen --- */
 #category-panel .category-list-container {
@@ -1690,14 +1823,6 @@ h1, h2, h3, h4, h5, h6 {
 .panel-header-actions {
     display: flex;
     gap: 0.75rem;
-}
-
-#duplicate-selected-game-btn {
-    background-color: #3498db; /* Peter River Blue */
-}
-
-#duplicate-selected-game-btn:hover:not(:disabled) {
-    background-color: #2980b9; /* Darker blue */
 }
 
 
@@ -1818,9 +1943,14 @@ h1, h2, h3, h4, h5, h6 {
     color: #f0f8ff;
 }
 
+#editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
 #game-editor-form {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 0.75rem;
     padding: 1.875rem;
     display: flex;
     flex-direction: column;
@@ -1861,68 +1991,6 @@ h1, h2, h3, h4, h5, h6 {
 #game-editor-form .timer-input {
     flex-grow: 0;
     width: 6.25rem;
-}
-
-/* --- New styles for Game Questions Summary --- */
-#game-questions-summary {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 1.5rem;
-    margin-top: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-#question-count-display {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #f0f8ff;
-}
-
-.game-actions {
-    display: flex;
-    gap: 1rem;
-}
-
-#toggle-questions-view-btn {
-    width: 3.5rem;
-    height: 3.5rem;
-}
-
-#toggle-questions-view-btn.btn-action-edit {
-    background-color: #ffeb3b;
-    border-color: #ffeb3b;
-}
-
-#toggle-questions-view-btn.btn-action-edit:hover:not(:disabled) {
-    background-color: #fdd835;
-}
-
-#toggle-questions-view-btn.btn-action-edit svg {
-    fill: #3f51b5;
-}
-
-#toggle-questions-view-btn.btn-action-view {
-    background-color: rgba(0, 0, 0, 0.3);
-    border-color: white;
-}
-
-#toggle-questions-view-btn.btn-action-view:hover:not(:disabled) {
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-#toggle-questions-view-btn.btn-action-view svg {
-    fill: #ffffff;
-}
-
-#toggle-questions-view-btn svg {
-    width: 1.8rem;
-    height: 1.8rem;
-}
-
-.edit-icon-svg.hidden,
-.view-icon-svg.hidden {
-    display: none;
 }
 
 
@@ -2081,16 +2149,20 @@ input:disabled + .slider:before {
 }
 
 /* States for the single toggle-all button */
-#toggle-all-questions-btn.state-expand .collapse-icon-svg {
+#toggle-all-questions-btn.state-expand .collapse-icon-svg,
+#view-toggle-all-questions-btn.state-expand .collapse-icon-svg {
     display: none;
 }
-#toggle-all-questions-btn.state-expand .expand-icon-svg {
+#toggle-all-questions-btn.state-expand .expand-icon-svg,
+#view-toggle-all-questions-btn.state-expand .expand-icon-svg {
     display: block;
 }
-#toggle-all-questions-btn.state-collapse .collapse-icon-svg {
+#toggle-all-questions-btn.state-collapse .collapse-icon-svg,
+#view-toggle-all-questions-btn.state-collapse .collapse-icon-svg {
     display: block;
 }
-#toggle-all-questions-btn.state-collapse .expand-icon-svg {
+#toggle-all-questions-btn.state-collapse .expand-icon-svg,
+#view-toggle-all-questions-btn.state-collapse .expand-icon-svg {
     display: none;
 }
 
@@ -2290,14 +2362,20 @@ input:disabled + .slider:before {
     display: flex;
     justify-content: flex-start; /* Align to the right in RTL */
     gap: 1rem;
-    padding: 1.25rem; /* Consistent with other panels */
-    margin-bottom: 1rem;
+    padding: 1.25rem;
     background: rgba(0, 0, 0, 0.2);
-    border: 0.0625rem solid rgba(255, 255, 255, 0.3);
-    border-radius: 0.75rem;
-    box-shadow: 0 0.25rem 0.9375rem rgba(0,0,0,0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     flex-shrink: 0; /* Prevent toolbar from shrinking */
 }
+#toolbar-cancel-btn {
+    margin-left: auto; /* Push other items to the right */
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+#toolbar-cancel-btn:hover {
+     background-color: rgba(255, 255, 255, 0.2);
+}
+
 .btn-icon-round {
     width: 3rem;
     height: 3rem;

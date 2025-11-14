@@ -1,3 +1,6 @@
+
+
+
 import { listGames, createGame, updateGame, deleteGame, listCategories, getFileUrl } from './appwriteService.js';
 import { showSetupScreenForGame } from './setup.js';
 import { showConfirmModal, showLinkModal, showNotification, showQuestionPreview } from './ui.js';
@@ -5,7 +8,30 @@ import { showConfirmModal, showLinkModal, showNotification, showQuestionPreview 
 // --- Elements ---
 const editGameScreen = document.getElementById('edit-game-screen');
 const createNewGameBtn = document.getElementById('create-new-game-btn');
-const duplicateSelectedGameBtn = document.getElementById('duplicate-selected-game-btn');
+const gameListUl = document.getElementById('game-list-ul');
+const categoryListContainer = document.getElementById('category-list-container');
+
+// Editor Panel Containers
+const editorPanel = document.getElementById('editor-panel');
+const editorPlaceholder = document.getElementById('editor-placeholder');
+const gameViewPanel = document.getElementById('game-view-panel');
+const editorContainer = document.getElementById('editor-container'); // Wraps toolbar and form
+
+// View Panel Elements
+const viewGameName = document.getElementById('view-game-name');
+const viewGameDescription = document.getElementById('view-game-description');
+const viewGameCategory = document.getElementById('view-game-category');
+const viewGameStatus = document.getElementById('view-game-status');
+const viewGameQCount = document.getElementById('view-game-q-count');
+const viewQuestionsList = document.getElementById('view-questions-list');
+const viewPlayBtn = document.getElementById('view-play-btn');
+const viewEditBtn = document.getElementById('view-edit-btn');
+const viewDuplicateBtn = document.getElementById('view-duplicate-btn');
+const viewDeleteBtn = document.getElementById('view-delete-btn');
+const viewToggleQuestionsBtn = document.getElementById('view-toggle-questions-btn');
+const viewToggleAllQuestionsBtn = document.getElementById('view-toggle-all-questions-btn');
+
+// Editor Form Elements
 const gameEditorForm = document.getElementById('game-editor-form');
 const gameNameInput = document.getElementById('game-name-input');
 const gameDescriptionInput = document.getElementById('game-description-input');
@@ -16,23 +42,12 @@ const finalQuestionQInput = document.getElementById('final-question-q-input');
 const finalQuestionAInput = document.getElementById('final-question-a-input');
 const finalQuestionUrlInput = document.getElementById('final-question-url-input');
 const toggleAllQuestionsBtn = document.getElementById('toggle-all-questions-btn');
-const playSelectedGameBtn = document.getElementById('play-selected-game-btn');
-const categoryListContainer = document.getElementById('category-list-container');
-const gameListUl = document.getElementById('game-list-ul');
 
-// New View Elements
-const gameQuestionsSummary = document.getElementById('game-questions-summary');
-const questionCountDisplay = document.getElementById('question-count-display');
-const toggleQuestionsViewBtn = document.getElementById('toggle-questions-view-btn');
-const questionsWrapper = document.getElementById('questions-wrapper');
-
-
-// New Toolbar Elements
-const editorToolbar = document.getElementById('editor-toolbar');
+// Toolbar Elements
 const toolbarAddQuestionBtn = document.getElementById('toolbar-add-question-btn');
 const toolbarDownloadBtn = document.getElementById('toolbar-download-btn');
 const toolbarSaveBtn = document.getElementById('toolbar-save-btn');
-const toolbarDeleteBtn = document.getElementById('toolbar-delete-btn');
+const toolbarCancelBtn = document.getElementById('toolbar-cancel-btn');
 
 // Modal Elements
 const newGameModalOverlay = document.getElementById('new-game-modal-overlay');
@@ -50,22 +65,14 @@ let gameDocumentsCache = {}; // Cache for all fetched game documents
 let gameDataToDuplicate = null;
 let userAcknowledgedUnsavedChanges = false;
 let currentlySelectedGameDoc = null;
+let allCategories = [];
 
 
 /**
  * Sets the visual and functional state of the save button.
- * It's enabled and pulsing when there are unsaved changes, and disabled otherwise.
  * @param {boolean} isUnsaved - True to show unsaved state, false to reset to disabled.
  */
 function setUnsavedState(isUnsaved) {
-    // If the form is read-only, the save button should always be disabled and not pulsing.
-    if (gameEditorForm.hasAttribute('data-readonly')) {
-        toolbarSaveBtn.disabled = true;
-        toolbarSaveBtn.classList.remove('unsaved');
-        return;
-    }
-
-    // Clear any pending 'saved' state timeout if a change is made.
     if (saveStateTimeout) {
         clearTimeout(saveStateTimeout);
         toolbarSaveBtn.classList.remove('saved');
@@ -75,31 +82,27 @@ function setUnsavedState(isUnsaved) {
 
     if (isUnsaved) {
         toolbarSaveBtn.classList.add('unsaved');
-        toolbarSaveBtn.disabled = false; // Enable on change
+        toolbarSaveBtn.disabled = false;
     } else {
         toolbarSaveBtn.classList.remove('unsaved');
-        toolbarSaveBtn.disabled = true; // Disable on load or after save
-        userAcknowledgedUnsavedChanges = false; // Reset acknowledgment when changes are no longer unsaved
+        toolbarSaveBtn.disabled = true;
+        userAcknowledgedUnsavedChanges = false;
     }
 }
 
 /**
  * Shows a visual confirmation that the game has been saved successfully.
- * The button becomes green, then reverts to its default disabled state.
  */
 function showSavedState() {
-    // When called, the button has been clicked, so unsaved changes existed.
-    toolbarSaveBtn.classList.remove('unsaved'); // Stop the pulse
-    toolbarSaveBtn.classList.add('saved'); // Show the green checkmark
+    toolbarSaveBtn.classList.remove('unsaved');
+    toolbarSaveBtn.classList.add('saved');
     toolbarSaveBtn.title = 'נשמר!';
-    toolbarSaveBtn.disabled = true; // Keep it disabled
-    userAcknowledgedUnsavedChanges = false; // Reset on successful save
+    toolbarSaveBtn.disabled = true;
+    userAcknowledgedUnsavedChanges = false;
 
-    // Set a timeout to remove the 'saved' visual, reverting to the default disabled state.
     saveStateTimeout = setTimeout(() => {
         toolbarSaveBtn.classList.remove('saved');
         toolbarSaveBtn.title = 'שמור שינויים';
-        // The button remains disabled. The next user edit will enable it via setUnsavedState(true).
         saveStateTimeout = null;
     }, 2000);
 }
@@ -131,9 +134,9 @@ function truncateText(text, limit = 6) {
 }
 
 /**
- * Updates the state of the toggle-all button based on the current state of the cards.
+ * Updates the state of the editor's toggle-all button based on the current state of the cards.
  */
-function updateToggleAllButtonState() {
+function updateEditorToggleAllButtonState() {
     const isAnyCollapsed = !!questionsEditorContainer.querySelector('.question-card.collapsed');
     if (isAnyCollapsed) {
         toggleAllQuestionsBtn.classList.remove('state-collapse');
@@ -143,6 +146,28 @@ function updateToggleAllButtonState() {
         toggleAllQuestionsBtn.classList.remove('state-expand');
         toggleAllQuestionsBtn.classList.add('state-collapse');
         toggleAllQuestionsBtn.title = 'כווץ הכל';
+    }
+}
+
+/**
+ * Updates the state of the view panel's toggle-all button based on the current state of the cards.
+ */
+function updateViewToggleAllButtonState() {
+    if (!viewQuestionsList || viewQuestionsList.classList.contains('hidden')) return;
+
+    // An item is considered "collapsed" if it does NOT have the 'open' class.
+    const isAnyCollapsed = !!viewQuestionsList.querySelector('.view-question-item:not(.open)');
+    
+    // If any item is collapsed, the button should show the "Expand All" icon/state.
+    if (isAnyCollapsed) {
+        viewToggleAllQuestionsBtn.classList.remove('state-collapse');
+        viewToggleAllQuestionsBtn.classList.add('state-expand');
+        viewToggleAllQuestionsBtn.title = 'הרחב הכל';
+    } else {
+        // If all items are open, the button should show the "Collapse All" icon/state.
+        viewToggleAllQuestionsBtn.classList.remove('state-expand');
+        viewToggleAllQuestionsBtn.classList.add('state-collapse');
+        viewToggleAllQuestionsBtn.title = 'כווץ הכל';
     }
 }
 
@@ -167,7 +192,7 @@ function updateCollapsedTitle(card) {
 function collapseCard(card) {
     card.classList.add('collapsed');
     updateCollapsedTitle(card);
-    updateToggleAllButtonState();
+    updateEditorToggleAllButtonState();
 }
 
 /**
@@ -180,7 +205,7 @@ function expandCard(card) {
     const index = parseInt(card.dataset.index, 10);
     titleEl.textContent = `שאלה ${index + 1}`;
     titleEl.title = '';
-    updateToggleAllButtonState();
+    updateEditorToggleAllButtonState();
 }
 
 
@@ -286,14 +311,13 @@ function renderQuestionCard(question, index) {
 
     const header = card.querySelector('.question-card-header');
     header.addEventListener('click', (e) => {
-        // Allow toggling even in read-only to view questions/answers
         if (!e.target.closest('button')) {
             card.classList.contains('collapsed') ? expandCard(card) : collapseCard(card);
         }
     });
 
     card.querySelector('.preview-question-btn').addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent card from toggling collapse
+        e.stopPropagation();
         const q = card.querySelector('.question-input').value;
         const a = card.querySelector('.answer-input').value;
         showQuestionPreview(q, a);
@@ -302,18 +326,14 @@ function renderQuestionCard(question, index) {
     card.querySelector('.delete-question-btn').addEventListener('click', (e) => {
         const cardToDelete = e.currentTarget.closest('.question-card');
         
-        // Add animation class
         cardToDelete.classList.add('deleting');
-        
-        // Set unsaved state immediately
         setUnsavedState(true);
     
-        // Wait for the animation to end before removing the element and re-calculating
         cardToDelete.addEventListener('animationend', () => {
             cardToDelete.remove();
             renumberQuestionCards();
             updateReorderButtons();
-            updateToggleAllButtonState();
+            updateEditorToggleAllButtonState();
         }, { once: true });
     });
     
@@ -350,143 +370,121 @@ function renderQuestionCard(question, index) {
         }
     });
     
+    // Set initial state for preview button on render
+    const urlInput = card.querySelector('.url-input');
+    const previewBtn = card.querySelector('.preview-link-btn');
+    if (urlInput && previewBtn) {
+        previewBtn.disabled = !urlInput.value.trim() || !urlInput.checkValidity();
+    }
+
     updateCollapsedTitle(card);
     return card;
 }
 
 /**
- * Clears and renders all questions for the currently loaded game.
+ * Renders all questions for the currently loaded game into the editor.
  * @param {Array<object>} questions - An array of question objects.
  */
-function renderAllQuestions(questions) {
+function renderAllQuestionsForEditor(questions) {
     questionsEditorContainer.innerHTML = '';
     questions.forEach((q, i) => {
         const card = renderQuestionCard(q, i);
         questionsEditorContainer.appendChild(card);
     });
     updateReorderButtons();
-    updateToggleAllButtonState();
+    updateEditorToggleAllButtonState();
 }
 
 /**
- * Sets the main details form inputs to a read-only or editable state.
- * @param {boolean} isReadOnly - True to make the form read-only, false for editable.
+ * Renders the read-only question list for the view panel.
+ * @param {object} gameData - The parsed game data object.
  */
-function setDetailsReadOnly(isReadOnly) {
-    gameNameInput.disabled = isReadOnly;
-    gameDescriptionInput.disabled = isReadOnly;
-    gameCategorySelect.disabled = isReadOnly;
-    gamePublicCheckbox.disabled = isReadOnly;
-}
+function renderReadOnlyQuestions(gameData) {
+    viewQuestionsList.innerHTML = '';
+    const questions = gameData.questions || [];
 
-
-/**
- * Sets the questions panel (questions and toolbar) to read-only or editable.
- * @param {boolean} isReadOnly - True for read-only, false for editable.
- */
-function setQuestionsPanelReadOnly(isReadOnly) {
-    // Set read-only state for the main form's data-attribute
-    gameEditorForm.toggleAttribute('data-readonly', isReadOnly);
-
-    // Final question inputs
-    finalQuestionQInput.disabled = isReadOnly;
-    finalQuestionAInput.disabled = isReadOnly;
-    finalQuestionUrlInput.disabled = isReadOnly;
-
-    // Inputs and action buttons in each question card
-    questionsEditorContainer.querySelectorAll('.question-card').forEach(card => {
-        card.querySelector('.question-input').disabled = isReadOnly;
-        card.querySelector('.answer-input').disabled = isReadOnly;
-        card.querySelector('.timer-input').disabled = isReadOnly;
-        card.querySelector('.url-input').disabled = isReadOnly;
-        
-        card.querySelector('.delete-question-btn').style.display = isReadOnly ? 'none' : 'flex';
-        card.querySelector('.reorder-controls').style.display = isReadOnly ? 'none' : 'flex';
+    questions.forEach((q, index) => {
+        const item = document.createElement('div');
+        item.className = 'view-question-item';
+        item.innerHTML = `
+            <div class="view-question-header" role="button" tabindex="0" aria-expanded="false">
+                <p><strong>שאלה ${index + 1}:</strong> ${truncateText(q.q, 8)}</p>
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+            </div>
+            <div class="view-question-body">
+                <p>${q.q}</p>
+                <p class="view-question-answer">${q.a}</p>
+            </div>
+        `;
+        viewQuestionsList.appendChild(item);
     });
 
-    // Toolbar buttons related to editing
-    toolbarAddQuestionBtn.style.display = isReadOnly ? 'none' : 'flex';
-    toolbarSaveBtn.style.display = isReadOnly ? 'none' : 'flex';
-    
-    // Ensure save button state is correct for read-only mode
-    if (isReadOnly) {
-        toolbarSaveBtn.classList.remove('unsaved');
+    if (gameData.final_question && gameData.final_question.q) {
+        const item = document.createElement('div');
+        item.className = 'view-question-item';
+        item.innerHTML = `
+            <div class="view-question-header" role="button" tabindex="0" aria-expanded="false">
+                <p><strong>שאלת הסיכום:</strong> ${truncateText(gameData.final_question.q, 8)}</p>
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+            </div>
+            <div class="view-question-body">
+                <p>${gameData.final_question.q}</p>
+                <p class="view-question-answer">${gameData.final_question.a}</p>
+            </div>
+        `;
+        viewQuestionsList.appendChild(item);
     }
 }
 
 
 /**
- * Fetches and loads a game's data into the editor form from Appwrite.
+ * Fetches and loads a game's data into the new view panel.
  * @param {object} gameDocument - The game document from Appwrite.
  */
-async function loadGameForEditing(gameDocument) {
-    currentlySelectedGameDoc = gameDocument; // Store for later use
+async function loadGameForViewing(gameDocument) {
+    currentlySelectedGameDoc = gameDocument;
 
     if (!gameDocument) {
-        gameEditorForm.classList.add('hidden');
-        editorToolbar.classList.add('hidden');
-        playSelectedGameBtn.disabled = true;
-        duplicateSelectedGameBtn.disabled = true;
+        editorPlaceholder.classList.remove('hidden');
+        gameViewPanel.classList.add('hidden');
+        editorContainer.classList.add('hidden');
         setUnsavedState(false);
         return;
     }
+    
     try {
         const gameData = JSON.parse(gameDocument.game_data);
         
-        // --- Populate Details View ---
-        gameNameInput.value = gameDocument.game_name || '';
-        gameDescriptionInput.value = gameDocument.description || '';
-        gameCategorySelect.value = gameDocument.categoryId || '';
-        gamePublicCheckbox.checked = gameDocument.is_public || false;
-        
-        // --- Populate Summary View ---
-        const questionCount = gameData.questions.length;
-        questionCountDisplay.textContent = `${questionCount} שאלות`;
+        // Populate View Panel
+        viewGameName.textContent = gameDocument.game_name || '';
+        viewGameDescription.textContent = gameDocument.description || 'אין תיאור למשחק זה.';
+        const category = allCategories.find(c => c.$id === gameDocument.categoryId);
+        viewGameCategory.textContent = category ? category.name : 'לא משויך';
+        viewGameStatus.textContent = gameDocument.is_public ? 'ציבורי' : 'פרטי';
+        viewGameQCount.textContent = gameData.questions.length;
+        renderReadOnlyQuestions(gameData);
 
-        // --- Set UI State ---
-        gameEditorForm.classList.remove('hidden'); // Show the main form container
-        gameQuestionsSummary.classList.remove('hidden'); // Show summary
-        questionsWrapper.classList.add('hidden'); // Hide questions
-        editorToolbar.classList.add('hidden'); // Hide toolbar
-        
+        // Reset question visibility state
+        document.getElementById('view-questions-list').classList.add('hidden');
+        viewToggleQuestionsBtn.textContent = 'הצג שאלות';
+        viewToggleAllQuestionsBtn.classList.add('hidden');
+
+
+        // Set Button Visibility
         const isOwned = gameDocument.isOwned;
-        const viewIcon = toggleQuestionsViewBtn.querySelector('.view-icon-svg');
-        const editIcon = toggleQuestionsViewBtn.querySelector('.edit-icon-svg');
+        viewEditBtn.classList.toggle('hidden', !isOwned);
+        viewDeleteBtn.classList.toggle('hidden', !isOwned);
 
-        if (isOwned) {
-            toggleQuestionsViewBtn.dataset.mode = 'edit';
-            toggleQuestionsViewBtn.title = 'ערוך שאלות';
-            viewIcon.classList.add('hidden');
-            editIcon.classList.remove('hidden');
-            toggleQuestionsViewBtn.classList.add('btn-action-edit');
-            toggleQuestionsViewBtn.classList.remove('btn-action-view');
-        } else {
-            toggleQuestionsViewBtn.dataset.mode = 'view';
-            toggleQuestionsViewBtn.title = 'צפה בשאלות';
-            viewIcon.classList.remove('hidden');
-            editIcon.classList.add('hidden');
-            toggleQuestionsViewBtn.classList.add('btn-action-view');
-            toggleQuestionsViewBtn.classList.remove('btn-action-edit');
-        }
-        
-        setDetailsReadOnly(true); // Always read-only on initial load
-        toolbarDeleteBtn.style.display = isOwned ? 'flex' : 'none';
+        // Show/Hide Panels
+        editorPlaceholder.classList.add('hidden');
+        editorContainer.classList.add('hidden');
+        gameViewPanel.classList.remove('hidden');
 
-        // Set initial state for preview button in final question
-        const finalUrlInput = document.getElementById('final-question-url-input');
-        const finalPreviewBtn = document.getElementById('final-question-preview-btn');
-        if(finalPreviewBtn) {
-            finalPreviewBtn.disabled = !finalUrlInput.value.trim() || !finalUrlInput.checkValidity();
-        }
-
-        gameEditorForm.dataset.documentId = gameDocument.$id;
-        playSelectedGameBtn.disabled = false;
-        duplicateSelectedGameBtn.disabled = false;
         setUnsavedState(false);
 
     } catch (error) {
         console.error(`Failed to parse game data for ${gameDocument.game_name}:`, error);
-        showNotification(`שגיאה בפענוח נתוני המשחק: ${gameDocument.game_name}. הנתונים עשויים להיות פגומים.`, 'error');
+        showNotification(`שגיאה בפענוח נתוני המשחק.`, 'error');
     }
 }
 
@@ -513,7 +511,6 @@ async function populateGameList(categoryId) {
             
             let content = `<span>${game.game_name}</span>`;
             
-            // Add a visual indicator for public games not owned by the user
             if (!game.isOwned) {
                 const publicIconSVG = `<svg class="public-game-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF" title="משחק ציבורי"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>`;
                 content = publicIconSVG + content;
@@ -523,8 +520,6 @@ async function populateGameList(categoryId) {
             gameListUl.appendChild(li);
         });
     } catch (error) {
-        // The error notification is already shown by appwriteService,
-        // so we just need to update the UI state.
         gameListUl.innerHTML = '<li>שגיאה בטעינת רשימת המשחקים</li>';
     }
 }
@@ -593,8 +588,8 @@ async function populateCategorySelectors() {
     selectors.forEach(sel => sel.innerHTML = '');
 
     try {
-        const categories = await listCategories();
-        if (categories.length === 0) {
+        allCategories = await listCategories();
+        if (allCategories.length === 0) {
             selectors.forEach(sel => {
                 const option = document.createElement('option');
                 option.textContent = 'לא נמצאו קטגוריות';
@@ -604,7 +599,7 @@ async function populateCategorySelectors() {
             return;
         }
 
-        categories.forEach(category => {
+        allCategories.forEach(category => {
             const option = document.createElement('option');
             option.value = category.$id;
             option.textContent = category.name;
@@ -613,7 +608,6 @@ async function populateCategorySelectors() {
         });
 
     } catch (error) {
-        // The service shows a notification. We just update the UI state.
         selectors.forEach(sel => {
             const option = document.createElement('option');
             option.textContent = 'שגיאה בטעינת קטגוריות';
@@ -626,11 +620,10 @@ async function populateCategorySelectors() {
 /**
  * Fetches and renders the category selection cards.
  */
-async function renderCategories() {
+function renderCategories() {
     categoryListContainer.innerHTML = '<span>טוען קטגוריות...</span>';
     
     try {
-        const categories = await listCategories();
         categoryListContainer.innerHTML = '';
 
         const allCard = document.createElement('div');
@@ -639,7 +632,7 @@ async function renderCategories() {
         allCard.innerHTML = `<img src="https://img.icons8.com/plasticine/100/question-mark.png" alt="הכל"><span>הכל</span>`;
         categoryListContainer.appendChild(allCard);
 
-        categories.forEach(category => {
+        allCategories.forEach(category => {
             const card = document.createElement('div');
             card.className = 'category-card';
             card.dataset.categoryId = category.$id;
@@ -649,7 +642,6 @@ async function renderCategories() {
         });
 
     } catch (error) {
-        // The service shows a notification. We just update the UI state.
         categoryListContainer.innerHTML = '<span>שגיאה בטעינת קטגוריות</span>';
     }
 }
@@ -659,17 +651,13 @@ async function renderCategories() {
  */
 export async function showEditScreen() {
     editGameScreen.classList.remove('hidden');
-    gameEditorForm.classList.add('hidden');
-    editorToolbar.classList.add('hidden');
-    playSelectedGameBtn.disabled = true;
-    duplicateSelectedGameBtn.disabled = true;
     document.getElementById('global-home-btn').classList.remove('hidden');
-    delete gameEditorForm.dataset.documentId;
+    loadGameForViewing(null);
     
-    await Promise.all([
-        populateCategorySelectors(),
-        renderCategories()
-    ]);
+    // Ensure categories are fetched before they are rendered to fix race condition
+    await populateCategorySelectors();
+    renderCategories(); // This function is synchronous and uses the data from the previous call
+    
     await populateGameList(null);
 }
 
@@ -678,7 +666,7 @@ export async function showEditScreen() {
  * @returns {Promise<boolean>} A promise that resolves to true on success, false on failure.
  */
 async function handleSave() {
-    const documentId = gameEditorForm.dataset.documentId;
+    const documentId = currentlySelectedGameDoc?.$id;
     if (!documentId) {
         showNotification('לא נבחר משחק לשמירה.', 'info');
         return false;
@@ -695,13 +683,20 @@ async function handleSave() {
     
     try {
         toolbarSaveBtn.disabled = true;
-        await updateGame(documentId, gameName, description, categoryId, gameData, isPublic);
+        const updatedDoc = await updateGame(documentId, gameName, description, categoryId, gameData, isPublic);
         showSavedState();
         showNotification('המשחק נשמר בהצלחה!', 'success');
+        
+        // Refresh the local cache and UI
         const currentCategoryId = categoryListContainer.querySelector('.selected')?.dataset.categoryId;
         await populateGameList(currentCategoryId === 'all' ? null : currentCategoryId);
         const liToSelect = gameListUl.querySelector(`li[data-document-id="${documentId}"]`);
         if(liToSelect) liToSelect.classList.add('selected');
+        
+        // After save, go back to view mode with updated data
+        editorContainer.classList.add('hidden');
+        loadGameForViewing(gameDocumentsCache[documentId]);
+
         return true;
     } catch (e) {
         toolbarSaveBtn.disabled = false;
@@ -712,14 +707,12 @@ async function handleSave() {
 
 /**
  * A central handler for actions that might discard unsaved changes.
- * It shows a modal with "Save", "Don't Save", and "Cancel" options.
  * @param {function} actionCallback The function to execute if the user decides to proceed.
  */
 export async function checkForUnsavedChangesAndProceed(actionCallback) {
     const isUnsaved = toolbarSaveBtn.classList.contains('unsaved');
-    const isEditorVisible = !editGameScreen.classList.contains('hidden');
 
-    if (!isEditorVisible || !isUnsaved || userAcknowledgedUnsavedChanges) {
+    if (!isUnsaved || userAcknowledgedUnsavedChanges) {
         if (actionCallback) await actionCallback();
         return;
     }
@@ -758,7 +751,7 @@ export function initializeEditGameScreen() {
             selectedCard.classList.add('selected');
             const categoryId = selectedCard.dataset.categoryId;
             populateGameList(categoryId === 'all' ? null : categoryId);
-            loadGameForEditing(null);
+            loadGameForViewing(null);
         };
         checkForUnsavedChangesAndProceed(proceed);
     });
@@ -771,28 +764,80 @@ export function initializeEditGameScreen() {
             gameListUl.querySelectorAll('li').forEach(li => li.classList.remove('selected'));
             selectedLi.classList.add('selected');
             const gameDoc = gameDocumentsCache[selectedLi.dataset.documentId];
-            loadGameForEditing(gameDoc);
+            loadGameForViewing(gameDoc);
         };
         checkForUnsavedChangesAndProceed(proceed);
     });
 
-    playSelectedGameBtn.addEventListener('click', () => {
+    viewPlayBtn.addEventListener('click', () => {
         const proceed = async () => {
-            const selectedLi = gameListUl.querySelector('li.selected');
-            if(!selectedLi) {
-                showNotification('יש לבחור משחק תחילה.', 'info');
-                return;
-            }
-            const gameDoc = gameDocumentsCache[selectedLi.dataset.documentId];
+            if (!currentlySelectedGameDoc) return;
             editGameScreen.classList.add('hidden');
             document.getElementById('global-header').classList.add('hidden');
-            await showSetupScreenForGame(gameDoc);
+            await showSetupScreenForGame(currentlySelectedGameDoc);
         };
         checkForUnsavedChangesAndProceed(proceed);
     });
+    
+    viewEditBtn.addEventListener('click', () => {
+        if (!currentlySelectedGameDoc) return;
+        
+        try {
+            const gameData = JSON.parse(currentlySelectedGameDoc.game_data);
+            
+            // Populate Editor Form
+            gameNameInput.value = currentlySelectedGameDoc.game_name || '';
+            gameDescriptionInput.value = currentlySelectedGameDoc.description || '';
+            gameCategorySelect.value = currentlySelectedGameDoc.categoryId || '';
+            gamePublicCheckbox.checked = currentlySelectedGameDoc.is_public || false;
+
+            renderAllQuestionsForEditor(gameData.questions);
+            
+            if (gameData.final_question) {
+                finalQuestionQInput.value = gameData.final_question.q || '';
+                finalQuestionAInput.value = gameData.final_question.a || '';
+                finalQuestionUrlInput.value = gameData.final_question.url || '';
+            } else {
+                finalQuestionQInput.value = '';
+                finalQuestionAInput.value = '';
+                finalQuestionUrlInput.value = '';
+            }
+
+            // Set initial state for preview button in final question
+            const finalPreviewBtn = document.getElementById('final-question-preview-btn');
+            if(finalPreviewBtn) {
+                finalPreviewBtn.disabled = !finalQuestionUrlInput.value.trim() || !finalQuestionUrlInput.checkValidity();
+            }
+
+            // Switch views
+            gameViewPanel.classList.add('hidden');
+            editorContainer.classList.remove('hidden');
+            setUnsavedState(false); // Start in a clean state
+            gameNameInput.focus();
+
+        } catch(error) {
+            showNotification('שגיאה בטעינת נתוני המשחק לעריכה.', 'error');
+        }
+    });
+
+    toolbarCancelBtn.addEventListener('click', () => {
+        const proceed = () => {
+            editorContainer.classList.add('hidden');
+            gameViewPanel.classList.remove('hidden');
+            setUnsavedState(false); // Discard unsaved state
+        };
+        checkForUnsavedChangesAndProceed(proceed);
+    });
+
 
     createNewGameBtn.addEventListener('click', () => {
         const proceed = () => {
+            // Clear modal fields before showing
+            newGameNameInput.value = '';
+            newGameDescriptionInput.value = '';
+            newGamePublicCheckbox.checked = false; // Default to private
+            gameDataToDuplicate = null; // Ensure no data is carried over from a duplication attempt
+
             const selectedCategoryCard = categoryListContainer.querySelector('.category-card.selected');
             const selectedCategoryId = selectedCategoryCard ? selectedCategoryCard.dataset.categoryId : null;
 
@@ -807,9 +852,27 @@ export function initializeEditGameScreen() {
         checkForUnsavedChangesAndProceed(proceed);
     });
 
+    viewToggleQuestionsBtn.addEventListener('click', () => {
+        const list = document.getElementById('view-questions-list');
+        const isHidden = list.classList.contains('hidden');
+        list.classList.toggle('hidden', !isHidden);
+        viewToggleQuestionsBtn.textContent = isHidden ? 'הסתר שאלות' : 'הצג שאלות';
+        
+        viewToggleAllQuestionsBtn.classList.toggle('hidden', !isHidden);
+        
+        if (isHidden) {
+            list.querySelectorAll('.view-question-item.open').forEach(item => {
+                item.classList.remove('open');
+                const header = item.querySelector('.view-question-header');
+                if (header) header.setAttribute('aria-expanded', 'false');
+            });
+            updateViewToggleAllButtonState();
+        }
+    });
+
 
     // --- Link Preview Listeners ---
-    gameEditorForm.addEventListener('input', (e) => {
+    editorContainer.addEventListener('input', (e) => {
         const input = e.target;
         if (input.matches('input[type="url"]')) {
             const wrapper = input.closest('.input-with-button');
@@ -835,16 +898,12 @@ export function initializeEditGameScreen() {
     gameEditorForm.addEventListener('input', () => setUnsavedState(true));
 
     toolbarAddQuestionBtn.addEventListener('click', () => {
-        if (gameEditorForm.classList.contains('hidden')) {
-            showNotification('יש לבחור משחק לפני הוספת שאלה.', 'info');
-            return;
-        }
         const questionCount = questionsEditorContainer.children.length;
         const newCard = renderQuestionCard({ q: '', a: '', timer: 30, url: '' }, questionCount);
         questionsEditorContainer.appendChild(newCard);
     
         updateReorderButtons();
-        updateToggleAllButtonState();
+        updateEditorToggleAllButtonState();
         setUnsavedState(true);
     
         expandCard(newCard);
@@ -857,17 +916,16 @@ export function initializeEditGameScreen() {
 
     toolbarSaveBtn.addEventListener('click', handleSave);
 
-    toolbarDeleteBtn.addEventListener('click', async () => {
-        const documentId = gameEditorForm.dataset.documentId;
-        const gameName = gameNameInput.value.trim();
-        if (!documentId) return;
+    viewDeleteBtn.addEventListener('click', async () => {
+        const gameName = currentlySelectedGameDoc?.game_name;
+        if (!gameName) return;
         
         const userConfirmed = await showConfirmModal(`האם אתה בטוח שברצונך למחוק את המשחק "${gameName}"? לא ניתן לשחזר פעולה זו.`);
         if (userConfirmed) {
             try {
-                await deleteGame(documentId);
+                await deleteGame(currentlySelectedGameDoc.$id);
                 showNotification(`המשחק "${gameName}" נמחק בהצלחה.`, 'success');
-                loadGameForEditing(null);
+                loadGameForViewing(null);
                 const currentCategoryId = categoryListContainer.querySelector('.selected')?.dataset.categoryId;
                 await populateGameList(currentCategoryId === 'all' ? null : currentCategoryId);
             } catch (error) {
@@ -877,10 +935,6 @@ export function initializeEditGameScreen() {
     });
 
     toolbarDownloadBtn.addEventListener('click', () => {
-        if (gameEditorForm.classList.contains('hidden')) {
-            showNotification('לא נבחר משחק להורדה. אנא בחר משחק קיים.', 'info');
-            return;
-        }
         const gameName = gameNameInput.value.trim();
         const description = gameDescriptionInput.value.trim();
         const categoryId = gameCategorySelect.value;
@@ -893,32 +947,56 @@ export function initializeEditGameScreen() {
     toggleAllQuestionsBtn.addEventListener('click', () => {
         const cards = questionsEditorContainer.querySelectorAll('.question-card');
         if (toggleAllQuestionsBtn.classList.contains('state-expand')) {
+            // If the button is in "expand" mode, it means some are collapsed. Expand all.
             cards.forEach(expandCard);
         } else {
+            // If the button is in "collapse" mode, it means all are expanded. Collapse all.
             cards.forEach(collapseCard);
         }
     });
+    
+    viewQuestionsList.addEventListener('click', (e) => {
+        const header = e.target.closest('.view-question-header');
+        if (header) {
+            const item = header.parentElement;
+            item.classList.toggle('open');
+            header.setAttribute('aria-expanded', item.classList.contains('open'));
+            updateViewToggleAllButtonState();
+        }
+    });
 
-    duplicateSelectedGameBtn.addEventListener('click', () => {
-        const proceed = () => {
-            const selectedLi = gameListUl.querySelector('li.selected');
-            if (!selectedLi) {
-                showNotification('יש לבחור משחק לשכפול.', 'info');
-                return;
+    viewToggleAllQuestionsBtn.addEventListener('click', () => {
+        const allItems = viewQuestionsList.querySelectorAll('.view-question-item');
+        const shouldExpand = viewToggleAllQuestionsBtn.classList.contains('state-expand');
+
+        allItems.forEach(item => {
+            const header = item.querySelector('.view-question-header');
+            if (shouldExpand) {
+                item.classList.add('open');
+                if (header) header.setAttribute('aria-expanded', 'true');
+            } else {
+                item.classList.remove('open');
+                if (header) header.setAttribute('aria-expanded', 'false');
             }
-            const gameDoc = gameDocumentsCache[selectedLi.dataset.documentId];
-            if (!gameDoc) return;
+        });
+        updateViewToggleAllButtonState();
+    });
+
+    viewDuplicateBtn.addEventListener('click', () => {
+        const proceed = () => {
+            if (!currentlySelectedGameDoc) return;
+            
             try {
-                gameDataToDuplicate = JSON.parse(gameDoc.game_data);
+                gameDataToDuplicate = JSON.parse(currentlySelectedGameDoc.game_data);
             } catch(e) {
                 showNotification('שגיאה בנתוני המשחק המקורי.', 'error');
                 gameDataToDuplicate = null;
                 return;
             }
-            newGameNameInput.value = `עותק של ${gameDoc.game_name}`;
-            newGameDescriptionInput.value = gameDoc.description || '';
-            newGameCategorySelect.value = gameDoc.categoryId || '';
-            newGamePublicCheckbox.checked = gameDoc.is_public || false;
+            newGameNameInput.value = `עותק של ${currentlySelectedGameDoc.game_name}`;
+            newGameDescriptionInput.value = currentlySelectedGameDoc.description || '';
+            newGameCategorySelect.value = currentlySelectedGameDoc.categoryId || '';
+            newGamePublicCheckbox.checked = currentlySelectedGameDoc.is_public || false;
             newGameModalOverlay.classList.remove('hidden');
             newGameNameInput.focus();
             newGameNameInput.select();
@@ -953,7 +1031,7 @@ export function initializeEditGameScreen() {
             newGameDescriptionInput.value = '';
             newGamePublicCheckbox.checked = false;
             
-            gameDataToDuplicate = null; // Reset after use
+            gameDataToDuplicate = null;
     
             const currentCategoryId = categoryListContainer.querySelector('.selected')?.dataset.categoryId;
             await populateGameList(currentCategoryId === 'all' ? null : currentCategoryId);
@@ -963,8 +1041,7 @@ export function initializeEditGameScreen() {
     
             showNotification(`משחק חדש "${newName}" נוצר. כעת ניתן לערוך אותו.`, 'success');
         } catch(e) {
-            // The service layer handles showing the error notification.
-            gameDataToDuplicate = null; // Also reset on error
+            gameDataToDuplicate = null;
         }
     });
     
@@ -972,38 +1049,4 @@ export function initializeEditGameScreen() {
     finalQuestionQInput.addEventListener('input', () => autoResizeTextarea(finalQuestionQInput));
     finalQuestionAInput.addEventListener('input', () => autoResizeTextarea(finalQuestionAInput));
     newGameDescriptionInput.addEventListener('input', () => autoResizeTextarea(newGameDescriptionInput));
-
-    toggleQuestionsViewBtn.addEventListener('click', () => {
-        if (!currentlySelectedGameDoc) return;
-
-        const mode = toggleQuestionsViewBtn.dataset.mode;
-        
-        const gameData = JSON.parse(currentlySelectedGameDoc.game_data);
-        renderAllQuestions(gameData.questions);
-        
-        // Populate final question for viewing/editing
-        if (gameData.final_question) {
-            finalQuestionQInput.value = gameData.final_question.q || '';
-            finalQuestionAInput.value = gameData.final_question.a || '';
-            finalQuestionUrlInput.value = gameData.final_question.url || '';
-        } else {
-            finalQuestionQInput.value = '';
-            finalQuestionAInput.value = '';
-            finalQuestionUrlInput.value = '';
-        }
-        
-        gameQuestionsSummary.classList.add('hidden');
-        questionsWrapper.classList.remove('hidden');
-        
-        if (mode === 'edit') {
-            setDetailsReadOnly(false); // Make details editable
-            setQuestionsPanelReadOnly(false); // Make questions editable
-            editorToolbar.classList.remove('hidden'); // Show the toolbar
-        } else { // mode === 'view'
-            setDetailsReadOnly(true); // Keep details read-only
-            setQuestionsPanelReadOnly(true); // Set questions to read-only
-            editorToolbar.classList.add('hidden'); // Keep toolbar hidden
-        }
-    });
-
 }
