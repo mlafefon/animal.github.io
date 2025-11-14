@@ -33,10 +33,19 @@
     </div>
 
     <div id="participant-game-screen" class="hidden">
+        <div class="participant-team-info">
+            <img id="my-team-icon" src="" alt="Team Icon">
+            <h2 id="my-team-name"></h2>
+        </div>
         <div class="game-header">
-            <div class="participant-team-info">
-                <img id="my-team-icon" src="" alt="Team Icon">
-                <h2 id="my-team-name"></h2>
+            <div id="participant-timer-area" class="timer-area hidden">
+                <div id="participant-timer-container" class="timer-container">
+                    <svg class="timer-svg" viewBox="0 0 100 100">
+                        <circle class="timer-bg-track" cx="50" cy="50" r="42"></circle>
+                        <circle id="participant-timer-progress-ring" class="timer-progress-ring" cx="50" cy="50" r="42"></circle>
+                    </svg>
+                    <span id="participant-timer-value" class="timer-value">30</span>
+                </div>
             </div>
             <div id="q-a-wrapper">
                 <div id="question-container">
