@@ -1,3 +1,5 @@
+
+
 // --- Constants ---
 const GAME_STATE_KEY = 'animalGameState';
 
@@ -35,7 +37,6 @@ function _resetInternalState() {
         sessionDocumentId: null, // To store the Appwrite document ID
         gameStateForParticipant: 'waiting', // The high-level state for participant view
         boxesData: null, // To hold scores and selection for the boxes screen
-        timerData: null, // To hold the current timer value for participants
     };
 }
 
@@ -259,20 +260,4 @@ export function clearBoxesState() {
 export function setParticipantState(newState) {
     _state.gameStateForParticipant = newState;
     _saveState();
-}
-
-/**
- * Sets the current timer data in the state. Not persisted to local storage.
- * @param {number} current The current time left in seconds.
- * @param {number} total The total time for the question in seconds.
- */
-export function setTimerState(current, total) {
-    _state.timerData = { current, total };
-}
-
-/**
- * Clears the timer data from the state.
- */
-export function clearTimerState() {
-    _state.timerData = null;
 }

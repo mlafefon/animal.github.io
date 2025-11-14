@@ -2,7 +2,7 @@ import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTe
 import { showBoxesScreen } from './boxes.js';
 import { playSound, stopSound } from './audio.js';
 import { showLinkModal } from './ui.js';
-import { getState, setParticipantState, setTimerState, clearTimerState } from './gameState.js';
+import { getState, setParticipantState } from './gameState.js';
 import { updateGameSession } from './appwriteService.js';
 
 // --- Elements ---
@@ -96,7 +96,6 @@ export function stopTimer() {
     clearInterval(timerInterval);
     timerInterval = null;
     stopSound('timerTick');
-    clearTimerState();
 }
 
 /**
@@ -206,11 +205,6 @@ export function showQuestionScreen(startTime = 30) {
         timeLeft--;
         timerValue.textContent = timeLeft;
         updateRing(timeLeft, startTime); // Update animation every second
-        
-        // Update state and broadcast to participants every second
-        setTimerState(timeLeft, startTime);
-        document.dispatchEvent(new Event('gamestatechange'));
-
 
         // Play tick sound every second until the end.
         if (timeLeft > 0) {
@@ -225,9 +219,10 @@ export function showQuestionScreen(startTime = 30) {
         }
 
         if (timeLeft <= 0) {
+            stopSound('timerTick');
             playSound('gong');
             // Behave as if "Stop" was clicked, allowing for manual grading.
-            triggerManualGrading(); // This will also stop the timer and clear state
+            triggerManualGrading();
         }
     }, 1000);
 }
