@@ -2,6 +2,7 @@
 
 
 
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -160,7 +161,7 @@ async function broadcastGameState() {
     
     if (currentGameState === 'question') {
         const q = getCurrentQuestion();
-        // Participant needs the timer value to start their own countdown.
+        // Also send the timer duration so the participant can display it
         questionDataForParticipant = { q: q.q, timer: q.timer };
     } else if (currentGameState === 'correctAnswer' || currentGameState === 'learningTime') { // When answer is correct or it's learning time
         const q_and_a = getCurrentQuestion();
