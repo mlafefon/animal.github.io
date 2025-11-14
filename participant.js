@@ -402,7 +402,7 @@ function updateGameView(state) {
         case 'grading':
             showScreen('game');
             if (isMyTurn) {
-                questionText.textContent = 'עצרתי את הטיימר. מה היא תשובתכם?';
+                questionText.textContent = 'עצרתם את הטיימר. מה היא תשובתכם?';
             } else {
                 questionText.textContent = `המנחה בודק את התשובה של קבוצת ${activeTeamName}...`;
             }
