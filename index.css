@@ -2965,33 +2965,6 @@ input:disabled + .slider:before {
     position: relative;
 }
 
-.participant-team-info {
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-    position: absolute;
-    top: 1.25rem;
-    right: 1.25rem;
-}
-
-.participant-team-info img {
-    width: 4.375rem;
-    height: 4.375rem;
-    border-radius: 50%;
-    border: 0.1875rem solid #ffeb3b;
-}
-
-#participant-game-screen #q-a-wrapper {
-    margin-top: 6.25rem; /* Make space for header */
-}
-
-.waiting-message {
-    text-align: center;
-    font-size: 2rem;
-    color: #ffeb3b;
-    margin-top: 2.5rem;
-}
-
 #participant-timer-display {
     position: absolute;
     top: 1.25rem;
@@ -3017,6 +2990,33 @@ input:disabled + .slider:before {
     color: #DC143C; /* Crimson red */
     border-color: #DC143C;
     animation: pulse-text-warning 1.2s infinite ease-in-out;
+}
+
+.participant-team-info {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+}
+
+.participant-team-info img {
+    width: 4.375rem;
+    height: 4.375rem;
+    border-radius: 50%;
+    border: 0.1875rem solid #ffeb3b;
+}
+
+#participant-game-screen #q-a-wrapper {
+    margin-top: 6.25rem; /* Make space for header */
+}
+
+.waiting-message {
+    text-align: center;
+    font-size: 2rem;
+    color: #ffeb3b;
+    margin-top: 2.5rem;
 }
 
 /* Styles for Host View Game Code */
