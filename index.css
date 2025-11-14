@@ -2,6 +2,8 @@
 
 
 
+
+
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -2988,6 +2990,33 @@ input:disabled + .slider:before {
     font-size: 2rem;
     color: #ffeb3b;
     margin-top: 2.5rem;
+}
+
+#participant-timer-display {
+    position: absolute;
+    top: 1.25rem;
+    left: 1.25rem;
+    background-color: rgba(0, 0, 0, 0.4);
+    color: #f0f8ff;
+    font-size: 2.2rem;
+    font-weight: 700;
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 0.1875rem solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 0.625rem rgba(0, 0, 0, 0.3);
+    z-index: 10;
+    text-shadow: 0 0 0.5rem rgba(0,0,0,0.6);
+    transition: color 0.5s, border-color 0.5s;
+}
+
+#participant-timer-display.low-time {
+    color: #DC143C; /* Crimson red */
+    border-color: #DC143C;
+    animation: pulse-text-warning 1.2s infinite ease-in-out;
 }
 
 /* Styles for Host View Game Code */
