@@ -25,10 +25,6 @@ const questionText = document.getElementById('participant-question-text');
 const participantControls = document.getElementById('participant-controls');
 const stopBtn = document.getElementById('participant-stop-btn');
 const waitingMessage = document.getElementById('waiting-message');
-const timerArea = document.getElementById('participant-timer-area');
-const timerContainer = document.getElementById('participant-timer-container');
-const timerValue = document.getElementById('participant-timer-value');
-const timerProgressRing = document.getElementById('participant-timer-progress-ring');
 
 
 // --- State ---
@@ -42,7 +38,6 @@ let myTeam = null;
 let gameCode = null;
 let currentHostState = null;
 let sessionDocumentId = null;
-let participantTimerInterval = null;
 
 
 // --- Utility Functions ---
@@ -53,57 +48,6 @@ function showScreen(screenName) {
         screens[screenName].classList.remove('hidden');
     }
 }
-
-// --- Timer Functions ---
-
-function stopParticipantTimer() {
-    if (participantTimerInterval) {
-        clearInterval(participantTimerInterval);
-        participantTimerInterval = null;
-    }
-    timerArea.classList.add('hidden');
-    timerContainer.classList.remove('low-time');
-}
-
-function startParticipantTimer(startTime) {
-    stopParticipantTimer();
-    if (!startTime || startTime <= 0) return;
-
-    timerArea.classList.remove('hidden');
-    let timeLeft = startTime;
-    timerValue.textContent = timeLeft;
-
-    const radius = timerProgressRing.r.baseVal.value;
-    const circumference = radius * 2 * Math.PI;
-    timerProgressRing.style.strokeDasharray = `${circumference} ${circumference}`;
-
-    const updateRing = (current, total) => {
-        const progress = Math.max(0, current / total);
-        const offset = circumference - progress * circumference;
-        timerProgressRing.style.strokeDashoffset = offset;
-    };
-
-    timerProgressRing.style.transition = 'none';
-    updateRing(timeLeft, startTime);
-    setTimeout(() => {
-        timerProgressRing.style.transition = 'stroke-dashoffset 1s linear, stroke 0.5s ease-in-out';
-    }, 0);
-
-    participantTimerInterval = setInterval(() => {
-        timeLeft--;
-        timerValue.textContent = timeLeft;
-        updateRing(timeLeft, startTime);
-
-        if (timeLeft <= 5) {
-            timerContainer.classList.add('low-time');
-        }
-
-        if (timeLeft <= 0) {
-            stopParticipantTimer();
-        }
-    }, 1000);
-}
-
 
 // --- Screen Initialization ---
 
@@ -275,7 +219,6 @@ async function handleParticipantChestSelection(index) {
 
 function updateGameView(state) {
     currentHostState = state; // Update global state
-    stopParticipantTimer(); // Stop timer on any state change
 
     // If the game is over, reset the view to the join screen
     if (state.gameState === 'finished') {
@@ -381,9 +324,6 @@ function updateGameView(state) {
         case 'question':
             showScreen('game');
             questionText.textContent = state.currentQuestionData.q;
-            if (state.currentQuestionData && state.currentQuestionData.timer) {
-                startParticipantTimer(state.currentQuestionData.timer);
-            }
             if (isMyTurn) {
                 participantControls.classList.remove('hidden');
                 stopBtn.disabled = false; // Ensure button is enabled for new question

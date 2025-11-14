@@ -2,7 +2,6 @@
 
 
 
-
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -742,7 +741,7 @@ h1, h2, h3, h4, h5, h6 {
     stroke-width: 12;
 }
 
-#timer-progress-ring, #participant-timer-progress-ring {
+#timer-progress-ring {
     fill: transparent;
     stroke: #ffeb3b; /* Bright yellow */
     stroke-width: 12;
@@ -786,14 +785,12 @@ h1, h2, h3, h4, h5, h6 {
     animation: pulse-warning 1.2s infinite ease-in-out;
 }
 
-#timer-container.low-time #timer-progress-ring,
-#participant-timer-container.low-time #participant-timer-progress-ring {
+#timer-container.low-time #timer-progress-ring {
     stroke: #DC143C; /* Crimson red */
     filter: drop-shadow(0 0 0.5rem #DC143C);
 }
 
-#timer-container.low-time #timer-value,
-#participant-timer-container.low-time #participant-timer-value {
+#timer-container.low-time #timer-value {
     animation: pulse-text-warning 1.2s infinite ease-in-out;
 }
 
@@ -2982,29 +2979,9 @@ input:disabled + .slider:before {
     border: 0.1875rem solid #ffeb3b;
 }
 
-#participant-game-screen .game-header {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex-grow: 1;
-    gap: 1.5rem;
-    width: 100%;
-    padding-top: 5rem; /* Make space for absolutely positioned team info */
-}
-
 #participant-game-screen #q-a-wrapper {
-    width: 100%;
+    margin-top: 6.25rem; /* Make space for header */
 }
-
-#participant-timer-area .timer-container {
-    width: 7.5rem; /* 120px */
-    height: 7.5rem; /* 120px */
-}
-
-#participant-timer-value {
-    font-size: 2.8rem;
-}
-
 
 .waiting-message {
     text-align: center;
@@ -3293,9 +3270,12 @@ body.participant-view .app-version {
         padding: 1rem;
     }
 
-    #participant-game-screen .game-header {
-        margin-top: 0;
-        padding-top: 4.5rem;
+    #participant-game-screen #q-a-wrapper {
+        margin-top: 5rem; /* Adjust for smaller header */
+        flex-grow: 1; /* Ensure wrapper takes available space */
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
     }
     
     .participant-team-info {

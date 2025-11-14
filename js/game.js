@@ -1,7 +1,6 @@
 
 
 
-
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -158,14 +157,12 @@ async function broadcastGameState() {
     let currentGameState = gameStateForParticipant || 'waiting'; // Use state if available
     let questionDataForParticipant = null; // Renamed for clarity
     
-    const currentQuestion = getCurrentQuestion();
-
     if (currentGameState === 'question') {
-        // Send only q and timer to avoid revealing the answer prematurely
-        questionDataForParticipant = { q: currentQuestion.q, timer: currentQuestion.timer };
+        const q = getCurrentQuestion();
+        questionDataForParticipant = { q: q.q }; // Only send the question text for a new question
     } else if (currentGameState === 'correctAnswer' || currentGameState === 'learningTime') { // When answer is correct or it's learning time
-        // Send q and a for learning
-        questionDataForParticipant = { q: currentQuestion.q, a: currentQuestion.a };
+        const q_and_a = getCurrentQuestion();
+        questionDataForParticipant = { q: q_and_a.q, a: q_and_a.a }; // Send Q and A
     }
 
     // Create a "lean" version of the teams array to reduce payload size.
