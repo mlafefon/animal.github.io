@@ -26,6 +26,11 @@ const participantControls = document.getElementById('participant-controls');
 const stopBtn = document.getElementById('participant-stop-btn');
 const waitingMessage = document.getElementById('waiting-message');
 
+// Timer Elements
+const participantTimerContainer = document.getElementById('participant-timer-container');
+const participantTimerValue = document.getElementById('participant-timer-value');
+const participantTimerProgressRing = document.getElementById('participant-timer-progress-ring');
+
 
 // --- State ---
 // Get participantId from sessionStorage or create a new one. This persists across refreshes.
@@ -216,6 +221,37 @@ async function handleParticipantChestSelection(index) {
     }
 }
 
+/**
+ * Updates the participant's timer UI based on the state received from the host.
+ * @param {object | null} timerState - Object with { timeLeft, totalTime } or null.
+ */
+function updateParticipantTimer(timerState) {
+    if (!timerState || !myTeam || currentHostState.activeTeamIndex != myTeam.index) {
+        participantTimerContainer.classList.add('hidden');
+        return;
+    }
+
+    participantTimerContainer.classList.remove('hidden');
+
+    const { timeLeft, totalTime } = timerState;
+    participantTimerValue.textContent = timeLeft;
+
+    // Update SVG progress ring
+    const radius = participantTimerProgressRing.r.baseVal.value;
+    const circumference = radius * 2 * Math.PI;
+    participantTimerProgressRing.style.strokeDasharray = `${circumference} ${circumference}`;
+    const progress = Math.max(0, timeLeft / totalTime);
+    const offset = circumference - progress * circumference;
+    participantTimerProgressRing.style.strokeDashoffset = offset;
+
+    // Handle low time visual warning
+    if (timeLeft <= 5) {
+        participantTimerContainer.classList.add('low-time');
+    } else {
+        participantTimerContainer.classList.remove('low-time');
+    }
+}
+
 
 function updateGameView(state) {
     currentHostState = state; // Update global state
@@ -260,6 +296,9 @@ function updateGameView(state) {
     // Default UI state: hide controls and waiting messages.
     participantControls.classList.add('hidden');
     waitingMessage.classList.add('hidden');
+    
+    // Update timer on every state change
+    updateParticipantTimer(state.timerState);
 
     switch (state.gameState) {
         case 'learningTime':
@@ -530,13 +569,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     let successfullyRejoined = false;
 
-    // Priority 1: A saved game session exists. Try to rejoin it,
-    // unless the URL is for a different game.
-    if (savedGame) {
-        if (!codeFromUrl || codeFromUrl === savedGame.gameCode) {
-            successfullyRejoined = await attemptRejoin();
-        }
+    // Priority 1: A saved game session exists and its code matches the URL code, or there is no URL code.
+    if (savedGame && (!codeFromUrl || codeFromUrl === savedGame.gameCode)) {
+        successfullyRejoined = await attemptRejoin();
     }
+
 
     // Priority 2: If no successful rejoin, and there's a code in the URL, join it fresh.
     if (!successfullyRejoined && codeFromUrl && /^\d{6}$/.test(codeFromUrl)) {
