@@ -1,6 +1,7 @@
 
 
 
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -150,7 +151,7 @@ function prepareForFinalRound() {
  * Gathers the current game state and broadcasts it to participants via Appwrite.
  */
 async function broadcastGameState() {
-    const { sessionDocumentId, gameCode, gameName, teams, activeTeamIndex, gameStateForParticipant, finalQuestionData, boxesData } = gameState.getState();
+    const { sessionDocumentId, gameCode, gameName, teams, activeTeamIndex, gameStateForParticipant, finalQuestionData, boxesData, timerData } = gameState.getState();
     if (!sessionDocumentId) return;
 
     // Determine the high-level state for participants
@@ -183,6 +184,7 @@ async function broadcastGameState() {
         gameState: currentGameState,
         currentQuestionData: questionDataForParticipant, // Use new name
         boxesData: boxesData,
+        timerData: timerData,
     };
 
     try {

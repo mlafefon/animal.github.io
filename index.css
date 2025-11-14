@@ -2,6 +2,8 @@
 
 
 
+
+
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -785,12 +787,14 @@ h1, h2, h3, h4, h5, h6 {
     animation: pulse-warning 1.2s infinite ease-in-out;
 }
 
-#timer-container.low-time #timer-progress-ring {
+#timer-container.low-time #timer-progress-ring,
+#participant-timer-container.low-time .timer-progress-ring {
     stroke: #DC143C; /* Crimson red */
     filter: drop-shadow(0 0 0.5rem #DC143C);
 }
 
-#timer-container.low-time #timer-value {
+#timer-container.low-time #timer-value,
+#participant-timer-container.low-time .timer-value {
     animation: pulse-text-warning 1.2s infinite ease-in-out;
 }
 
@@ -2979,8 +2983,30 @@ input:disabled + .slider:before {
     border: 0.1875rem solid #ffeb3b;
 }
 
+#participant-game-screen .game-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+}
+
 #participant-game-screen #q-a-wrapper {
-    margin-top: 6.25rem; /* Make space for header */
+    margin-top: 0;
+    flex-grow: 1;
+    width: 100%;
+    min-height: 0;
+}
+
+
+#participant-timer-container {
+    width: 8rem;
+    height: 8rem;
+}
+
+#participant-timer-container .timer-value {
+    font-size: 3rem;
 }
 
 .waiting-message {
@@ -3271,10 +3297,9 @@ body.participant-view .app-version {
     }
 
     #participant-game-screen #q-a-wrapper {
-        margin-top: 5rem; /* Adjust for smaller header */
-        flex-grow: 1; /* Ensure wrapper takes available space */
-        display: flex;
-        flex-direction: column;
+        margin-top: 0; /* remove fixed margin */
+        flex-grow: 1; /* allow question to take space */
+        width: 100%;
         min-height: 0;
     }
     

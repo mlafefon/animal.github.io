@@ -25,6 +25,9 @@ const questionText = document.getElementById('participant-question-text');
 const participantControls = document.getElementById('participant-controls');
 const stopBtn = document.getElementById('participant-stop-btn');
 const waitingMessage = document.getElementById('waiting-message');
+const participantTimerContainer = document.getElementById('participant-timer-container');
+const participantTimerValue = document.getElementById('participant-timer-value');
+const participantTimerProgressRing = document.getElementById('participant-timer-progress-ring');
 
 
 // --- State ---
@@ -219,6 +222,10 @@ async function handleParticipantChestSelection(index) {
 
 function updateGameView(state) {
     currentHostState = state; // Update global state
+    
+    // Hide dynamic elements by default
+    participantTimerContainer.classList.add('hidden');
+
 
     // If the game is over, reset the view to the join screen
     if (state.gameState === 'finished') {
@@ -327,6 +334,24 @@ function updateGameView(state) {
             if (isMyTurn) {
                 participantControls.classList.remove('hidden');
                 stopBtn.disabled = false; // Ensure button is enabled for new question
+
+                if (state.timerData) {
+                    const { current, total } = state.timerData;
+                    participantTimerContainer.classList.remove('hidden');
+                    participantTimerValue.textContent = current;
+
+                    const radius = participantTimerProgressRing.r.baseVal.value;
+                    const circumference = radius * 2 * Math.PI;
+                    participantTimerProgressRing.style.strokeDasharray = `${circumference} ${circumference}`;
+                    participantTimerProgressRing.style.transition = 'none';
+                    
+                    const progress = Math.max(0, current / total);
+                    const offset = circumference - progress * circumference;
+                    participantTimerProgressRing.style.strokeDashoffset = offset;
+
+                    participantTimerContainer.classList.toggle('low-time', current <= 5);
+                }
+
             } else {
                 const otherTeamMessage = `התור של קבוצת ${activeTeamName}.`;
                 waitingMessage.querySelector('p').textContent = otherTeamMessage;
