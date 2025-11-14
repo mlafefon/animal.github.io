@@ -37,7 +37,6 @@ function _resetInternalState() {
         sessionDocumentId: null, // To store the Appwrite document ID
         gameStateForParticipant: 'waiting', // The high-level state for participant view
         boxesData: null, // To hold scores and selection for the boxes screen
-        timerState: null, // To hold { timeLeft, totalTime } for participants
     };
 }
 
@@ -261,21 +260,4 @@ export function clearBoxesState() {
 export function setParticipantState(newState) {
     _state.gameStateForParticipant = newState;
     _saveState();
-}
-
-/**
- * Sets the transient timer state for broadcasting to participants.
- * This does not save to localStorage.
- * @param {{timeLeft: number, totalTime: number}} timerData 
- */
-export function setTimerState(timerData) {
-    _state.timerState = timerData;
-}
-
-/**
- * Clears the transient timer state.
- * This does not save to localStorage.
- */
-export function clearTimerState() {
-    _state.timerState = null;
 }

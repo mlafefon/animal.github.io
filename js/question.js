@@ -2,7 +2,7 @@ import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTe
 import { showBoxesScreen } from './boxes.js';
 import { playSound, stopSound } from './audio.js';
 import { showLinkModal } from './ui.js';
-import { getState, setParticipantState, setTimerState, clearTimerState } from './gameState.js';
+import { getState, setParticipantState } from './gameState.js';
 import { updateGameSession } from './appwriteService.js';
 
 // --- Elements ---
@@ -123,7 +123,6 @@ export function triggerManualGrading() {
     if (!state.sessionDocumentId) return;
     
     setParticipantState('grading');
-    clearTimerState(); // Ensure timer is cleared from participant view
     document.dispatchEvent(new Event('gamestatechange'));
 }
 
@@ -203,10 +202,6 @@ export function showQuestionScreen(startTime = 30) {
     // --- END OF INSTANT TIMER RESET ---
 
     timerInterval = setInterval(() => {
-        // Broadcast current time BEFORE decrementing, so participant sees the current number
-        setTimerState({ timeLeft, totalTime: startTime });
-        document.dispatchEvent(new Event('gamestatechange'));
-
         timeLeft--;
         timerValue.textContent = timeLeft;
         updateRing(timeLeft, startTime); // Update animation every second
@@ -224,7 +219,7 @@ export function showQuestionScreen(startTime = 30) {
         }
 
         if (timeLeft <= 0) {
-            stopTimer(); // Just clears the interval and sound
+            stopSound('timerTick');
             playSound('gong');
             // Behave as if "Stop" was clicked, allowing for manual grading.
             triggerManualGrading();
@@ -256,7 +251,6 @@ export function initializeQuestionScreen(onComplete) {
         undoAnswerChoiceBtn.classList.remove('hidden');
 
         // Set state for participants to show the correct answer and a message
-        clearTimerState();
         setParticipantState('correctAnswer');
         document.dispatchEvent(new Event('gamestatechange'));
 
@@ -291,7 +285,6 @@ export function initializeQuestionScreen(onComplete) {
         failureControls.classList.remove('hidden');
         undoAnswerChoiceBtn.classList.remove('hidden');
 
-        clearTimerState();
         setParticipantState('incorrectAnswer');
         document.dispatchEvent(new Event('gamestatechange'));
 
@@ -393,7 +386,6 @@ export function initializeQuestionScreen(onComplete) {
             failureBoxBtn.textContent = 'המשך לתיבה';
             
             // Notify participants that it's learning time
-            clearTimerState();
             setParticipantState('learningTime');
             document.dispatchEvent(new Event('gamestatechange'));
         } else {
