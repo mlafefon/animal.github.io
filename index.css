@@ -2980,7 +2980,7 @@ input:disabled + .slider:before {
 }
 
 #participant-game-screen #q-a-wrapper {
-    margin-top: 6.25rem; /* Make space for header */
+    margin-top: 6.25rem; /* Make space for header and timer */
 }
 
 .waiting-message {
@@ -3053,6 +3053,61 @@ body.participant-view .app-version {
     left: 1rem;
     bottom: auto; /* Override the default from the start screen */
     z-index: 10001;
+}
+
+/* --- Participant Timer --- */
+#participant-timer-container {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    width: 5rem; /* Smaller timer for participant view */
+    height: 5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.25);
+    border-radius: 50%;
+    box-shadow: 0 0 0.75rem rgba(0, 0, 0, 0.5), inset 0 0 0.5rem rgba(0, 0, 0, 0.5);
+    z-index: 10;
+}
+
+#participant-timer-container .timer-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+#participant-timer-progress-ring {
+    fill: transparent;
+    stroke: #ffeb3b;
+    stroke-width: 12;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear, stroke 0.5s ease-in-out;
+    filter: drop-shadow(0 0 0.2rem #ffeb3b);
+}
+
+#participant-timer-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #f0f8ff;
+    z-index: 1;
+    text-shadow: 0 0 0.3rem rgba(0,0,0,0.6);
+}
+
+#participant-timer-container.low-time {
+    animation: pulse-warning 1.2s infinite ease-in-out;
+}
+
+#participant-timer-container.low-time #participant-timer-progress-ring {
+    stroke: #DC143C; /* Crimson red */
+    filter: drop-shadow(0 0 0.3rem #DC143C);
+}
+
+#participant-timer-container.low-time #participant-timer-value {
+    animation: pulse-text-warning 1.2s infinite ease-in-out;
 }
 
 

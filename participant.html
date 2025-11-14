@@ -33,6 +33,15 @@
     </div>
 
     <div id="participant-game-screen" class="hidden">
+        <div id="participant-timer-container" class="hidden">
+            <svg class="timer-svg" viewBox="0 0 100 100">
+                <!-- Background track -->
+                <circle class="timer-bg-track" cx="50" cy="50" r="42" />
+                <!-- Progress ring -->
+                <circle id="participant-timer-progress-ring" cx="50" cy="50" r="42" />
+            </svg>
+            <span id="participant-timer-value">30</span>
+        </div>
         <div class="game-header">
             <div class="participant-team-info">
                 <img id="my-team-icon" src="" alt="Team Icon">

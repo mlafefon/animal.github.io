@@ -26,6 +26,9 @@ const participantControls = document.getElementById('participant-controls');
 const stopBtn = document.getElementById('participant-stop-btn');
 const waitingMessage = document.getElementById('waiting-message');
 const versionElement = document.querySelector('.app-version');
+const participantTimerContainer = document.getElementById('participant-timer-container');
+const participantTimerValue = document.getElementById('participant-timer-value');
+const participantTimerProgressRing = document.getElementById('participant-timer-progress-ring');
 
 
 // --- State ---
@@ -39,6 +42,7 @@ let myTeam = null;
 let gameCode = null;
 let currentHostState = null;
 let sessionDocumentId = null;
+let participantTimerInterval = null;
 
 
 // --- Utility Functions ---
@@ -51,6 +55,59 @@ function showScreen(screenName) {
     if (versionElement) {
         versionElement.classList.toggle('hidden', screenName !== 'join');
     }
+}
+
+// --- Timer Functions ---
+
+function stopParticipantTimer() {
+    if (participantTimerInterval) {
+        clearInterval(participantTimerInterval);
+        participantTimerInterval = null;
+    }
+    if(participantTimerContainer){
+        participantTimerContainer.classList.add('hidden');
+        participantTimerContainer.classList.remove('low-time');
+    }
+}
+
+function startParticipantTimer(startTime) {
+    stopParticipantTimer(); // Ensure any existing timer is stopped
+    if(!participantTimerContainer) return;
+
+    participantTimerContainer.classList.remove('hidden');
+    let timeLeft = startTime;
+    participantTimerValue.textContent = timeLeft;
+
+    const radius = participantTimerProgressRing.r.baseVal.value;
+    const circumference = radius * 2 * Math.PI;
+    participantTimerProgressRing.style.strokeDasharray = `${circumference} ${circumference}`;
+
+    const updateRing = (current, total) => {
+        const progress = Math.max(0, current / total);
+        const offset = circumference - progress * circumference;
+        participantTimerProgressRing.style.strokeDashoffset = offset;
+    };
+
+    participantTimerProgressRing.style.transition = 'none';
+    updateRing(timeLeft, startTime);
+    setTimeout(() => {
+        participantTimerProgressRing.style.transition = 'stroke-dashoffset 1s linear, stroke 0.5s ease-in-out';
+    }, 10);
+
+    participantTimerInterval = setInterval(() => {
+        timeLeft--;
+        participantTimerValue.textContent = timeLeft;
+        updateRing(timeLeft, startTime);
+
+        if (timeLeft <= 5) {
+            participantTimerContainer.classList.add('low-time');
+        }
+
+        if (timeLeft <= 0) {
+            stopParticipantTimer();
+            // The timer just stops on the participant side. The host controls the state change.
+        }
+    }, 1000);
 }
 
 // --- Screen Initialization ---
@@ -264,6 +321,7 @@ function updateGameView(state) {
     // Default UI state: hide controls and waiting messages.
     participantControls.classList.add('hidden');
     waitingMessage.classList.add('hidden');
+    stopParticipantTimer(); // Stop timer by default for every state change
 
     switch (state.gameState) {
         case 'learningTime':
@@ -335,6 +393,9 @@ function updateGameView(state) {
                 const otherTeamMessage = `התור של קבוצת ${activeTeamName}.`;
                 waitingMessage.querySelector('p').textContent = otherTeamMessage;
                 waitingMessage.classList.remove('hidden');
+            }
+            if (state.currentQuestionData && state.currentQuestionData.timer) {
+                startParticipantTimer(state.currentQuestionData.timer);
             }
             break;
 
