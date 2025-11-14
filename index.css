@@ -1662,6 +1662,22 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
 }
 
+#view-edit-btn {
+    background-color: transparent;
+    border-color: #ffeb3b;
+    opacity: 1;
+}
+#view-edit-btn svg {
+    fill: #ffeb3b;
+}
+#view-edit-btn:hover {
+    background-color: #ffeb3b;
+}
+#view-edit-btn:hover svg {
+    fill: #3f51b5;
+}
+
+
 .view-panel-body {
     padding: 1.5rem 1.875rem;
     overflow-y: auto;
@@ -1692,7 +1708,7 @@ h1, h2, h3, h4, h5, h6 {
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-#game-description-container h3 {
+#game-description-container h4 {
     font-size: 1.5rem;
     margin-bottom: 0.75rem;
 }
