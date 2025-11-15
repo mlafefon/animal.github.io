@@ -3623,9 +3623,9 @@ body.participant-view .app-version {
         overflow: hidden; /* Prevent accidental scrolling */
     }
     #participant-boxes-screen .boxes-content {
-        gap: 0.5rem; /* Added small gap */
+        gap: 1rem;
         padding-top: 0;
-        justify-content: space-between; /* Changed to push content from edges */
+        justify-content: space-between;
         align-items: center;
         flex: 1;
         min-height: 0; /* Allow flex item to shrink */
@@ -3639,25 +3639,25 @@ body.participant-view .app-version {
         
     #participant-chests-container {
         flex-direction: column;
-        gap: 0.5rem; /* Reduced gap */
+        gap: 1rem;
         align-items: center;
         flex-shrink: 1;
         overflow: hidden;
     }
     
     #participant-chests-container .treasure-chest {
-        padding: 0.25rem;
-        width: 8rem; /* Reduced width */
+        padding: 0.5rem;
+        width: 11rem;
         flex-shrink: 0;
     }
     
     #participant-chests-container .treasure-chest img {
-        width: 4.5rem; /* Further reduced image size */
+        width: 6rem;
         height: auto;
     }
     
     #participant-chests-container .treasure-chest span {
-        font-size: 1rem; /* Reduced font size */
+        font-size: 1.4rem;
     }
     
     .score-reveal-above {
