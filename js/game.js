@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -13,12 +5,15 @@ import * as gameState from './gameState.js';
 import { subscribeToActions, updateGameSession, unsubscribeAllRealtime } from './appwriteService.js';
 import { triggerManualGrading } from './question.js';
 import { revealChest } from './boxes.js';
+import { showNotification } from './ui.js';
 
 // --- Elements ---
 const gameScreen = document.getElementById('game-screen');
 const mainTeamsContainer = document.getElementById('main-teams-container');
 const mainGameFooter = document.getElementById('main-game-footer');
 const setupScreen = document.getElementById('setup-screen');
+const showJoinInfoBtn = document.getElementById('show-join-info-btn');
+const inGameJoinModalOverlay = document.getElementById('in-game-join-modal-overlay');
 
 // --- Data ---
 // This is now only used for initializing state
@@ -459,6 +454,98 @@ export async function startGame(options) {
     broadcastGameState(); // Initial broadcast
 }
 
+
+function renderInGameJoinSlots(teams) {
+    const container = document.getElementById('in-game-join-teams-container');
+    if (!container) return;
+    container.innerHTML = '';
+    teams.forEach(team => {
+        const slot = document.createElement('div');
+        slot.className = 'team-slot';
+        slot.dataset.index = team.index;
+        
+        const img = document.createElement('img');
+        img.src = team.icon;
+        img.alt = team.name;
+
+        if (team.isTaken) {
+            slot.classList.add('filled');
+            img.style.display = 'block';
+        } else {
+            img.style.display = 'none';
+        }
+        slot.appendChild(img);
+        container.appendChild(slot);
+    });
+}
+
+function showInGameJoinModal() {
+    const { gameCode, teams } = gameState.getState();
+    if (!gameCode || !inGameJoinModalOverlay) return;
+
+    const codeDisplay = document.getElementById('in-game-join-code-display');
+    if (codeDisplay) codeDisplay.textContent = gameCode;
+    
+    renderInGameJoinSlots(teams);
+
+    const qrContainer = document.getElementById('in-game-qrcode-container');
+    if (qrContainer) {
+        qrContainer.innerHTML = '';
+        try {
+            const url = new URL('participant.html', window.location.href);
+            url.searchParams.set('code', gameCode);
+            new QRCode(qrContainer, {
+                text: url.href,
+                width: 256,
+                height: 256,
+            });
+        } catch (e) {
+            console.warn("Failed to generate QR Code for in-game join modal.", e);
+        }
+    }
+    
+    inGameJoinModalOverlay.classList.remove('hidden');
+}
+
+function initializeInGameJoinModal() {
+    if (!showJoinInfoBtn || !inGameJoinModalOverlay) return;
+
+    showJoinInfoBtn.addEventListener('click', showInGameJoinModal);
+    
+    const closeBtn = document.getElementById('close-in-game-join-modal-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => inGameJoinModalOverlay.classList.add('hidden'));
+    }
+    
+    inGameJoinModalOverlay.addEventListener('click', (e) => {
+        if (e.target === inGameJoinModalOverlay) {
+            inGameJoinModalOverlay.classList.add('hidden');
+        }
+    });
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !inGameJoinModalOverlay.classList.contains('hidden')) {
+            inGameJoinModalOverlay.classList.add('hidden');
+        }
+    });
+
+    const codeDisplay = document.getElementById('in-game-join-code-display');
+    if (codeDisplay) {
+        codeDisplay.addEventListener('click', () => {
+            navigator.clipboard.writeText(codeDisplay.textContent).then(() => {
+                showNotification('הקוד הועתק!', 'success');
+            });
+        });
+    }
+
+    // Listen for join events to update the modal if it's open
+    document.addEventListener('participantjoined', (e) => {
+        if (!inGameJoinModalOverlay.classList.contains('hidden')) {
+            renderInGameJoinSlots(e.detail.teams);
+        }
+    });
+}
+
 export function initializeScoreControls() {
     // Listen for the setup screen being ready to start listening for participants
     document.addEventListener('setupready', (e) => {
@@ -483,4 +570,6 @@ export function initializeScoreControls() {
             adjustScore(-5, null, true);
         }
     });
+
+    initializeInGameJoinModal();
 }

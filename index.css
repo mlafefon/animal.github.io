@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -996,13 +988,40 @@ h1, h2, h3, h4, h5, h6 {
     padding: 1.25rem;
     display: flex;
     align-items: center;
-    gap: 1.875rem;
+    gap: 0.9375rem;
     transition: transform 0.4s ease-in-out;
     transform: translateY(100%); /* Hidden by default */
 }
 
 #main-game-footer.visible {
     transform: translateY(0);
+}
+
+#show-join-info-btn {
+    background: rgba(0, 0, 0, 0.3);
+    border: 0.125rem solid white;
+    border-radius: 50%;
+    width: 3.125rem;
+    height: 3.125rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.625rem;
+    opacity: 0.7;
+    transition: background-color 0.2s, transform 0.2s, opacity 0.2s;
+    flex-shrink: 0;
+}
+
+#show-join-info-btn:hover {
+    background-color: rgba(0, 0, 0, 0.5);
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+#show-join-info-btn svg {
+    width: 100%;
+    height: 100%;
 }
 
 .score-controls {
@@ -3005,6 +3024,65 @@ input:disabled + .slider:before {
     }
 }
 
+/* --- In-Game Join Modal --- */
+#in-game-join-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+#in-game-join-modal {
+    background: linear-gradient(to top, #6a85b6 0%, #bac8e0 100%);
+    border: 0.125rem solid rgba(255, 255, 255, 0.5);
+    border-radius: 0.9375rem;
+    padding: 2.5rem;
+    width: 90%;
+    max-width: 62.5rem; /* 1000px */
+    box-shadow: 0 0.625rem 2.5rem rgba(0, 0, 0, 0.5);
+    position: relative;
+    text-align: center;
+}
+#in-game-join-modal h2 {
+    font-size: 2.5rem;
+    color: #ffeb3b;
+    margin-bottom: 1.5rem;
+}
+.in-game-join-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+}
+.join-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+#in-game-qrcode-container {
+    background-color: white;
+    padding: 1rem;
+    border-radius: 1rem;
+    box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.25);
+    line-height: 0;
+}
+#in-game-join-teams-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+#in-game-join-teams-container .team-slot {
+    width: 5rem;
+    height: 5rem;
+}
+
+
 /* --- Styles for Participant View --- */
 .participant-container {
     background: rgba(0, 0, 0, 0.25);
@@ -3559,6 +3637,16 @@ body.participant-view .app-version {
         width: 5rem;
         height: 5rem;
         border-width: 0.2rem;
+    }
+    
+    #in-game-join-modal {
+        padding: 1.5rem;
+        width: 95%;
+    }
+    
+    .in-game-join-content {
+        flex-direction: column-reverse;
+        gap: 2rem;
     }
 }
 

@@ -497,6 +497,25 @@
         </div>
     </div>
 
+    <!-- In-Game Join Modal -->
+    <div id="in-game-join-modal-overlay" class="hidden">
+        <div id="in-game-join-modal">
+            <button id="close-in-game-join-modal-btn" class="modal-close-btn" title="סגור"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+            <h2>הזמן שחקנים להצטרף</h2>
+            <div class="in-game-join-content">
+                <div class="join-info">
+                    <p>שתף קוד זה עם המשתתפים או סרוק את קוד ה-QR</p>
+                    <div class="join-code-container">
+                        <div id="in-game-join-code-display" class="game-code-display" title="לחץ להעתקה">......</div>
+                    </div>
+                    <div id="in-game-join-teams-container">
+                        <!-- Team slots will be injected here by JS -->
+                    </div>
+                </div>
+                <div id="in-game-qrcode-container"></div>
+            </div>
+        </div>
+    </div>
 
     <div class="global-top-left-controls">
         <button id="fullscreen-toggle-btn" class="global-control-btn">
@@ -513,6 +532,9 @@
 
     <!-- Persistent Game Footer -->
     <div id="main-game-footer" class="game-footer">
+        <button id="show-join-info-btn" class="global-control-btn" title="הזמן שחקנים">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 8c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4zm-6 4c.22-.72 2.31-2 6-2 3.7 0 5.78 1.28 6 2H9zm-3-4v-3h3v-2H6V7H4v3H1v2h3v3h2z"/></svg>
+        </button>
         <div class="score-controls">
             <button class="score-btn add-point-btn" tabindex="-1">+</button>
             <button class="score-btn subtract-point-btn" tabindex="-1">-</button>
