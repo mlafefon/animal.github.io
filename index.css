@@ -3619,47 +3619,59 @@ body.participant-view .app-version {
         height: 100dvh; /* Use dynamic viewport height */
         display: flex;
         flex-direction: column;
-        padding: 1rem;
+        padding: 0.5rem; /* Reduced padding */
+        overflow: hidden; /* Prevent accidental scrolling */
     }
     #participant-boxes-screen .boxes-content {
-        gap: 1.5rem;
-        padding-top: 1rem;
-        justify-content: flex-start;
+        gap: 0; /* Let space-around handle vertical spacing */
+        padding-top: 0;
+        justify-content: space-around;
+        align-items: center;
+        flex: 1;
+        min-height: 0; /* Allow flex item to shrink */
     }
     
     #participant-boxes-screen .boxes-content h1 {
-        font-size: 2rem;
+        font-size: clamp(1.6rem, 5vw, 2rem); /* Responsive font size */
+        margin-bottom: 0;
+        flex-shrink: 0;
     }
-    
+        
     #participant-chests-container {
         flex-direction: column;
-        gap: 1.25rem;
+        gap: 0.5rem; /* Reduced gap */
         align-items: center;
+        flex-shrink: 1;
+        overflow: hidden;
     }
     
     #participant-chests-container .treasure-chest {
-        padding: 0.75rem;
-        width: 12rem;
+        padding: 0.25rem;
+        width: 8rem; /* Reduced width */
+        flex-shrink: 0;
     }
     
     #participant-chests-container .treasure-chest img {
-        width: 8rem;
+        width: 4.5rem; /* Further reduced image size */
+        height: auto;
     }
     
     #participant-chests-container .treasure-chest span {
-        font-size: 1.5rem;
+        font-size: 1rem; /* Reduced font size */
     }
     
     .score-reveal-above {
-        font-size: 2rem;
+        font-size: 1.8rem; /* Reduced font size */
     }
     
     .score-reveal-above.selected-score {
-        font-size: 2.5rem;
+        font-size: 2.2rem; /* Reduced font size */
     }
     
     #participant-boxes-message {
-        font-size: 1.2rem;
+        font-size: 1.1rem; /* Slightly reduced message size */
+        margin-top: 0;
+        flex-shrink: 0;
     }
 
     /* Responsive for join screen */
