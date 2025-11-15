@@ -3195,8 +3195,8 @@ input:disabled + .slider:before {
 
 #participant-game-screen {
     width: 100vw;
-    height: 100vh;
-    height: 100dvh; /* Use dynamic viewport height to account for browser UI */
+    /* Use JS-calculated height to reliably handle mobile browser UI */
+    height: calc(var(--vh, 1dvh) * 100);
     display: flex;
     flex-direction: column;
     padding: 1.25rem;

@@ -590,6 +590,14 @@ async function attemptRejoin() {
 
 // --- Main Execution ---
 document.addEventListener('DOMContentLoaded', async () => {
+    // A robust way to handle mobile viewport height changes
+    const setViewportHeight = () => {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    window.addEventListener('resize', setViewportHeight);
+    setViewportHeight(); // Initial call
+
     initializeNotification();
     initializeJoinScreen();
     initializeGameScreen();
