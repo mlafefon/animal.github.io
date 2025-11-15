@@ -21,7 +21,7 @@ const teamSelectGameName = document.getElementById('team-select-game-name');
 const teamSelectError = document.getElementById('team-select-error');
 const myTeamIcon = document.getElementById('my-team-icon');
 const myTeamName = document.getElementById('my-team-name');
-const questionText = document.getElementById('participant-question-text');
+const questionContainer = document.getElementById('question-container');
 const participantControls = document.getElementById('participant-controls');
 const stopBtn = document.getElementById('participant-stop-btn');
 const waitingMessage = document.getElementById('waiting-message');
@@ -160,7 +160,7 @@ async function handleTeamSelection(teamIndex) {
     
     // 3. Switch to the game screen with a waiting message
     showScreen('game');
-    questionText.textContent = `הצטרפת לקבוצת ${myTeam.name}! ממתין למנחה שיתחיל את המשחק...`;
+    questionContainer.innerHTML = `<p id="participant-question-text">הצטרפת לקבוצת ${myTeam.name}! ממתין למנחה שיתחיל את המשחק...</p>`;
     participantControls.classList.add('hidden');
     waitingMessage.classList.add('hidden');
 
@@ -331,10 +331,10 @@ function updateGameView(state) {
     switch (state.gameState) {
         case 'learningTime':
             showScreen('game');
-            questionText.innerHTML = `
+            questionContainer.innerHTML = `
                 <div style="line-height: 1.6; text-align: center;">
                     <p style="font-size: 2.2rem; font-weight: bold; margin-bottom: 1.5rem;">זמן למידה:</p>
-                    <p style="font-size: 1.8rem; color: #ffeb3b;">${state.currentQuestionData.a}</p>
+                    <p id="participant-question-text" style="font-size: 1.8rem; color: #ffeb3b;">${state.currentQuestionData.a}</p>
                 </div>
             `;
             participantControls.classList.add('hidden');
@@ -351,7 +351,7 @@ function updateGameView(state) {
                         <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-5-6c.78 2.34 2.72 4 5 4s4.22-1.66 5-4H7zM9 13c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/>
                     </svg>
                 `;
-                questionText.innerHTML = `
+                questionContainer.innerHTML = `
                     <div style="line-height: 1.6; display: flex; flex-direction: column; align-items: center;">
                         ${sadIcon}
                         <p style="font-size: 2.2rem; color: #FF5252; font-weight: bold;">תשובה שגויה</p>
@@ -359,8 +359,7 @@ function updateGameView(state) {
                     </div>
                 `;
             } else {
-                 // Fallback if team somehow isn't found
-                 questionText.textContent = `תשובה שגויה`;
+                 questionContainer.innerHTML = `<p id="participant-question-text">תשובה שגויה</p>`;
             }
             participantControls.classList.add('hidden');
             waitingMessage.classList.add('hidden');
@@ -370,19 +369,17 @@ function updateGameView(state) {
             showScreen('game');
             const activeTeamForCorrect = state.teams.find(t => t.index === state.activeTeamIndex);
             if (activeTeamForCorrect) {
-                // Using innerHTML to structure the message with styling
-                questionText.innerHTML = `
+                questionContainer.innerHTML = `
                     <div style="line-height: 1.6;">
                         <p style="font-size: 2.2rem; color: #4CAF50; font-weight: bold;">כל הכבוד קבוצת ${activeTeamForCorrect.name}!</p>
                         <p>עניתם תשובה נכונה.</p>
                         <p style="margin-top: 1rem; font-style: italic;">עכשיו זמן למידה...</p>
                         <hr style="margin: 1.25rem auto; width: 80%; border-color: rgba(255,255,255,0.2);">
-                        <p style="font-size: 1.8rem; color: #ffeb3b; font-weight: bold;">${state.currentQuestionData.a}</p>
+                        <p id="participant-question-text" style="font-size: 1.8rem; color: #ffeb3b; font-weight: bold;">${state.currentQuestionData.a}</p>
                     </div>
                 `;
             } else {
-                 // Fallback if team somehow isn't found
-                 questionText.textContent = `תשובה נכונה! התשובה היא: ${state.currentQuestionData.a}`;
+                 questionContainer.innerHTML = `<p id="participant-question-text">תשובה נכונה! התשובה היא: ${state.currentQuestionData.a}</p>`;
             }
             participantControls.classList.add('hidden');
             waitingMessage.classList.add('hidden');
@@ -390,7 +387,7 @@ function updateGameView(state) {
 
         case 'question':
             showScreen('game');
-            questionText.textContent = state.currentQuestionData.q;
+            questionContainer.innerHTML = `<p id="participant-question-text">${state.currentQuestionData.q}</p>`;
             if (isMyTurn) {
                 participantControls.classList.remove('hidden');
                 stopBtn.disabled = false; // Ensure button is enabled for new question
@@ -407,9 +404,9 @@ function updateGameView(state) {
         case 'grading':
             showScreen('game');
             if (isMyTurn) {
-                questionText.textContent = 'עצרתם את הטיימר. מה היא תשובתכם?';
+                questionContainer.innerHTML = `<p id="participant-question-text">עצרתם את הטיימר. מה היא תשובתכם?</p>`;
             } else {
-                questionText.textContent = `המנחה בודק את התשובה של קבוצת ${activeTeamName}...`;
+                questionContainer.innerHTML = `<p id="participant-question-text">המנחה בודק את התשובה של קבוצת ${activeTeamName}...</p>`;
             }
             break;
             
@@ -420,22 +417,22 @@ function updateGameView(state) {
                 renderBoxesScreen(state);
             } else {
                 showScreen('game');
-                questionText.textContent = `ממתין לקבוצת ${activeTeamName} לבחור תיבת אוצר...`;
+                questionContainer.innerHTML = `<p id="participant-question-text">ממתין לקבוצת ${activeTeamName} לבחור תיבת אוצר...</p>`;
             }
             break;
         
         case 'setup':
             showScreen('game');
-            questionText.textContent = "המשחק יתחיל בקרוב...";
+            questionContainer.innerHTML = `<p id="participant-question-text">המשחק יתחיל בקרוב...</p>`;
             break;
 
         case 'waiting':
         default:
             showScreen('game');
             if (isMyTurn) {
-                questionText.textContent = 'מוכנים? השאלה הבאה אליכם';
+                questionContainer.innerHTML = `<p id="participant-question-text">מוכנים? השאלה הבאה אליכם</p>`;
             } else {
-                questionText.textContent = `התור הבא הוא של קבוצת ${activeTeamName}. השאלה תופיע בקרוב...`;
+                questionContainer.innerHTML = `<p id="participant-question-text">התור הבא הוא של קבוצת ${activeTeamName}. השאלה תופיע בקרוב...</p>`;
             }
             break;
     }

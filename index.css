@@ -3450,6 +3450,7 @@ body.participant-view .app-version {
 
     #participant-question-text {
         font-size: 1.8rem;
+        white-space: pre-wrap; /* Respect newlines */
     }
 
     .waiting-message {
