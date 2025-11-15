@@ -557,6 +557,15 @@ export function initializeScoreControls() {
         }
     });
 
+    // When a participant joins, re-render the footer to show/update phone icons.
+    document.addEventListener('participantjoined', () => {
+        // Only update the UI if the main game footer is actually visible.
+        if (document.body.classList.contains('game-active')) {
+            generateTeams();
+            updateActiveTeam(); // Re-apply the active team highlight after re-rendering.
+        }
+    });
+
     const scoreControls = document.querySelector('.score-controls');
     if (!scoreControls) return;
 
