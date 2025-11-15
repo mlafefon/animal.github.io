@@ -1,4 +1,4 @@
-import { getSavedState, initializeSetupState, getState, clearSessionDetails } from './gameState.js';
+import { getSavedState, initializeSetupState, getState, clearSessionDetails, unassignParticipant } from './gameState.js';
 import { TEAMS_MASTER_DATA } from './game.js';
 import { showNotification } from './ui.js';
 import { createGameSession, getAccount, unsubscribeAllRealtime, updateGameSession } from './appwriteService.js';
@@ -35,7 +35,12 @@ function renderEmptyTeamSlots(count) {
         slot.className = 'team-slot';
         slot.dataset.index = i;
         const teamMaster = TEAMS_MASTER_DATA[i % TEAMS_MASTER_DATA.length];
-        slot.innerHTML = `<img src="${teamMaster.icon}" alt="${teamMaster.name}" style="display: none;">`;
+        slot.innerHTML = `
+            <img src="${teamMaster.icon}" alt="${teamMaster.name}" style="display: none;">
+            <button class="kick-participant-btn" title="הסר משתתף">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+        `;
         joinHostTeamsContainer.appendChild(slot);
     }
 }
@@ -245,6 +250,27 @@ export async function showSetupScreenForGame(gameDoc) {
     updateQuestionStats();
 }
 
+/**
+ * Handles the host's action to kick a participant from a team.
+ * @param {number} teamIndex The index of the team to free up.
+ */
+function handleKickParticipant(teamIndex) {
+    unassignParticipant(teamIndex);
+
+    // Update the UI on the host's join screen immediately.
+    const slot = joinHostTeamsContainer.querySelector(`.team-slot[data-index="${teamIndex}"]`);
+    if (slot) {
+        slot.classList.remove('filled');
+        const img = slot.querySelector('img');
+        if (img) img.style.display = 'none';
+    }
+
+    // Trigger a state change event to broadcast to all participants.
+    document.dispatchEvent(new Event('gamestatechange'));
+
+    showNotification(`המשתתף מקבוצה ${teamIndex + 1} הוסר.`, 'info');
+}
+
 
 /**
  * Initializes the setup screen by attaching event listeners.
@@ -380,7 +406,7 @@ export function initializeSetupScreen(onStart) {
 
             if (hasParticipants) {
                 clearSessionDetails();
-                showNotification('נוצר קוד משחק חדש מכיוון שמשתתפים הצטרפו לסשн הקודם.', 'info');
+                showNotification('נוצר קוד משחק חדש מכיוון שמשתתפים הצטרפו לסשן הקודם.', 'info');
             }
 
             joinHostScreen.classList.add('hidden');
@@ -413,5 +439,17 @@ export function initializeSetupScreen(onStart) {
             console.error('Failed to copy code: ', err);
             showNotification('שגיאה בהעתקת הקוד', 'error');
         });
+    });
+
+    // Listener for kicking participants from the Join Host screen
+    joinHostTeamsContainer.addEventListener('click', (e) => {
+        const kickBtn = e.target.closest('.kick-participant-btn');
+        if (kickBtn) {
+            const slot = kickBtn.closest('.team-slot');
+            if (slot) {
+                const teamIndex = parseInt(slot.dataset.index, 10);
+                handleKickParticipant(teamIndex);
+            }
+        }
     });
 }

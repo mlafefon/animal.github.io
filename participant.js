@@ -299,16 +299,21 @@ function updateGameView(state) {
         return;
     }
     
-    // VERIFY SELECTION: If I thought I picked a team, check if the official state agrees.
+    // VERIFY SELECTION: Check if I am still part of my team.
     const myTeamInNewState = state.teams.find(t => t.index === myTeam.index);
     if (!myTeamInNewState || myTeamInNewState.participantId !== participantId) {
-        // My selection was pre-empted by another player.
-        sessionStorage.removeItem('activeGame'); // Clear invalid saved state
-        showNotification('הקבוצה שבחרת נתפסה. אנא בחר קבוצה אחרת.', 'info');
-        myTeam = null; // Reset my choice
-        showScreen('teamSelect'); // Go back to team select
-        renderTeamSelectScreen(state); // Re-render with the correct state
-        return;
+        // I have been kicked by the host, or my selection was pre-empted.
+        myTeam = null;
+        unsubscribeAllRealtime();
+        sessionStorage.removeItem('activeGame');
+
+        showNotification('החיבור לקבוצה בוטל. יש להצטרף למשחק מחדש.', 'info');
+        
+        // Go back to the initial join screen
+        showScreen('join');
+        gameCodeInput.value = '';
+        joinError.classList.add('hidden');
+        return; // Stop processing this state update.
     }
 
     // This logic runs AFTER the participant has chosen a team.

@@ -464,17 +464,20 @@ function renderInGameJoinSlots(teams) {
         slot.className = 'team-slot';
         slot.dataset.index = team.index;
         
-        const img = document.createElement('img');
-        img.src = team.icon;
-        img.alt = team.name;
+        slot.innerHTML = `
+            <img src="${team.icon}" alt="${team.name}">
+            <button class="kick-participant-btn" title="הסר משתתף">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+        `;
 
+        const img = slot.querySelector('img');
         if (team.isTaken) {
             slot.classList.add('filled');
             img.style.display = 'block';
         } else {
             img.style.display = 'none';
         }
-        slot.appendChild(img);
         container.appendChild(slot);
     });
 }
@@ -544,6 +547,29 @@ function initializeInGameJoinModal() {
             renderInGameJoinSlots(e.detail.teams);
         }
     });
+
+    const inGameTeamsContainer = document.getElementById('in-game-join-teams-container');
+    if (inGameTeamsContainer) {
+        inGameTeamsContainer.addEventListener('click', (e) => {
+            const kickBtn = e.target.closest('.kick-participant-btn');
+            if (kickBtn) {
+                const slot = kickBtn.closest('.team-slot');
+                if (slot) {
+                    const teamIndex = parseInt(slot.dataset.index, 10);
+                    gameState.unassignParticipant(teamIndex);
+
+                    // Update UI in the modal
+                    slot.classList.remove('filled');
+                    const img = slot.querySelector('img');
+                    if (img) img.style.display = 'none';
+
+                    // Trigger broadcast
+                    document.dispatchEvent(new Event('gamestatechange'));
+                    showNotification(`המשתתף מקבוצה ${teamIndex + 1} הוסר.`, 'info');
+                }
+            }
+        });
+    }
 }
 
 export function initializeScoreControls() {

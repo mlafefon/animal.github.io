@@ -194,6 +194,23 @@ export function setTeams(teamsArray) {
 }
 
 /**
+ * Unassigns a participant from a team.
+ * @param {number} teamIndex The index of the team to free up.
+ * @returns {string|null} The ID of the participant who was kicked, or null.
+ */
+export function unassignParticipant(teamIndex) {
+    const team = _state.teams.find(t => t.index === teamIndex);
+    if (team && team.isTaken) {
+        const participantId = team.participantId;
+        team.isTaken = false;
+        team.participantId = null;
+        // This is a transient setup state change, no need to save to localStorage.
+        return participantId;
+    }
+    return null;
+}
+
+/**
  * Initializes a minimal state for the pre-game setup phase (join screen).
  * This state is NOT saved to localStorage as it's transient.
  * @param {string} gameName The name of the game.
