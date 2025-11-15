@@ -1,5 +1,3 @@
-
-
 // --- Constants ---
 const GAME_STATE_KEY = 'animalGameState';
 
@@ -212,6 +210,24 @@ export function initializeSetupState(gameName, gameCode, sessionDocumentId, team
     _state.gameStateForParticipant = 'setup';
     // We don't call _saveState() here because this state is temporary
     // until the game officially starts. The official start will save it.
+}
+
+/**
+ * Clears session-specific details (code, documentId, participant data) from the state.
+ * This is used when the host backs out of a session that participants have joined,
+ * forcing a new session to be created on the next attempt.
+ */
+export function clearSessionDetails() {
+    _state.gameCode = null;
+    _state.sessionDocumentId = null;
+    if (_state.teams) {
+        _state.teams.forEach(team => {
+            team.isTaken = false;
+            team.participantId = null;
+        });
+    }
+    // This state is transient and shouldn't be saved to localStorage.
+    // It's a temporary state before a new session is created.
 }
 
 /**

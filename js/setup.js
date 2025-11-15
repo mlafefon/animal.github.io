@@ -1,10 +1,7 @@
-
-
-
-import { getSavedState, initializeSetupState } from './gameState.js';
+import { getSavedState, initializeSetupState, getState, clearSessionDetails } from './gameState.js';
 import { TEAMS_MASTER_DATA } from './game.js';
 import { showNotification } from './ui.js';
-import { createGameSession, getAccount, unsubscribeAllRealtime } from './appwriteService.js';
+import { createGameSession, getAccount, unsubscribeAllRealtime, updateGameSession } from './appwriteService.js';
 
 // --- Elements from Setup Screen ---
 const groupList = document.getElementById('group-list');
@@ -323,29 +320,52 @@ export function initializeSetupScreen(onStart) {
             alert('יש לבחור משחק.');
             return;
         }
+        
+        // --- MODIFIED GAME FLOW ---
+        const currentState = getState();
+        const existingSessionId = currentState.sessionDocumentId;
+        const existingGameCode = currentState.gameCode;
 
-        // --- New Game Flow ---
-        const gameCode = Math.floor(100000 + Math.random() * 900000).toString();
-        options.gameCode = gameCode;
-
-        try {
-            const user = await getAccount();
+        // Check if we can reuse the existing session.
+        if (existingSessionId && existingGameCode) {
+            options.gameCode = existingGameCode;
+            options.sessionDocumentId = existingSessionId;
             const teamsForSession = TEAMS_MASTER_DATA.slice(0, options.numberOfGroups).map((t, i) => ({ index: i, name: t.name, iconKey: t.iconKey, isTaken: false, participantId: null }));
+            initializeSetupState(options.gameName, options.gameCode, options.sessionDocumentId, teamsForSession);
             
-            const sessionData = { gameCode, gameName: options.gameName, teams: teamsForSession, gameState: 'setup' };
-            const sessionDoc = await createGameSession(gameCode, user.$id, sessionData);
+            // Reset the session document in Appwrite with a fresh (empty) team list.
+            const sessionData = { gameCode: options.gameCode, gameName: options.gameName, teams: teamsForSession, gameState: 'setup' };
+            try {
+                await updateGameSession(options.sessionDocumentId, sessionData);
+                document.dispatchEvent(new CustomEvent('setupready', { detail: { gameCode: options.gameCode } }));
+                showJoinHostScreen(options);
+            } catch (error) {
+                 console.error("Failed to reset reused game session:", error);
+                 showNotification("שגיאה באיפוס סשן המשחק. יוצר סשן חדש.", "error");
+                 clearSessionDetails();
+                 startButton.click(); // Re-trigger click to try creating a new session.
+            }
+        } else {
+            // No session to reuse, create a new one.
+            const gameCode = Math.floor(100000 + Math.random() * 900000).toString();
+            options.gameCode = gameCode;
 
-            // Initialize the state with all necessary info, including the session ID.
-            initializeSetupState(options.gameName, gameCode, sessionDoc.$id, teamsForSession);
-            
-            // The options object still needs the session ID for showJoinHostScreen and later, startGame.
-            options.sessionDocumentId = sessionDoc.$id;
-            
-            document.dispatchEvent(new CustomEvent('setupready', { detail: { gameCode } }));
-            showJoinHostScreen(options);
-        } catch (error) {
-            console.error("Failed to create game session:", error);
-            showNotification("שגיאה ביצירת סשן המשחק.", "error");
+            try {
+                const user = await getAccount();
+                const teamsForSession = TEAMS_MASTER_DATA.slice(0, options.numberOfGroups).map((t, i) => ({ index: i, name: t.name, iconKey: t.iconKey, isTaken: false, participantId: null }));
+                
+                const sessionData = { gameCode, gameName: options.gameName, teams: teamsForSession, gameState: 'setup' };
+                const sessionDoc = await createGameSession(gameCode, user.$id, sessionData);
+                
+                initializeSetupState(options.gameName, gameCode, sessionDoc.$id, teamsForSession);
+                options.sessionDocumentId = sessionDoc.$id;
+                
+                document.dispatchEvent(new CustomEvent('setupready', { detail: { gameCode } }));
+                showJoinHostScreen(options);
+            } catch (error) {
+                console.error("Failed to create game session:", error);
+                showNotification("שגיאה ביצירת סשן המשחק.", "error");
+            }
         }
     });
 
@@ -353,18 +373,22 @@ export function initializeSetupScreen(onStart) {
     const backToSetupBtn = document.getElementById('back-to-setup-btn');
     if (backToSetupBtn) {
         backToSetupBtn.addEventListener('click', () => {
-            // Unsubscribe from the game session actions when going back
             unsubscribeAllRealtime();
+            
+            const currentState = getState();
+            const hasParticipants = currentState.teams.some(team => team.isTaken);
+
+            if (hasParticipants) {
+                clearSessionDetails();
+                showNotification('נוצר קוד משחק חדש מכיוון שמשתתפים הצטרפו לסשн הקודם.', 'info');
+            }
 
             joinHostScreen.classList.add('hidden');
             setupScreen.classList.remove('hidden');
             
-            // Restore button visibility
             backToSetupBtn.classList.add('hidden');
             document.getElementById('global-home-btn').classList.remove('hidden');
 
-            // The selected game and group count are preserved in the DOM, so no need to re-select them.
-            // The start button should be re-focused for better UX.
             startButton.focus();
         });
     }
@@ -373,7 +397,6 @@ export function initializeSetupScreen(onStart) {
     startGameFromJoinBtn.addEventListener('click', () => {
         joinHostScreen.classList.add('hidden');
         
-        // Restore button visibility
         document.getElementById('back-to-setup-btn').classList.add('hidden');
         document.getElementById('global-home-btn').classList.remove('hidden');
 
