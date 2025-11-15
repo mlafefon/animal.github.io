@@ -411,13 +411,23 @@ function updateGameView(state) {
             break;
             
         case 'boxes':
-        case 'boxes-revealed':
             if (isMyTurn) {
                 showScreen('boxes');
                 renderBoxesScreen(state);
             } else {
                 showScreen('game');
                 questionContainer.innerHTML = `<p id="participant-question-text">ממתין לקבוצת ${activeTeamName} לבחור תיבת אוצר...</p>`;
+            }
+            break;
+            
+        case 'boxes-revealed':
+            if (isMyTurn) {
+                showScreen('boxes');
+                renderBoxesScreen(state);
+            } else {
+                showScreen('game');
+                const score = state.boxesData.selectedScore;
+                questionContainer.innerHTML = `<p id="participant-question-text">קבוצת ${activeTeamName} קיבלה \u200e${score} נקודות. ממתין למנחה...</p>`;
             }
             break;
         
