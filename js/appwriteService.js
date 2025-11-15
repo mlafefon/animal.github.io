@@ -352,7 +352,8 @@ export function getFileUrl(fileId) {
         return '';
     }
     // storage.getFileView returns a URL object. We need its string representation.
-    return storage.getFileView(AppwriteConfig.bucketId, fileId).href;
+    const url = storage.getFileView(AppwriteConfig.bucketId, fileId).href;
+    return `${url}&`;
 }
 
 // --- Real-time Game Session Functions ---

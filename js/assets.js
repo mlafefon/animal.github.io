@@ -2,12 +2,12 @@ import { getFileUrl } from './appwriteService.js';
 
 // *** שלום! יש לעדכן כאן את מזהי הקבצים (File IDs) שהעתקת מ-Appwrite ***
 const IMAGE_FILE_IDS = {
-    START_SCREEN: '6907a5790023434e293c',
-    TEAM_OWL: '6907a5a0001f41c62853',
-    TEAM_FOX: '6907a34200341b1376eb',
-    TEAM_ELEPHANT: '6907a560003e403da517',
-    TEAM_FROG: '6907a34e0019ed1bd7f6',
-    TEAM_LION: '6907a56d0005c76ac2a0',
+    START_SCREEN: 'animal_game',
+    TEAM_OWL: 'yanshuf',
+    TEAM_FOX: 'fox',
+    TEAM_ELEPHANT: 'pil',
+    TEAM_FROG: 'frog',
+    TEAM_LION: 'lion',
     CHEST_OPEN: '6907a59000124db5c410',
     CHEST_BROKEN: '6907a597002ec4e72def',
     CHEST_CLOSED: '6907a581002d5279cb02'
