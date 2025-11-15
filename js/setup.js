@@ -1,8 +1,10 @@
 
+
+
 import { getSavedState, initializeSetupState } from './gameState.js';
 import { TEAMS_MASTER_DATA } from './game.js';
 import { showNotification } from './ui.js';
-import { createGameSession, getAccount } from './appwriteService.js';
+import { createGameSession, getAccount, unsubscribeAllRealtime } from './appwriteService.js';
 
 // --- Elements from Setup Screen ---
 const groupList = document.getElementById('group-list');
@@ -71,6 +73,11 @@ function showJoinHostScreen(options) {
     renderEmptyTeamSlots(options.numberOfGroups);
     joinHostScreen.classList.remove('hidden');
     startGameFromJoinBtn.focus();
+
+    // Show the back button and hide the home button for this specific screen
+    document.getElementById('back-to-setup-btn').classList.remove('hidden');
+    document.getElementById('global-home-btn').classList.add('hidden');
+
 
     // --- Generate QR Code ---
     const qrContainer = document.getElementById('qrcode-container');
@@ -342,9 +349,34 @@ export function initializeSetupScreen(onStart) {
         }
     });
 
+    // Back button from Join Screen
+    const backToSetupBtn = document.getElementById('back-to-setup-btn');
+    if (backToSetupBtn) {
+        backToSetupBtn.addEventListener('click', () => {
+            // Unsubscribe from the game session actions when going back
+            unsubscribeAllRealtime();
+
+            joinHostScreen.classList.add('hidden');
+            setupScreen.classList.remove('hidden');
+            
+            // Restore button visibility
+            backToSetupBtn.classList.add('hidden');
+            document.getElementById('global-home-btn').classList.remove('hidden');
+
+            // The selected game and group count are preserved in the DOM, so no need to re-select them.
+            // The start button should be re-focused for better UX.
+            startButton.focus();
+        });
+    }
+
     // Start Button from Join Screen
     startGameFromJoinBtn.addEventListener('click', () => {
         joinHostScreen.classList.add('hidden');
+        
+        // Restore button visibility
+        document.getElementById('back-to-setup-btn').classList.add('hidden');
+        document.getElementById('global-home-btn').classList.remove('hidden');
+
         if (onStart && _gameOptionsForStart) {
             onStart(_gameOptionsForStart);
         }
