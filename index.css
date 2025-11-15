@@ -1312,6 +1312,7 @@ h1, h2, h3, h4, h5, h6 {
     opacity: 0;
     transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.4s;
     transition-delay: 0.2s; /* Delay before appearing */
+    z-index: 2; /* Ensure score is on top of the chest border */
 }
 
 /* When the parent is selected/disabled, animate the score reveal */
@@ -3492,10 +3493,9 @@ body.participant-view .app-version {
         
     #participant-chests-container {
         flex-direction: column;
-        gap: 0.75rem; /* Tighter gap */
+        gap: 0.75rem;
         align-items: center;
         flex-shrink: 1;
-        overflow: hidden;
     }
     
     #participant-chests-container .treasure-chest {
@@ -3522,10 +3522,12 @@ body.participant-view .app-version {
     /* Larger font for revealed scores on participant screen */
     #participant-chests-container .score-reveal-above {
         font-size: 2.8rem;
+        z-index: 2;
     }
     
     #participant-chests-container .score-reveal-above.selected-score {
         font-size: 4rem;
+        z-index: 3;
     }
     
     #participant-boxes-message {
