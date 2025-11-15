@@ -3619,13 +3619,13 @@ body.participant-view .app-version {
         height: 100dvh; /* Use dynamic viewport height */
         display: flex;
         flex-direction: column;
-        padding: 0.5rem; /* Reduced padding */
+        padding: 0.5rem 0.5rem 2rem 0.5rem; /* More padding at the bottom */
         overflow: hidden; /* Prevent accidental scrolling */
     }
     #participant-boxes-screen .boxes-content {
-        gap: 0; /* Let space-around handle vertical spacing */
+        gap: 0.5rem; /* Added small gap */
         padding-top: 0;
-        justify-content: space-around;
+        justify-content: space-between; /* Changed to push content from edges */
         align-items: center;
         flex: 1;
         min-height: 0; /* Allow flex item to shrink */
