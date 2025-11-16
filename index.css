@@ -1712,6 +1712,29 @@ h1, h2, h3, h4, h5, h6 {
     color: rgba(255, 255, 255, 0.8);
 }
 
+#continue-view-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    height: 100%;
+    color: rgba(255, 255, 255, 0.6);
+    gap: 1.5rem;
+}
+#continue-view-panel svg {
+    opacity: 0.5;
+}
+#continue-view-panel h2 {
+    font-size: 1.8rem;
+    color: #ffeb3b;
+}
+#continue-view-panel p {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #f0f8ff;
+}
+
 /* --- Game View Panel --- */
 #game-view-panel {
     display: flex;
@@ -1915,6 +1938,17 @@ h1, h2, h3, h4, h5, h6 {
 #category-panel .category-card span {
     font-size: 1.1rem;
 }
+
+.continue-game-container {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#category-panel .public-toggle-container {
+    justify-content: space-between;
+}
+
 
 /* --- Game List in Edit Screen --- */
 .panel-header {

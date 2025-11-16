@@ -1,9 +1,8 @@
 
-
-
 import { listGames, createGame, updateGame, deleteGame, listCategories, getFileUrl } from './appwriteService.js';
 import { showSetupScreenForGame } from './setup.js';
 import { showConfirmModal, showLinkModal, showNotification, showQuestionPreview } from './ui.js';
+import { getSavedState } from './gameState.js';
 
 // --- Elements ---
 const editGameScreen = document.getElementById('edit-game-screen');
@@ -16,6 +15,7 @@ const editorPanel = document.getElementById('editor-panel');
 const editorPlaceholder = document.getElementById('editor-placeholder');
 const gameViewPanel = document.getElementById('game-view-panel');
 const editorContainer = document.getElementById('editor-container'); // Wraps toolbar and form
+const continueViewPanel = document.getElementById('continue-view-panel');
 
 // View Panel Elements
 const viewGameName = document.getElementById('view-game-name');
@@ -66,6 +66,7 @@ let gameDataToDuplicate = null;
 let userAcknowledgedUnsavedChanges = false;
 let currentlySelectedGameDoc = null;
 let allCategories = [];
+let onStartGameCallback = null;
 
 
 /**
@@ -448,6 +449,7 @@ async function loadGameForViewing(gameDocument) {
         editorPlaceholder.classList.remove('hidden');
         gameViewPanel.classList.add('hidden');
         editorContainer.classList.add('hidden');
+        continueViewPanel.classList.add('hidden');
         setUnsavedState(false);
         return;
     }
@@ -478,6 +480,7 @@ async function loadGameForViewing(gameDocument) {
         // Show/Hide Panels
         editorPlaceholder.classList.add('hidden');
         editorContainer.classList.add('hidden');
+        continueViewPanel.classList.add('hidden');
         gameViewPanel.classList.remove('hidden');
 
         setUnsavedState(false);
@@ -647,6 +650,30 @@ function renderCategories() {
 }
 
 /**
+ * Checks for a saved game state and updates the "Continue" checkbox accordingly.
+ */
+function refreshContinueToggleState() {
+    const continueCheckbox = document.getElementById('continue-last-point');
+    const continueLabel = document.querySelector('label[for="continue-last-point"]');
+    const savedState = getSavedState();
+
+    if (savedState && savedState.gameName) {
+        continueCheckbox.disabled = false;
+        continueLabel.textContent = `המשך "${savedState.gameName}"`;
+    } else {
+        continueCheckbox.disabled = true;
+        continueLabel.textContent = 'המשך מנקודה אחרונה';
+        if (savedState) { // Corrupt state
+            localStorage.removeItem('animalGameState');
+        }
+    }
+    continueCheckbox.checked = false;
+    // Manually trigger change event to reset UI state if it was somehow checked
+    continueCheckbox.dispatchEvent(new Event('change'));
+}
+
+
+/**
  * Shows the main edit screen and populates the game list.
  */
 export async function showEditScreen() {
@@ -659,6 +686,7 @@ export async function showEditScreen() {
     renderCategories(); // This function is synchronous and uses the data from the previous call
     
     await populateGameList(null);
+    refreshContinueToggleState();
 }
 
 /**
@@ -740,8 +768,11 @@ export async function checkForUnsavedChangesAndProceed(actionCallback) {
 
 /**
  * Initializes all event listeners for the edit game screen.
+ * @param {function} onStart - The callback function to start the game.
  */
-export function initializeEditGameScreen() {
+export function initializeEditGameScreen(onStart) {
+    onStartGameCallback = onStart;
+
     categoryListContainer.addEventListener('click', (e) => {
         const selectedCard = e.target.closest('.category-card');
         if (!selectedCard || selectedCard.classList.contains('selected')) return;
@@ -917,136 +948,170 @@ export function initializeEditGameScreen() {
     toolbarSaveBtn.addEventListener('click', handleSave);
 
     viewDeleteBtn.addEventListener('click', async () => {
-        const gameName = currentlySelectedGameDoc?.game_name;
-        if (!gameName) return;
+        if (!currentlySelectedGameDoc) return;
+        const gameName = currentlySelectedGameDoc.game_name;
+        const result = await showConfirmModal(`האם אתה בטוח שברצונך למחוק את המשחק "${gameName}"? פעולה זו אינה הפיכה.`);
         
-        const userConfirmed = await showConfirmModal(`האם אתה בטוח שברצונך למחוק את המשחק "${gameName}"? לא ניתן לשחזר פעולה זו.`);
-        if (userConfirmed) {
+        if (result) {
             try {
                 await deleteGame(currentlySelectedGameDoc.$id);
                 showNotification(`המשחק "${gameName}" נמחק בהצלחה.`, 'success');
-                loadGameForViewing(null);
+                
+                // Refresh UI
                 const currentCategoryId = categoryListContainer.querySelector('.selected')?.dataset.categoryId;
                 await populateGameList(currentCategoryId === 'all' ? null : currentCategoryId);
+                loadGameForViewing(null); // Clear the view panel
             } catch (error) {
-                // The error is already handled and shown by the service layer.
+                // The service function already shows a notification
             }
-        }
-    });
-
-    toolbarDownloadBtn.addEventListener('click', () => {
-        const gameName = gameNameInput.value.trim();
-        const description = gameDescriptionInput.value.trim();
-        const categoryId = gameCategorySelect.value;
-        const gameData = compileGameData();
-        const fullGameJson = { game_name: gameName, description, categoryId, ...gameData };
-        const fileName = `${gameName.replace(/\s+/g, '_')}.json`;
-        downloadJsonFile(fileName, fullGameJson);
-    });
-
-    toggleAllQuestionsBtn.addEventListener('click', () => {
-        const cards = questionsEditorContainer.querySelectorAll('.question-card');
-        if (toggleAllQuestionsBtn.classList.contains('state-expand')) {
-            // If the button is in "expand" mode, it means some are collapsed. Expand all.
-            cards.forEach(expandCard);
-        } else {
-            // If the button is in "collapse" mode, it means all are expanded. Collapse all.
-            cards.forEach(collapseCard);
         }
     });
     
-    viewQuestionsList.addEventListener('click', (e) => {
-        const header = e.target.closest('.view-question-header');
-        if (header) {
-            const item = header.parentElement;
-            item.classList.toggle('open');
-            header.setAttribute('aria-expanded', item.classList.contains('open'));
-            updateViewToggleAllButtonState();
-        }
-    });
-
-    viewToggleAllQuestionsBtn.addEventListener('click', () => {
-        const allItems = viewQuestionsList.querySelectorAll('.view-question-item');
-        const shouldExpand = viewToggleAllQuestionsBtn.classList.contains('state-expand');
-
-        allItems.forEach(item => {
-            const header = item.querySelector('.view-question-header');
-            if (shouldExpand) {
-                item.classList.add('open');
-                if (header) header.setAttribute('aria-expanded', 'true');
-            } else {
-                item.classList.remove('open');
-                if (header) header.setAttribute('aria-expanded', 'false');
-            }
-        });
-        updateViewToggleAllButtonState();
-    });
-
     viewDuplicateBtn.addEventListener('click', () => {
+        if (!currentlySelectedGameDoc) return;
+
         const proceed = () => {
-            if (!currentlySelectedGameDoc) return;
-            
             try {
                 gameDataToDuplicate = JSON.parse(currentlySelectedGameDoc.game_data);
+                newGameNameInput.value = `עותק של ${currentlySelectedGameDoc.game_name}`;
+                newGameDescriptionInput.value = currentlySelectedGameDoc.description || '';
+                newGameCategorySelect.value = currentlySelectedGameDoc.categoryId || '';
+                newGamePublicCheckbox.checked = currentlySelectedGameDoc.is_public || false;
+
+                newGameModalOverlay.classList.remove('hidden');
+                newGameNameInput.focus();
             } catch(e) {
-                showNotification('שגיאה בנתוני המשחק המקורי.', 'error');
+                showNotification('שגיאה בהכנת המשחק לשכפול.', 'error');
                 gameDataToDuplicate = null;
-                return;
             }
-            newGameNameInput.value = `עותק של ${currentlySelectedGameDoc.game_name}`;
-            newGameDescriptionInput.value = currentlySelectedGameDoc.description || '';
-            newGameCategorySelect.value = currentlySelectedGameDoc.categoryId || '';
-            newGamePublicCheckbox.checked = currentlySelectedGameDoc.is_public || false;
-            newGameModalOverlay.classList.remove('hidden');
-            newGameNameInput.focus();
-            newGameNameInput.select();
         };
+
         checkForUnsavedChangesAndProceed(proceed);
     });
-
-
+    
+    // --- New Game Modal Logic ---
     closeNewGameModalBtn.addEventListener('click', () => {
         newGameModalOverlay.classList.add('hidden');
         gameDataToDuplicate = null;
     });
 
-    confirmNewGameBtn.addEventListener('click', async () => {
-        const newName = newGameNameInput.value.trim();
-        const newDescription = newGameDescriptionInput.value.trim();
-        const newCategoryId = newGameCategorySelect.value;
-        const isPublic = newGamePublicCheckbox.checked;
-
-        if (!newName || !newCategoryId) {
-            showNotification('יש למלא שם וקטגוריה למשחק.', 'error');
-            return;
-        }
-        
-        const newGameData = gameDataToDuplicate || { questions: [], final_question: { q: "", a: "", url: "" } };
-    
-        try {
-            const newDocument = await createGame(newName, newDescription, newCategoryId, newGameData, isPublic);
-            
+    newGameModalOverlay.addEventListener('click', (e) => {
+        if (e.target === newGameModalOverlay) {
             newGameModalOverlay.classList.add('hidden');
-            newGameNameInput.value = '';
-            newGameDescriptionInput.value = '';
-            newGamePublicCheckbox.checked = false;
-            
-            gameDataToDuplicate = null;
-    
-            const currentCategoryId = categoryListContainer.querySelector('.selected')?.dataset.categoryId;
-            await populateGameList(currentCategoryId === 'all' ? null : currentCategoryId);
-            
-            const liToSelect = gameListUl.querySelector(`li[data-document-id="${newDocument.$id}"]`);
-            if(liToSelect) liToSelect.click();
-    
-            showNotification(`משחק חדש "${newName}" נוצר. כעת ניתן לערוך אותו.`, 'success');
-        } catch(e) {
             gameDataToDuplicate = null;
         }
     });
+
+    confirmNewGameBtn.addEventListener('click', async () => {
+        const name = newGameNameInput.value.trim();
+        const description = newGameDescriptionInput.value.trim();
+        const categoryId = newGameCategorySelect.value;
+        const isPublic = newGamePublicCheckbox.checked;
+
+        if (!name) {
+            showNotification('יש להזין שם למשחק.', 'error');
+            return;
+        }
+
+        try {
+            const gameData = gameDataToDuplicate || { questions: [], final_question: { q: '', a: '' } };
+            const newDoc = await createGame(name, description, categoryId, gameData, isPublic);
+            
+            showNotification('המשחק נוצר בהצלחה!', 'success');
+            newGameModalOverlay.classList.add('hidden');
+            
+            // Refresh game list and select the new game
+            const currentCategoryId = categoryListContainer.querySelector('.selected')?.dataset.categoryId;
+            await populateGameList(currentCategoryId === 'all' ? null : currentCategoryId);
+            
+            const liToSelect = gameListUl.querySelector(`li[data-document-id="${newDoc.$id}"]`);
+            if (liToSelect) {
+                liToSelect.click();
+            } else {
+                // If the new game is in a different category, we may need to switch
+                loadGameForViewing(null);
+            }
+
+        } catch (error) {
+            // Service function shows a notification
+        } finally {
+            gameDataToDuplicate = null;
+        }
+    });
+
+    // --- Continue Game Logic ---
+    const continueCheckbox = document.getElementById('continue-last-point');
+    const continueGameBtn = document.getElementById('continue-game-btn');
+    const continueGameName = document.getElementById('continue-game-name');
+
+    continueCheckbox.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        const savedState = getSavedState();
+
+        const listsToDisable = [categoryListContainer, gameListUl];
+        listsToDisable.forEach(el => {
+            el.style.pointerEvents = isChecked ? 'none' : 'auto';
+            el.style.opacity = isChecked ? 0.5 : 1;
+        });
+
+        if (isChecked && savedState) {
+            editorPlaceholder.classList.add('hidden');
+            gameViewPanel.classList.add('hidden');
+            editorContainer.classList.add('hidden');
+            continueViewPanel.classList.remove('hidden');
+            continueGameName.textContent = `משחק: ${savedState.gameName}`;
+            continueGameBtn.focus();
+        } else {
+            continueViewPanel.classList.add('hidden');
+            // Restore appropriate view (placeholder or selected game)
+            if (currentlySelectedGameDoc) {
+                gameViewPanel.classList.remove('hidden');
+            } else {
+                editorPlaceholder.classList.remove('hidden');
+            }
+        }
+    });
+
+    continueGameBtn.addEventListener('click', () => {
+        if (onStartGameCallback) {
+            editGameScreen.classList.add('hidden');
+            document.getElementById('global-header').classList.add('hidden');
+            onStartGameCallback({ continueLastPoint: true });
+        }
+    });
+
+    // --- Question Toggling in Editor ---
+    toggleAllQuestionsBtn.addEventListener('click', () => {
+        const cards = questionsEditorContainer.querySelectorAll('.question-card');
+        const isExpanding = toggleAllQuestionsBtn.classList.contains('state-expand');
+        cards.forEach(card => isExpanding ? expandCard(card) : collapseCard(card));
+        updateEditorToggleAllButtonState();
+    });
     
-    gameDescriptionInput.addEventListener('input', () => autoResizeTextarea(gameDescriptionInput));
-    finalQuestionQInput.addEventListener('input', () => autoResizeTextarea(finalQuestionQInput));
-    finalQuestionAInput.addEventListener('input', () => autoResizeTextarea(finalQuestionAInput));
-    newGameDescriptionInput.addEventListener('input', () => autoResizeTextarea(newGameDescriptionInput));
+    // --- Question Toggling in View ---
+    viewQuestionsList.addEventListener('click', (e) => {
+        const header = e.target.closest('.view-question-header');
+        if (header) {
+            const item = header.parentElement;
+            const isOpening = !item.classList.contains('open');
+            item.classList.toggle('open');
+            header.setAttribute('aria-expanded', isOpening);
+            updateViewToggleAllButtonState();
+        }
+    });
+    
+    viewToggleAllQuestionsBtn.addEventListener('click', () => {
+        const items = viewQuestionsList.querySelectorAll('.view-question-item');
+        const isExpanding = viewToggleAllQuestionsBtn.classList.contains('state-expand');
+        
+        items.forEach(item => {
+            const header = item.querySelector('.view-question-header');
+            item.classList.toggle('open', isExpanding);
+            if (header) {
+                header.setAttribute('aria-expanded', isExpanding);
+            }
+        });
+        
+        updateViewToggleAllButtonState();
+    });
 }

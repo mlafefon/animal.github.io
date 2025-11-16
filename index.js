@@ -243,7 +243,7 @@ export function initializeApp() {
     initializeQuestionScreen(onQuestionComplete);
     initializeBoxesScreen(onBoxesScoreAwarded, onBoxesContinue);
     initializeScoreControls();
-    initializeEditGameScreen();
+    initializeEditGameScreen(onGameStart);
     initializeFinalRound();
     initializeFullscreenControls();
     initializeGlobalHomeButton();
