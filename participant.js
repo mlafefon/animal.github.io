@@ -1,3 +1,4 @@
+
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
@@ -70,9 +71,16 @@ function stopParticipantTimer() {
     }
 }
 
-function startParticipantTimer(startTime) {
+/**
+ * Starts the participant's timer and progress ring animation.
+ * @param {number} startTime The number of seconds remaining to count down from.
+ * @param {number} totalDuration The original total duration of the timer (for progress ring calculation).
+ */
+function startParticipantTimer(startTime, totalDuration) {
     stopParticipantTimer(); // Ensure any existing timer is stopped
     if(!participantTimerContainer) return;
+
+    const initialDuration = totalDuration || startTime; // Fallback if total isn't provided
 
     participantTimerContainer.classList.remove('hidden');
     let timeLeft = startTime;
@@ -89,7 +97,7 @@ function startParticipantTimer(startTime) {
     };
 
     participantTimerProgressRing.style.transition = 'none';
-    updateRing(timeLeft, startTime);
+    updateRing(timeLeft, initialDuration); // Use initialDuration for ring calculation
     setTimeout(() => {
         participantTimerProgressRing.style.transition = 'stroke-dashoffset 1s linear, stroke 0.5s ease-in-out';
     }, 10);
@@ -97,7 +105,7 @@ function startParticipantTimer(startTime) {
     participantTimerInterval = setInterval(() => {
         timeLeft--;
         participantTimerValue.textContent = timeLeft;
-        updateRing(timeLeft, startTime);
+        updateRing(timeLeft, initialDuration); // Use initialDuration for ring calculation
 
         if (timeLeft <= 5) {
             participantTimerContainer.classList.add('low-time');
@@ -109,6 +117,7 @@ function startParticipantTimer(startTime) {
         }
     }, 1000);
 }
+
 
 // --- Screen Initialization ---
 
@@ -396,8 +405,12 @@ function updateGameView(state) {
                 waitingMessage.querySelector('p').textContent = otherTeamMessage;
                 waitingMessage.classList.remove('hidden');
             }
-            if (state.currentQuestionData && state.currentQuestionData.timer) {
-                startParticipantTimer(state.currentQuestionData.timer);
+            if (state.currentQuestionData && state.currentQuestionData.timerEndTime) {
+                const remainingTime = Math.max(0, Math.round((state.currentQuestionData.timerEndTime - Date.now()) / 1000));
+                startParticipantTimer(remainingTime, state.currentQuestionData.timer);
+            } else if (state.currentQuestionData && state.currentQuestionData.timer) {
+                // Fallback for older state structure or if endTime is missing
+                startParticipantTimer(state.currentQuestionData.timer, state.currentQuestionData.timer);
             }
             break;
 

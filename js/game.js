@@ -1,3 +1,4 @@
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -155,7 +156,7 @@ function prepareForFinalRound() {
  * Gathers the current game state and broadcasts it to participants via Appwrite.
  */
 async function broadcastGameState() {
-    const { sessionDocumentId, gameCode, gameName, teams, activeTeamIndex, gameStateForParticipant, finalQuestionData, boxesData } = gameState.getState();
+    const { sessionDocumentId, gameCode, gameName, teams, activeTeamIndex, gameStateForParticipant, finalQuestionData, boxesData, timerEndTime } = gameState.getState();
     if (!sessionDocumentId) return;
 
     // Determine the high-level state for participants
@@ -164,7 +165,11 @@ async function broadcastGameState() {
     
     if (currentGameState === 'question') {
         const q = getCurrentQuestion();
-        questionDataForParticipant = { q: q.q, timer: q.timer }; // Only send the question text for a new question
+        questionDataForParticipant = {
+            q: q.q,
+            timer: q.timer,
+            timerEndTime: timerEndTime,
+        };
     } else if (currentGameState === 'correctAnswer' || currentGameState === 'learningTime') { // When answer is correct or it's learning time
         const q_and_a = getCurrentQuestion();
         questionDataForParticipant = { q: q_and_a.q, a: q_and_a.a }; // Send Q and A

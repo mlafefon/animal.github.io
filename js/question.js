@@ -1,8 +1,9 @@
+
 import { getCurrentQuestion, getIsQuestionPassed, getTeamsInfo, passQuestionToTeam } from './game.js';
 import { showBoxesScreen } from './boxes.js';
 import { playSound, stopSound } from './audio.js';
 import { showLinkModal } from './ui.js';
-import { getState, setParticipantState } from './gameState.js';
+import { getState, setParticipantState, setTimerEndTime } from './gameState.js';
 import { updateGameSession } from './appwriteService.js';
 
 // --- Elements ---
@@ -96,6 +97,7 @@ export function stopTimer() {
     clearInterval(timerInterval);
     timerInterval = null;
     stopSound('timerTick');
+    setTimerEndTime(null); // Clear the end time
 }
 
 /**
@@ -136,8 +138,16 @@ export function triggerManualGrading() {
 export function showQuestionScreen(startTime = 30) {
     const currentQuestion = getCurrentQuestion();
     questionText.textContent = currentQuestion.q;
+    
+    // --- Timer and State Logic ---
+    // 1. Stop any existing timer and clear its associated state.
+    stopTimer();
 
-    // Set state for participants and broadcast it
+    // 2. Calculate and set the new end time.
+    const timerEndTime = Date.now() + startTime * 1000;
+    setTimerEndTime(timerEndTime);
+
+    // 3. Update participant state and broadcast the new, correct state.
     setParticipantState('question');
     document.dispatchEvent(new Event('gamestatechange'));
 
@@ -170,7 +180,6 @@ export function showQuestionScreen(startTime = 30) {
     failureBoxBtn.textContent = 'תיבת כישלון';
 
     timerContainer.classList.remove('low-time'); // Reset on new question
-    stopTimer();
     let timeLeft = startTime;
     timerValue.textContent = timeLeft;
 
