@@ -1,4 +1,3 @@
-
 // --- Constants ---
 const GAME_STATE_KEY = 'animalGameState';
 
@@ -34,6 +33,7 @@ function _resetInternalState() {
         options: {},
         gameCode: null,
         sessionDocumentId: null, // To store the Appwrite document ID
+        hostId: null, // The Appwrite user ID of the host
         gameStateForParticipant: 'waiting', // The high-level state for participant view
         boxesData: null, // To hold scores and selection for the boxes screen
         timerEndTime: null, // To sync timers with participants
@@ -59,6 +59,7 @@ export function initializeState(options, gameData, teamsMasterData) {
     _state.finalQuestionData = gameData.final_question;
     _state.gameCode = options.gameCode;
     _state.sessionDocumentId = options.sessionDocumentId;
+    _state.hostId = options.hostId;
 
     // Shuffle questions if the option is selected
     if (options.shuffleQuestions) {
@@ -219,13 +220,15 @@ export function unassignParticipant(teamIndex) {
  * @param {string} gameCode The 6-digit join code.
  * @param {string} sessionDocumentId The Appwrite document ID for the session.
  * @param {Array<object>} teams The initial array of team objects.
+ * @param {string} hostId The Appwrite user ID of the host.
  */
-export function initializeSetupState(gameName, gameCode, sessionDocumentId, teams) {
+export function initializeSetupState(gameName, gameCode, sessionDocumentId, teams, hostId) {
     _resetInternalState(); // Clear any previous game state
     _state.gameName = gameName;
     _state.gameCode = gameCode;
     _state.sessionDocumentId = sessionDocumentId;
     _state.teams = teams;
+    _state.hostId = hostId;
     _state.gameStateForParticipant = 'setup';
     // We don't call _saveState() here because this state is temporary
     // until the game officially starts. The official start will save it.

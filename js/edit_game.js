@@ -1,4 +1,5 @@
 
+
 import { listGames, createGame, updateGame, deleteGame, listCategories, getFileUrl } from './appwriteService.js';
 import { showSetupScreenForGame } from './setup.js';
 import { showConfirmModal, showLinkModal, showNotification, showQuestionPreview } from './ui.js';
@@ -768,10 +769,8 @@ export async function checkForUnsavedChangesAndProceed(actionCallback) {
 
 /**
  * Initializes all event listeners for the edit game screen.
- * @param {function} onStart - The callback function to start the game.
  */
-export function initializeEditGameScreen(onStart) {
-    onStartGameCallback = onStart;
+export function initializeEditGameScreen() {
 
     categoryListContainer.addEventListener('click', (e) => {
         const selectedCard = e.target.closest('.category-card');

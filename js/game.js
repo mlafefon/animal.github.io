@@ -1,3 +1,4 @@
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -210,64 +211,40 @@ async function handleParticipantAction(actionPayload) {
         const actionData = JSON.parse(actionPayload.actionData);
         const currentState = gameState.getState();
 
-        // --- Host Remote Control Actions ---
-        if (actionData.participantId === 'host') {
-            switch (actionData.type) {
-                case 'hostNextQuestion':
-                    document.getElementById('next-question-btn')?.click();
-                    break;
-                case 'hostCorrectAnswer':
-                    document.getElementById('correct-answer-btn')?.click();
-                    break;
-                case 'hostIncorrectAnswer':
-                    document.getElementById('incorrect-answer-btn')?.click();
-                    break;
-                case 'hostShowVictoryBox':
-                    document.getElementById('victory-box-btn')?.click();
-                    break;
-                case 'hostShowFailureBox':
-                    // This button has two states, we need to click it twice if needed
-                    const failureBtn = document.getElementById('failure-box-btn');
-                    if (failureBtn) {
-                        failureBtn.click(); // First click reveals answer
-                        setTimeout(() => failureBtn.click(), 100); // Second click goes to boxes
-                    }
-                    break;
-                case 'hostPassQuestion':
-                    document.getElementById('pass-question-btn')?.click();
-                    break;
-                case 'hostReturnFromBoxes':
-                    document.getElementById('return-from-boxes-btn')?.click();
-                    break;
-                case 'hostShowFinalQuestion':
-                    document.getElementById('show-final-question-btn')?.click();
-                    break;
-                case 'hostShowFinalAnswer':
-                    document.getElementById('show-final-answer-btn')?.click();
-                    break;
-            }
-            return; // Host actions are handled, no need to continue
-        }
-
-        // --- Regular Participant Actions ---
         if (actionData.type === 'selectTeam') {
             const team = currentState.teams.find(t => t.index === actionData.teamIndex);
             
+            // This is the critical check to prevent a "race condition".
+            // The host checks ITS OWN state to see if the team is still available.
             if (team && !team.isTaken) {
+                // Step 1: Update the host's internal state in memory.
+                // At this point, the `currentState` object is modified.
                 team.isTaken = true;
                 team.participantId = actionData.participantId;
+                
+                // Save the updated state to the gameState module.
+                // From now on, any call to gameState.getState() will return the new state.
                 gameState.setTeams(currentState.teams); 
+                
+                // Step 2: Immediately update the host's UI.
                 document.dispatchEvent(new CustomEvent('participantjoined', { detail: { teams: currentState.teams } }));
+
+                // Step 3: Broadcast the updated state to Appwrite.
+                // The `broadcastGameState` function is called *after* the state has been changed.
+                // It will take the updated `currentState` (where isTaken: true)
+                // and send it to Appwrite. This ensures the new JSON is sent, not the old one.
                 await broadcastGameState();
             }
         } else if (actionData.type === 'stopTimer') {
             if (actionData.teamIndex === currentState.activeTeamIndex) {
+                // Check if the timer is actually running
                 if (document.getElementById('stop-game-btn').offsetParent !== null) {
-                    triggerManualGrading();
+                    triggerManualGrading(); // This function will handle its own broadcast
                 }
             }
         } else if (actionData.type === 'selectChest') {
             if (actionData.teamIndex === currentState.activeTeamIndex) {
+                 // Check if we are in the boxes screen
                 if (document.getElementById('boxes-screen').offsetParent !== null) {
                     await revealChest(actionData.chestIndex);
                 }
