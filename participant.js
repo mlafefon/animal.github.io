@@ -45,6 +45,7 @@ let gameCode = null;
 let currentHostState = null;
 let sessionDocumentId = null;
 let participantTimerInterval = null;
+let wakeLockSentinel = null; // For Screen Wake Lock API
 
 
 // --- Utility Functions ---
@@ -58,6 +59,44 @@ function showScreen(screenName) {
         versionElement.classList.toggle('hidden', screenName !== 'join');
     }
 }
+
+// --- Screen Wake Lock ---
+
+/**
+ * Manages the screen wake lock.
+ * 'request' tries to acquire the lock.
+ * 'release' releases the lock.
+ * @param {'request' | 'release'} action The action to perform.
+ */
+const manageWakeLock = async (action) => {
+    if (!('wakeLock' in navigator)) {
+        console.log('Screen Wake Lock API not supported.');
+        return;
+    }
+
+    if (action === 'request') {
+        try {
+            if (!wakeLockSentinel) {
+                wakeLockSentinel = await navigator.wakeLock.request('screen');
+                console.log('Screen Wake Lock is active.');
+                wakeLockSentinel.addEventListener('release', () => {
+                    console.log('Screen Wake Lock was released by the system.');
+                    wakeLockSentinel = null;
+                });
+            }
+        } catch (err) {
+            console.error(`Failed to acquire wake lock: ${err.name}, ${err.message}`);
+            wakeLockSentinel = null;
+        }
+    } else if (action === 'release') {
+        if (wakeLockSentinel) {
+            await wakeLockSentinel.release();
+            wakeLockSentinel = null;
+            console.log('Screen Wake Lock released.');
+        }
+    }
+};
+
 
 // --- Timer Functions ---
 
@@ -293,6 +332,7 @@ function updateGameView(state) {
 
     // If the game is over, reset the view to the join screen
     if (state.gameState === 'finished') {
+        manageWakeLock('release'); // Release the lock on game end
         unsubscribeAllRealtime();
         sessionStorage.removeItem('activeGame');
         sessionStorage.removeItem('participantId');
@@ -304,6 +344,7 @@ function updateGameView(state) {
     // This logic runs if the participant has NOT yet chosen a team.
     // It keeps the team selection screen up-to-date.
     if (!myTeam) {
+        manageWakeLock('release'); // Not in game yet, ensure lock is off
         renderTeamSelectScreen(state);
         showScreen('teamSelect');
         return;
@@ -314,6 +355,7 @@ function updateGameView(state) {
     if (!myTeamInNewState || myTeamInNewState.participantId !== participantId) {
         // I have been kicked by the host, or my selection was pre-empted.
         myTeam = null;
+        manageWakeLock('release'); // Release lock as we're kicked
         unsubscribeAllRealtime();
         sessionStorage.removeItem('activeGame');
 
@@ -337,6 +379,9 @@ function updateGameView(state) {
     participantControls.classList.add('hidden');
     waitingMessage.classList.add('hidden');
     stopParticipantTimer(); // Stop timer by default for every state change
+    
+    // In an active game state, request the wake lock
+    manageWakeLock('request');
 
     switch (state.gameState) {
         case 'learningTime':
@@ -629,6 +674,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Clean up subscriptions when the user closes the page
     window.addEventListener('beforeunload', () => {
         unsubscribeAllRealtime();
+        manageWakeLock('release');
+    });
+
+    // Handle visibility changes to re-acquire wake lock if necessary
+    document.addEventListener('visibilitychange', () => {
+        if (wakeLockSentinel !== null && document.visibilityState === 'visible') {
+            manageWakeLock('request');
+        }
     });
 
     // --- New Join/Rejoin Logic ---
