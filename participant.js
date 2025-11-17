@@ -366,6 +366,7 @@ function updateGameView(state) {
                         ${sadIcon}
                         <p style="font-size: 2.2rem; color: #FF5252; font-weight: bold;">תשובה שגויה</p>
                         <p>במה תבחרו?</p>
+                        <p>במה ${activeTeamForIncorrect ? 'הם יבחרו?' : 'תבחרו'}</p>
                     </div>
                 `;
             } else {
