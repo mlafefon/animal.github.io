@@ -4,7 +4,7 @@
 // It will communicate with the host's tab via Appwrite Realtime.
 
 import { initializeNotification, showNotification } from './js/ui.js';
-import { getGameSession, subscribeToSessionUpdates, sendAction, unsubscribeAllRealtime } from './js/appwriteService.js';
+import { getGameSession, subscribeToSessionUpdates, sendAction, unsubscribeAllRealtime, getAccount } from './js/appwriteService.js';
 import { IMAGE_URLS } from './js/assets.js';
 
 
@@ -13,7 +13,8 @@ const screens = {
     join: document.getElementById('join-screen'),
     teamSelect: document.getElementById('team-select-screen'),
     game: document.getElementById('participant-game-screen'),
-    boxes: document.getElementById('participant-boxes-screen')
+    boxes: document.getElementById('participant-boxes-screen'),
+    hostRemote: document.getElementById('host-remote-screen')
 };
 const joinForm = document.getElementById('join-form');
 const gameCodeInput = document.getElementById('game-code-input');
@@ -32,9 +33,20 @@ const participantTimerContainer = document.getElementById('participant-timer-con
 const participantTimerValue = document.getElementById('participant-timer-value');
 const participantTimerProgressRing = document.getElementById('participant-timer-progress-ring');
 
+// --- Host Remote DOM Elements ---
+const remoteStatusText = document.getElementById('remote-status-text');
+const remotePanels = {
+    start: document.getElementById('remote-panel-start'),
+    preQuestion: document.getElementById('remote-panel-pre-question'),
+    question: document.getElementById('remote-panel-question'),
+    grading: document.getElementById('remote-panel-grading'),
+    correct: document.getElementById('remote-panel-correct'),
+    incorrect: document.getElementById('remote-panel-incorrect'),
+    boxes: document.getElementById('remote-panel-boxes'),
+    boxesRevealed: document.getElementById('remote-panel-boxes-revealed'),
+};
 
 // --- State ---
-// Get participantId from sessionStorage or create a new one. This persists across refreshes.
 let participantId = sessionStorage.getItem('participantId');
 if (!participantId) {
     participantId = `participant_${Math.random().toString(36).substr(2, 9)}`;
@@ -45,13 +57,14 @@ let gameCode = null;
 let currentHostState = null;
 let sessionDocumentId = null;
 let participantTimerInterval = null;
-let wakeLockSentinel = null; // For Screen Wake Lock API
+let wakeLockSentinel = null;
+let isHost = false; // <-- New state variable to track if the user is the host
 
 
 // --- Utility Functions ---
 
 function showScreen(screenName) {
-    Object.values(screens).forEach(screen => screen.classList.add('hidden'));
+    Object.values(screens).forEach(screen => screen && screen.classList.add('hidden'));
     if (screens[screenName]) {
         screens[screenName].classList.remove('hidden');
     }
@@ -60,40 +73,21 @@ function showScreen(screenName) {
     }
 }
 
-// --- Screen Wake Lock ---
-
-/**
- * Manages the screen wake lock.
- * 'request' tries to acquire the lock.
- * 'release' releases the lock.
- * @param {'request' | 'release'} action The action to perform.
- */
 const manageWakeLock = async (action) => {
-    if (!('wakeLock' in navigator)) {
-        console.log('Screen Wake Lock API not supported.');
-        return;
-    }
-
+    if (!('wakeLock' in navigator)) return;
     if (action === 'request') {
         try {
             if (!wakeLockSentinel) {
                 wakeLockSentinel = await navigator.wakeLock.request('screen');
-                console.log('Screen Wake Lock is active.');
-                wakeLockSentinel.addEventListener('release', () => {
-                    console.log('Screen Wake Lock was released by the system.');
-                    wakeLockSentinel = null;
-                });
+                wakeLockSentinel.addEventListener('release', () => { wakeLockSentinel = null; });
             }
         } catch (err) {
-            console.error(`Failed to acquire wake lock: ${err.name}, ${err.message}`);
+            console.error(`Wake Lock failed: ${err.name}, ${err.message}`);
             wakeLockSentinel = null;
         }
-    } else if (action === 'release') {
-        if (wakeLockSentinel) {
-            await wakeLockSentinel.release();
-            wakeLockSentinel = null;
-            console.log('Screen Wake Lock released.');
-        }
+    } else if (action === 'release' && wakeLockSentinel) {
+        await wakeLockSentinel.release();
+        wakeLockSentinel = null;
     }
 };
 
@@ -111,17 +105,11 @@ function stopParticipantTimer() {
     }
 }
 
-/**
- * Starts the participant's timer and progress ring animation.
- * @param {number} startTime The number of seconds remaining to count down from.
- * @param {number} totalDuration The original total duration of the timer (for progress ring calculation).
- */
 function startParticipantTimer(startTime, totalDuration) {
-    stopParticipantTimer(); // Ensure any existing timer is stopped
+    stopParticipantTimer();
     if(!participantTimerContainer) return;
 
-    const initialDuration = totalDuration || startTime; // Fallback if total isn't provided
-
+    const initialDuration = totalDuration || startTime;
     participantTimerContainer.classList.remove('hidden');
     let timeLeft = startTime;
     participantTimerValue.textContent = timeLeft;
@@ -137,7 +125,7 @@ function startParticipantTimer(startTime, totalDuration) {
     };
 
     participantTimerProgressRing.style.transition = 'none';
-    updateRing(timeLeft, initialDuration); // Use initialDuration for ring calculation
+    updateRing(timeLeft, initialDuration);
     setTimeout(() => {
         participantTimerProgressRing.style.transition = 'stroke-dashoffset 1s linear, stroke 0.5s ease-in-out';
     }, 10);
@@ -145,16 +133,9 @@ function startParticipantTimer(startTime, totalDuration) {
     participantTimerInterval = setInterval(() => {
         timeLeft--;
         participantTimerValue.textContent = timeLeft;
-        updateRing(timeLeft, initialDuration); // Use initialDuration for ring calculation
-
-        if (timeLeft <= 5) {
-            participantTimerContainer.classList.add('low-time');
-        }
-
-        if (timeLeft <= 0) {
-            stopParticipantTimer();
-            // The timer just stops on the participant side. The host controls the state change.
-        }
+        updateRing(timeLeft, initialDuration);
+        if (timeLeft <= 5) participantTimerContainer.classList.add('low-time');
+        if (timeLeft <= 0) stopParticipantTimer();
     }, 1000);
 }
 
@@ -189,150 +170,89 @@ function renderTeamSelectScreen(state) {
 
 async function handleTeamSelection(teamIndex) {
     const selectedTeamData = currentHostState.teams.find(t => t.index === teamIndex);
-
     if (!selectedTeamData || selectedTeamData.isTaken) {
         teamSelectError.textContent = 'קבוצה זו נתפסה. אנא בחר קבוצה אחרת.';
         teamSelectError.classList.remove('hidden');
         return;
     }
-
-    // --- Optimistic UI Update ---
-    // 1. Set myTeam object
-    myTeam = {
-        ...selectedTeamData,
-        icon: IMAGE_URLS[selectedTeamData.iconKey]
-    };
-    
-    // 2. Update my info display (for the next screen)
+    myTeam = { ...selectedTeamData, icon: IMAGE_URLS[selectedTeamData.iconKey] };
     myTeamName.textContent = `אתם קבוצת ${myTeam.name}`;
     myTeamIcon.src = myTeam.icon;
-    
-    // 3. Switch to the game screen with a waiting message
     showScreen('game');
     questionContainer.innerHTML = `<p id="participant-question-text">הצטרפת לקבוצת ${myTeam.name}! ממתין למנחה שיתחיל את המשחק...</p>`;
     participantControls.classList.add('hidden');
     waitingMessage.classList.add('hidden');
-
-    // 4. Send the action to the host
     try {
-        await sendAction(gameCode, {
-            type: 'selectTeam',
-            teamIndex: teamIndex,
-            participantId: participantId
-        });
-        // On success, save the session details for potential rejoin
-        sessionStorage.setItem('activeGame', JSON.stringify({
-            gameCode: gameCode,
-            teamIndex: myTeam.index
-        }));
+        await sendAction(gameCode, { type: 'selectTeam', teamIndex, participantId });
+        sessionStorage.setItem('activeGame', JSON.stringify({ gameCode, teamIndex: myTeam.index }));
     } catch (error) {
-        // --- Revert UI on error ---
         showNotification('שגיאה בבחירת קבוצה. נסה שוב.', 'error');
-        myTeam = null; // Unset team
-        showScreen('teamSelect'); // Go back
-        renderTeamSelectScreen(currentHostState); // Re-render the grid with latest data
+        myTeam = null;
+        showScreen('teamSelect');
+        renderTeamSelectScreen(currentHostState);
     }
 }
 
-
-/**
- * Renders the treasure boxes screen for the participant based on the host's state.
- * @param {object} state The current game state from the host.
- */
 function renderBoxesScreen(state) {
     const titleEl = document.getElementById('participant-boxes-title');
     const msgEl = document.getElementById('participant-boxes-message');
     const container = document.getElementById('participant-chests-container');
     container.innerHTML = '';
-
     const { boxesData } = state;
     if (!boxesData) return;
-
-    // Set title based on mode
     if (boxesData.mode === 'failure') titleEl.textContent = 'תיבת כישלון';
     else if (boxesData.mode === 'half-victory') titleEl.textContent = 'חצי תיבת נצחון';
     else titleEl.textContent = 'תיבת נצחון';
-
     const hasSelection = boxesData.selectedIndex !== null;
-
-    // Create 3 chests
     for (let i = 0; i < 3; i++) {
         const chest = document.createElement('div');
         chest.className = 'treasure-chest';
         chest.dataset.index = i;
-        
-        const img = document.createElement('img');
-        img.src = IMAGE_URLS.CHEST_CLOSED;
-        
-        const span = document.createElement('span');
-        span.textContent = i + 1;
-
-        chest.appendChild(img);
-        chest.appendChild(span);
+        chest.innerHTML = `<img src="${IMAGE_URLS.CHEST_CLOSED}"><span>${i + 1}</span>`;
         container.appendChild(chest);
-
         if (hasSelection) {
             chest.querySelector('span').style.display = 'none';
             const scoreDiv = document.createElement('div');
             scoreDiv.className = 'score-reveal-above';
             scoreDiv.textContent = `\u200e${boxesData.scores[i]}`;
             chest.appendChild(scoreDiv);
-
             if (i === boxesData.selectedIndex) {
                 chest.classList.add('selected');
                 scoreDiv.classList.add('selected-score');
-                img.src = boxesData.selectedScore < 0 ? IMAGE_URLS.CHEST_BROKEN : IMAGE_URLS.CHEST_OPEN;
+                chest.querySelector('img').src = boxesData.selectedScore < 0 ? IMAGE_URLS.CHEST_BROKEN : IMAGE_URLS.CHEST_OPEN;
             } else {
                 chest.classList.add('disabled');
             }
         } else {
-            // Not yet selected, add click listener
             chest.addEventListener('click', () => handleParticipantChestSelection(i));
         }
     }
-
-    if (hasSelection) {
-        msgEl.textContent = `הניקוד שהתקבל: \u200e${boxesData.selectedScore} נקודות. ממתין למנחה...`;
-    } else {
-        msgEl.textContent = 'התור שלך! בחר תיבת אוצר.';
-    }
+    msgEl.textContent = hasSelection ? `הניקוד שהתקבל: \u200e${boxesData.selectedScore} נקודות. ממתין למנחה...` : 'התור שלך! בחר תיבת אוצר.';
 }
 
-/**
- * Handles the participant's click on a treasure chest, sending the choice to the host.
- * @param {number} index The index (0, 1, or 2) of the selected chest.
- */
 async function handleParticipantChestSelection(index) {
-    // Disable all chests immediately to prevent multiple clicks
-    document.querySelectorAll('#participant-chests-container .treasure-chest').forEach(c => {
-        c.style.pointerEvents = 'none';
-    });
-
+    document.querySelectorAll('#participant-chests-container .treasure-chest').forEach(c => { c.style.pointerEvents = 'none'; });
     try {
-        await sendAction(gameCode, {
-            type: 'selectChest',
-            chestIndex: index,
-            teamIndex: myTeam.index,
-            participantId: participantId
-        });
-        // The host will get this and broadcast the new state with the selection revealed.
-        // The realtime listener will then call updateGameView -> renderBoxesScreen to show the result.
+        await sendAction(gameCode, { type: 'selectChest', chestIndex: index, teamIndex: myTeam.index, participantId });
     } catch (e) {
         showNotification('שגיאה בבחירת התיבה.', 'error');
-        // Re-enable on error
-        document.querySelectorAll('#participant-chests-container .treasure-chest').forEach(c => {
-            c.style.pointerEvents = 'auto';
-        });
+        document.querySelectorAll('#participant-chests-container .treasure-chest').forEach(c => { c.style.pointerEvents = 'auto'; });
     }
 }
 
+function handleRealtimeUpdate(response) {
+    const updatedData = JSON.parse(response.payload.sessionData);
+    if (isHost) {
+        updateHostRemoteView(updatedData);
+    } else {
+        updateGameView(updatedData);
+    }
+}
 
 function updateGameView(state) {
-    currentHostState = state; // Update global state
-
-    // If the game is over, reset the view to the join screen
+    currentHostState = state;
     if (state.gameState === 'finished') {
-        manageWakeLock('release'); // Release the lock on game end
+        manageWakeLock('release');
         unsubscribeAllRealtime();
         sessionStorage.removeItem('activeGame');
         sessionStorage.removeItem('participantId');
@@ -340,307 +260,179 @@ function updateGameView(state) {
         setTimeout(() => window.location.reload(), 3000);
         return;
     }
-
-    // This logic runs if the participant has NOT yet chosen a team.
-    // It keeps the team selection screen up-to-date.
     if (!myTeam) {
-        manageWakeLock('release'); // Not in game yet, ensure lock is off
+        manageWakeLock('release');
         renderTeamSelectScreen(state);
         showScreen('teamSelect');
         return;
     }
-    
-    // VERIFY SELECTION: Check if I am still part of my team.
     const myTeamInNewState = state.teams.find(t => t.index === myTeam.index);
     if (!myTeamInNewState || myTeamInNewState.participantId !== participantId) {
-        // I have been kicked by the host, or my selection was pre-empted.
         myTeam = null;
-        manageWakeLock('release'); // Release lock as we're kicked
+        manageWakeLock('release');
         unsubscribeAllRealtime();
         sessionStorage.removeItem('activeGame');
-
         showNotification('החיבור לקבוצה בוטל. יש להצטרף למשחק מחדש.', 'info');
-        
-        // Go back to the initial join screen
         showScreen('join');
         gameCodeInput.value = '';
         joinError.classList.add('hidden');
-        return; // Stop processing this state update.
+        return;
     }
-
-    // This logic runs AFTER the participant has chosen a team.
-    
-    // Use == to protect against potential type mismatch (string vs number) from state updates.
     const isMyTurn = state.activeTeamIndex == myTeam.index;
     const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
     const activeTeamName = activeTeam ? activeTeam.name : 'הקבוצה';
-
-    // Default UI state: hide controls and waiting messages.
     participantControls.classList.add('hidden');
     waitingMessage.classList.add('hidden');
-    stopParticipantTimer(); // Stop timer by default for every state change
-    
-    // In an active game state, request the wake lock
+    stopParticipantTimer();
     manageWakeLock('request');
 
-    switch (state.gameState) {
-        case 'learningTime':
+    const stateHandlers = {
+        'join': () => {
+             showScreen('game');
+             questionContainer.innerHTML = `<p id="participant-question-text">ממתין למנחה שיתחיל את המשחק...</p>`;
+        },
+        'learningTime': () => {
             showScreen('game');
-            questionContainer.innerHTML = `
-                <div style="line-height: 1.6; text-align: center;">
-                    <p style="font-size: 2.2rem; font-weight: bold; margin-bottom: 1.5rem;">זמן למידה:</p>
-                    <p id="participant-question-text" style="font-size: 1.8rem; color: #ffeb3b;">${state.currentQuestionData.a}</p>
-                </div>
-            `;
-            participantControls.classList.add('hidden');
-            waitingMessage.classList.add('hidden');
-            break;
-            
-        case 'incorrectAnswer':
+            questionContainer.innerHTML = `<div style="line-height: 1.6; text-align: center;"><p style="font-size: 2.2rem; font-weight: bold; margin-bottom: 1.5rem;">זמן למידה:</p><p id="participant-question-text" style="font-size: 1.8rem; color: #ffeb3b;">${state.currentQuestionData.a}</p></div>`;
+        },
+        'incorrectAnswer': () => {
             showScreen('game');
-            const activeTeamForIncorrect = state.teams.find(t => t.index === state.activeTeamIndex);
-            if (activeTeamForIncorrect) {
-                const isMyTeamIncorrect = myTeam && myTeam.index === activeTeamForIncorrect.index;
-                const sadIcon = `
-                    <svg xmlns="http://www.w3.org/2000/svg" height="80px" viewBox="0 0 24 24" width="80px" fill="#FF5252" style="margin-bottom: 1rem;">
-                        <path d="M0 0h24v24H0V0z" fill="none"/>
-                        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-5-6c.78 2.34 2.72 4 5 4s4.22-1.66 5-4H7zM9 13c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/>
-                    </svg>
-                `;
-                const choiceMessage = isMyTeamIncorrect 
-                    ? 'במה תבחרו?' 
-                    : `במה ${activeTeamForIncorrect.name} יבחרו?`;
-
-                questionContainer.innerHTML = `
-                    <div style="line-height: 1.6; display: flex; flex-direction: column; align-items: center;">
-                        ${sadIcon}
-                        <p style="font-size: 2.2rem; color: #FF5252; font-weight: bold;">תשובה שגויה</p>
-                        <p>${choiceMessage}</p>
-                    </div>
-                `;
-            } else {
-                 questionContainer.innerHTML = `<p id="participant-question-text">תשובה שגויה</p>`;
-            }
-            participantControls.classList.add('hidden');
-            waitingMessage.classList.add('hidden');
-            break;
-
-        case 'correctAnswer':
+            const team = state.teams[state.activeTeamIndex];
+            const isMyTeam = myTeam && myTeam.index === team.index;
+            questionContainer.innerHTML = `<div style="line-height: 1.6; display: flex; flex-direction: column; align-items: center;"><svg xmlns="http://www.w3.org/2000/svg" height="80px" viewBox="0 0 24 24" width="80px" fill="#FF5252" style="margin-bottom: 1rem;"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-5-6c.78 2.34 2.72 4 5 4s4.22-1.66 5-4H7zM9 13c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg><p style="font-size: 2.2rem; color: #FF5252; font-weight: bold;">תשובה שגויה</p><p>${isMyTeam ? 'במה תבחרו?' : `במה ${team.name} יבחרו?`}</p></div>`;
+        },
+        'correctAnswer': () => {
             showScreen('game');
-            const activeTeamForCorrect = state.teams.find(t => t.index === state.activeTeamIndex);
-            const isMyTeamCorrect = myTeam && activeTeamForCorrect && myTeam.index === activeTeamForCorrect.index;
-        
-            if (activeTeamForCorrect) {
-                const messageHtml = `
-                    <div style="line-height: 1.6; text-align: center;">
-                        <p style="font-size: 2.2rem; color: #4CAF50; font-weight: bold;">
-                            כל הכבוד ${isMyTeamCorrect ? `קבוצת ${activeTeamForCorrect.name}` : `לקבוצת ${activeTeamForCorrect.name}`}!
-                        </p>
-                        <p>${isMyTeamCorrect ? 'עניתם' : 'הם ענו'} תשובה נכונה.</p>
-                        <p style="margin-top: 1rem; font-style: italic;">עכשיו זמן למידה...</p>
-                        <hr style="margin: 1.25rem auto; width: 80%; border-color: rgba(255,255,255,0.2);">
-                        <p id="participant-question-text" style="font-size: 1.8rem; color: #ffeb3b; font-weight: bold;">${state.currentQuestionData.a}</p>
-                    </div>
-                `;
-                questionContainer.innerHTML = messageHtml;
-            } else {
-                 questionContainer.innerHTML = `<p id="participant-question-text">תשובה נכונה! התשובה היא: ${state.currentQuestionData.a}</p>`;
-            }
-            participantControls.classList.add('hidden');
-            waitingMessage.classList.add('hidden');
-            break;
-
-        case 'question':
+            const team = state.teams[state.activeTeamIndex];
+            const isMyTeam = myTeam && myTeam.index === team.index;
+            questionContainer.innerHTML = `<div style="line-height: 1.6; text-align: center;"><p style="font-size: 2.2rem; color: #4CAF50; font-weight: bold;">כל הכבוד ${isMyTeam ? `קבוצת ${team.name}` : `לקבוצת ${team.name}`}!</p><p>${isMyTeam ? 'עניתם' : 'הם ענו'} תשובה נכונה.</p><p style="margin-top: 1rem; font-style: italic;">עכשיו זמן למידה...</p><hr style="margin: 1.25rem auto; width: 80%; border-color: rgba(255,255,255,0.2);"><p id="participant-question-text" style="font-size: 1.8rem; color: #ffeb3b; font-weight: bold;">${state.currentQuestionData.a}</p></div>`;
+        },
+        'question': () => {
             showScreen('game');
             questionContainer.innerHTML = `<p id="participant-question-text">${state.currentQuestionData.q}</p>`;
             if (isMyTurn) {
                 participantControls.classList.remove('hidden');
-                stopBtn.disabled = false; // Ensure button is enabled for new question
+                stopBtn.disabled = false;
             } else {
-                const otherTeamMessage = `התור של קבוצת ${activeTeamName}.`;
-                waitingMessage.querySelector('p').textContent = otherTeamMessage;
+                waitingMessage.querySelector('p').textContent = `התור של קבוצת ${activeTeamName}.`;
                 waitingMessage.classList.remove('hidden');
             }
             if (state.currentQuestionData && state.currentQuestionData.timerEndTime) {
-                const remainingTime = Math.max(0, Math.round((state.currentQuestionData.timerEndTime - Date.now()) / 1000));
-                startParticipantTimer(remainingTime, state.currentQuestionData.timer);
-            } else if (state.currentQuestionData && state.currentQuestionData.timer) {
-                // Fallback for older state structure or if endTime is missing
-                startParticipantTimer(state.currentQuestionData.timer, state.currentQuestionData.timer);
+                const remaining = Math.max(0, Math.round((state.currentQuestionData.timerEndTime - Date.now()) / 1000));
+                startParticipantTimer(remaining, state.currentQuestionData.timer);
             }
-            break;
-
-        case 'grading':
+        },
+        'grading': () => {
             showScreen('game');
-            if (isMyTurn) {
-                questionContainer.innerHTML = `<p id="participant-question-text">עצרתם את הטיימר. מה היא תשובתכם?</p>`;
-            } else {
-                questionContainer.innerHTML = `<p id="participant-question-text">המנחה בודק את התשובה של קבוצת ${activeTeamName}...</p>`;
-            }
-            break;
-            
-        case 'boxes':
-            if (isMyTurn) {
-                showScreen('boxes');
-                renderBoxesScreen(state);
-            } else {
-                showScreen('game');
-                questionContainer.innerHTML = `<p id="participant-question-text">ממתין לקבוצת ${activeTeamName} לבחור תיבת אוצר...</p>`;
-            }
-            break;
-            
-        case 'boxes-revealed':
-            if (isMyTurn) {
-                showScreen('boxes');
-                renderBoxesScreen(state);
-            } else {
-                showScreen('game');
-                const score = state.boxesData.selectedScore;
-                questionContainer.innerHTML = `<p id="participant-question-text">קבוצת ${activeTeamName} קיבלה \u200e${score} נקודות. ממתין למנחה...</p>`;
-            }
-            break;
-        
-        case 'setup':
+            questionContainer.innerHTML = `<p id="participant-question-text">${isMyTurn ? 'עצרתם את הטיימר. מה היא תשובתכם?' : `המנחה בודק את התשובה של קבוצת ${activeTeamName}...`}</p>`;
+        },
+        'boxes': () => {
+            if (isMyTurn) { showScreen('boxes'); renderBoxesScreen(state); }
+            else { showScreen('game'); questionContainer.innerHTML = `<p id="participant-question-text">ממתין לקבוצת ${activeTeamName} לבחור תיבת אוצר...</p>`; }
+        },
+        'boxes-revealed': () => {
+            if (isMyTurn) { showScreen('boxes'); renderBoxesScreen(state); }
+            else { showScreen('game'); questionContainer.innerHTML = `<p id="participant-question-text">קבוצת ${activeTeamName} קיבלה \u200e${state.boxesData.selectedScore} נקודות. ממתין למנחה...</p>`; }
+        },
+        'setup': () => {
             showScreen('game');
             questionContainer.innerHTML = `<p id="participant-question-text">המשחק יתחיל בקרוב...</p>`;
-            break;
-
-        case 'waiting':
-        default:
+        },
+        'waiting': () => {
             showScreen('game');
-            if (isMyTurn) {
-                questionContainer.innerHTML = `<p id="participant-question-text">מוכנים? השאלה הבאה אליכם</p>`;
-            } else {
-                questionContainer.innerHTML = `<p id="participant-question-text">התור הבא הוא של קבוצת ${activeTeamName}. השאלה תופיע בקרוב...</p>`;
-            }
-            break;
-    }
+            questionContainer.innerHTML = `<p id="participant-question-text">${isMyTurn ? 'מוכנים? השאלה הבאה אליכם' : `התור הבא הוא של קבוצת ${activeTeamName}. השאלה תופיע בקרוב...`}</p>`;
+        },
+    };
+
+    (stateHandlers[state.gameState] || stateHandlers['waiting'])();
 }
 
-function initializeJoinScreen() {
-    joinForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const code = gameCodeInput.value.trim();
-        if (!code || code.length !== 6) {
-            joinError.textContent = 'יש להזין קוד משחק בן 6 ספרות.';
-            joinError.classList.remove('hidden');
-            return;
-        }
+// --- Host Remote Functions ---
+function updateHostRemoteView(state) {
+    currentHostState = state;
+    Object.values(remotePanels).forEach(p => p.classList.add('hidden'));
 
-        try {
-            const sessionDoc = await getGameSession(code);
-            if (!sessionDoc) {
-                joinError.textContent = 'קוד המשחק שהוזן אינו תקין או שהמשחק לא התחיל.';
-                joinError.classList.remove('hidden');
-                return;
-            }
-            
-            // Check if the game session has expired (older than 3 hours)
-            const createdAt = new Date(sessionDoc.$createdAt);
-            const now = new Date();
-            const threeHoursInMillis = 3 * 60 * 60 * 1000;
-
-            if (now - createdAt > threeHoursInMillis) {
-                joinError.textContent = 'תוקף המשחק פג. אנא בקש מהמנחה קוד חדש.';
-                joinError.classList.remove('hidden');
-                gameCodeInput.value = ''; // Clear input for new code
-                return;
-            }
-
-            gameCode = code;
-            sessionDocumentId = sessionDoc.$id;
-            const sessionData = JSON.parse(sessionDoc.sessionData);
-            
-            joinError.classList.add('hidden');
-            
-            // Subscribe to updates for this session
-            subscribeToSessionUpdates(sessionDocumentId, (response) => {
-                const updatedData = JSON.parse(response.payload.sessionData);
-                updateGameView(updatedData);
-            });
-            
-            // Initial render and switch to team select screen
-            updateGameView(sessionData);
-            showScreen('teamSelect');
-
-        } catch (error) {
-            console.error("Failed to join game:", error);
-            joinError.textContent = 'אירעה שגיאה. בדוק את חיבור האינטרנט ונסה שוב.';
-            joinError.classList.remove('hidden');
-        }
-    });
-}
-
-function initializeGameScreen() {
-    stopBtn.addEventListener('click', async () => {
-        // Disable button immediately to prevent multiple clicks
-        stopBtn.disabled = true; 
-        try {
-            await sendAction(gameCode, {
-                type: 'stopTimer',
-                teamIndex: myTeam.index,
-                participantId: participantId
-            });
-            // Host will receive this and update state, which will hide the button via the listener.
-        } catch (error) {
-            showNotification('שגיאה בשליחת הפעולה.', 'error');
-            stopBtn.disabled = false; // Re-enable on error
-        }
-    });
-}
-
-/**
- * Checks sessionStorage for an active game and attempts to rejoin it.
- * @returns {Promise<boolean>} True if rejoin was successful, false otherwise.
- */
-async function attemptRejoin() {
-    const savedGameJSON = sessionStorage.getItem('activeGame');
-    if (!savedGameJSON) {
-        return false;
+    const stateToPanelMap = {
+        'join': 'start',
+        'setup': 'start',
+        'waiting': 'preQuestion',
+        'question': 'question',
+        'grading': 'grading',
+        'correctAnswer': 'correct',
+        'incorrectAnswer': 'incorrect',
+        'boxes': 'boxes',
+        'boxes-revealed': 'boxesRevealed'
+    };
+    
+    const panelKey = stateToPanelMap[state.gameState] || 'preQuestion';
+    if(remotePanels[panelKey]) {
+        remotePanels[panelKey].classList.remove('hidden');
     }
     
-    const savedGame = JSON.parse(savedGameJSON);
-    const { gameCode: savedCode, teamIndex: savedTeamIndex } = savedGame;
+    const activeTeam = state.teams[state.activeTeamIndex];
+    remoteStatusText.textContent = `התור של: ${activeTeam ? activeTeam.name : '...'}`;
+}
 
-    if (!savedCode) {
+function initializeHostRemote(initialState) {
+    showScreen('hostRemote');
+    updateHostRemoteView(initialState);
+    
+    const remoteActions = {
+        'remote-start-game-btn': { type: 'host_action', action: 'startGame' },
+        'remote-next-question-btn': { type: 'host_action', action: 'nextQuestion' },
+        'remote-stop-timer-btn': { type: 'host_action', action: 'stopTimer' },
+        'remote-correct-btn': { type: 'host_action', action: 'gradeAnswer', correct: true },
+        'remote-incorrect-btn': { type: 'host_action', action: 'gradeAnswer', correct: false },
+        'remote-victory-box-btn': { type: 'host_action', action: 'showVictoryBox' },
+        'remote-failure-box-btn': { type: 'host_action', action: 'showFailureBox' },
+        'remote-pass-question-btn': { type: 'host_action', action: 'passQuestion' },
+        'remote-return-btn': { type: 'host_action', action: 'continueFromBoxes' }
+    };
+    
+    Object.entries(remoteActions).forEach(([btnId, action]) => {
+        document.getElementById(btnId)?.addEventListener('click', () => sendAction(gameCode, action));
+    });
+
+    remotePanels.boxes.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const chestIndex = parseInt(btn.dataset.chest, 10);
+            sendAction(gameCode, { type: 'host_action', action: 'selectChest', chestIndex });
+        });
+    });
+}
+
+
+// --- Main Initialization ---
+
+async function attemptRejoin() {
+    const savedGameJSON = sessionStorage.getItem('activeGame');
+    if (!savedGameJSON) return false;
+    const savedGame = JSON.parse(savedGameJSON);
+    if (!savedGame.gameCode) {
         sessionStorage.removeItem('activeGame');
         return false;
     }
-
     showScreen('join');
     joinError.textContent = 'מנסה להתחבר מחדש למשחק...';
     joinError.classList.remove('hidden');
-
     try {
-        const sessionDoc = await getGameSession(savedCode);
-        if (!sessionDoc) {
-            throw new Error('המשחק כבר לא פעיל.');
-        }
-
+        const sessionDoc = await getGameSession(savedGame.gameCode);
+        if (!sessionDoc) throw new Error('המשחק כבר לא פעיל.');
         const createdAt = new Date(sessionDoc.$createdAt);
-        const now = new Date();
-        const threeHoursInMillis = 3 * 60 * 60 * 1000;
-        if (now - createdAt > threeHoursInMillis) {
-            throw new Error('תוקף המשחק ששמרת פג.');
-        }
-
-        gameCode = savedCode;
+        if (new Date() - createdAt > 3 * 60 * 60 * 1000) throw new Error('תוקף המשחק ששמרת פג.');
+        gameCode = savedGame.gameCode;
         sessionDocumentId = sessionDoc.$id;
         const sessionData = JSON.parse(sessionDoc.sessionData);
-        const myTeamInSession = sessionData.teams.find(t => t.index === savedTeamIndex);
-        
+        const myTeamInSession = sessionData.teams.find(t => t.index === savedGame.teamIndex);
         if (myTeamInSession && myTeamInSession.participantId === participantId) {
             joinError.classList.add('hidden');
-            subscribeToSessionUpdates(sessionDocumentId, (response) => {
-                const updatedData = JSON.parse(response.payload.sessionData);
-                updateGameView(updatedData);
-            });
+            subscribeToSessionUpdates(sessionDocumentId, handleRealtimeUpdate);
             myTeam = { ...myTeamInSession, icon: IMAGE_URLS[myTeamInSession.iconKey] };
             myTeamName.textContent = `אתם קבוצת ${myTeam.name}`;
             myTeamIcon.src = myTeam.icon;
             updateGameView(sessionData);
             showNotification('התחברת מחדש בהצלחה!', 'success');
-            return true; // SUCCESS
+            return true;
         } else {
             throw new Error('הקבוצה שלך כבר לא שמורה. אנא הצטרף מחדש.');
         }
@@ -652,90 +444,84 @@ async function attemptRejoin() {
             joinError.classList.add('hidden');
             gameCodeInput.value = '';
         }, 3500);
-        return false; // FAILURE
+        return false;
     }
 }
 
-
-// --- Main Execution ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // A robust way to handle mobile viewport height changes
-    const setViewportHeight = () => {
-        const vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
-    };
+    const setViewportHeight = () => document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
     window.addEventListener('resize', setViewportHeight);
-    setViewportHeight(); // Initial call
-
+    setViewportHeight();
     initializeNotification();
-    initializeJoinScreen();
-    initializeGameScreen();
 
-    // Clean up subscriptions when the user closes the page
-    window.addEventListener('beforeunload', () => {
-        unsubscribeAllRealtime();
-        manageWakeLock('release');
-    });
+    joinForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = gameCodeInput.value.trim();
+        if (!/^\d{6}$/.test(code)) {
+            joinError.textContent = 'יש להזין קוד משחק בן 6 ספרות.';
+            joinError.classList.remove('hidden');
+            return;
+        }
+        try {
+            const sessionDoc = await getGameSession(code);
+            if (!sessionDoc) {
+                joinError.textContent = 'קוד המשחק שהוזן אינו תקין.';
+                joinError.classList.remove('hidden');
+                return;
+            }
+            if (new Date() - new Date(sessionDoc.$createdAt) > 3 * 60 * 60 * 1000) {
+                joinError.textContent = 'תוקף המשחק פג. בקש מהמנחה קוד חדש.';
+                joinError.classList.remove('hidden');
+                return;
+            }
+            gameCode = code;
+            sessionDocumentId = sessionDoc.$id;
+            const sessionData = JSON.parse(sessionDoc.sessionData);
+            joinError.classList.add('hidden');
 
-    // Handle visibility changes to re-acquire wake lock if necessary
-    document.addEventListener('visibilitychange', () => {
-        if (wakeLockSentinel !== null && document.visibilityState === 'visible') {
-            manageWakeLock('request');
+            try {
+                const user = await getAccount();
+                if (user && user.$id === sessionDoc.hostId) {
+                    isHost = true;
+                    subscribeToSessionUpdates(sessionDocumentId, handleRealtimeUpdate);
+                    initializeHostRemote(sessionData);
+                    return;
+                }
+            } catch (authError) { /* Not logged in, proceed as participant */ }
+            
+            isHost = false;
+            subscribeToSessionUpdates(sessionDocumentId, handleRealtimeUpdate);
+            updateGameView(sessionData);
+            showScreen('teamSelect');
+        } catch (error) {
+            console.error("Failed to join game:", error);
+            joinError.textContent = 'אירעה שגיאה. בדוק את חיבור האינטרנט ונסה שוב.';
+            joinError.classList.remove('hidden');
         }
     });
 
-    // --- New Join/Rejoin Logic ---
+    initializeGameScreen();
+    window.addEventListener('beforeunload', () => { unsubscribeAllRealtime(); manageWakeLock('release'); });
+    document.addEventListener('visibilitychange', () => { if (wakeLockSentinel && document.visibilityState === 'visible') manageWakeLock('request'); });
+
     const urlParams = new URLSearchParams(window.location.search);
     const codeFromUrl = urlParams.get('code');
-    const savedGameJSON = sessionStorage.getItem('activeGame');
-    const savedGame = savedGameJSON ? JSON.parse(savedGameJSON) : null;
-    
+    const savedGame = JSON.parse(sessionStorage.getItem('activeGame') || 'null');
     let successfullyRejoined = false;
-
-    // Priority 1: A saved game session exists. Try to rejoin it,
-    // unless the URL is for a different game.
-    if (savedGame) {
-        if (!codeFromUrl || codeFromUrl === savedGame.gameCode) {
-            successfullyRejoined = await attemptRejoin();
-        }
+    if (savedGame && (!codeFromUrl || codeFromUrl === savedGame.gameCode)) {
+        successfullyRejoined = await attemptRejoin();
     }
-
-    // Priority 2: If no successful rejoin, and there's a code in the URL, join it fresh.
     if (!successfullyRejoined && codeFromUrl && /^\d{6}$/.test(codeFromUrl)) {
-        // Clear any old session storage that might conflict
-        sessionStorage.removeItem('activeGame'); 
-
+        sessionStorage.removeItem('activeGame');
         gameCodeInput.value = codeFromUrl;
         joinError.textContent = 'מתחבר למשחק...';
         joinError.classList.remove('hidden');
-        
-        // Short delay to allow DOM to update before simulating submit.
-        setTimeout(() => {
-            // The submit event listener is in initializeJoinScreen
-            joinForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-        }, 100);
-    
-    // Priority 3: No rejoin, no URL code. Just show the clean join screen.
+        setTimeout(() => joinForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true })), 100);
     } else if (!successfullyRejoined) {
-         showScreen('join');
+        showScreen('join');
     }
 
-    // Fetch and display the app version
-    fetch('metadata.json')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            const version = data.version;
-            if (version) {
-                const versionElement = document.querySelector('.app-version');
-                if (versionElement) {
-                    versionElement.textContent = `גרסה ${version}`;
-                }
-            }
-        })
-        .catch(error => console.error('Error fetching app version:', error));
+    fetch('metadata.json').then(res => res.json()).then(data => {
+        if (data.version && versionElement) versionElement.textContent = `גרסה ${data.version}`;
+    }).catch(err => console.error('Error fetching app version:', err));
 });

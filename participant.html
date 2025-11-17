@@ -72,7 +72,60 @@
     </div>
     
     <div id="host-remote-screen" class="container hidden">
-        <!-- Host remote controls will be rendered here by JS -->
+        <h1>שלט רחוק למנחה</h1>
+        <p id="remote-status-text">סנכרון עם המשחק...</p>
+        
+        <!-- Panel for Join Screen -->
+        <div id="remote-panel-start" class="remote-panel hidden">
+            <button id="remote-start-game-btn" class="btn btn-primary btn-large">התחל משחק</button>
+        </div>
+        
+        <!-- Panel for Pre-Question Screen -->
+        <div id="remote-panel-pre-question" class="remote-panel hidden">
+            <button id="remote-next-question-btn" class="btn btn-primary">השאלה הבאה</button>
+        </div>
+
+        <!-- Panel for Active Question Screen -->
+        <div id="remote-panel-question" class="remote-panel hidden">
+            <button id="remote-stop-timer-btn" class="btn btn-secondary">עצור</button>
+        </div>
+        
+        <!-- Panel for Grading Screen -->
+        <div id="remote-panel-grading" class="remote-panel hidden">
+            <div class="remote-panel-row">
+                <button id="remote-correct-btn" class="answer-btn" title="תשובה נכונה">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                </button>
+                <button id="remote-incorrect-btn" class="answer-btn" title="תשובה שגויה">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Panel for Correct Answer -->
+        <div id="remote-panel-correct" class="remote-panel hidden">
+             <button id="remote-victory-box-btn" class="btn btn-primary">תיבת נצחון</button>
+        </div>
+        
+        <!-- Panel for Incorrect Answer -->
+        <div id="remote-panel-incorrect" class="remote-panel hidden">
+             <button id="remote-failure-box-btn" class="btn btn-danger">תיבת כישלון</button>
+             <button id="remote-pass-question-btn" class="btn btn-primary">העבר שאלה</button>
+        </div>
+        
+        <!-- Panel for Boxes -->
+        <div id="remote-panel-boxes" class="remote-panel hidden">
+            <div class="remote-chests">
+                <button class="btn btn-secondary" data-chest="0">1</button>
+                <button class="btn btn-secondary" data-chest="1">2</button>
+                <button class="btn btn-secondary" data-chest="2">3</button>
+            </div>
+        </div>
+
+         <!-- Panel for Revealed Boxes -->
+        <div id="remote-panel-boxes-revealed" class="remote-panel hidden">
+            <button id="remote-return-btn" class="btn btn-primary">חזרה</button>
+        </div>
     </div>
 
     <div id="notification-toast"></div>

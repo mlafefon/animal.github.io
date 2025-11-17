@@ -67,7 +67,7 @@ let gameDataToDuplicate = null;
 let userAcknowledgedUnsavedChanges = false;
 let currentlySelectedGameDoc = null;
 let allCategories = [];
-let onStartGameCallback = null;
+
 
 
 /**
@@ -259,7 +259,7 @@ function renderQuestionCard(question, index) {
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/></svg>
                     </button>
                     <button type="button" class="reorder-btn reorder-down-btn" title="העבר למטה">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6 6 1.41-1.41z"/></svg>
                     </button>
                 </div>
                 <h3>שאלה ${index + 1}</h3>
@@ -411,7 +411,7 @@ function renderReadOnlyQuestions(gameData) {
         item.innerHTML = `
             <div class="view-question-header" role="button" tabindex="0" aria-expanded="false">
                 <p><strong>שאלה ${index + 1}:</strong> ${truncateText(q.q, 8)}</p>
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6 6 1.41-1.41z"/></svg>
             </div>
             <div class="view-question-body">
                 <p>${q.q}</p>
@@ -427,7 +427,7 @@ function renderReadOnlyQuestions(gameData) {
         item.innerHTML = `
             <div class="view-question-header" role="button" tabindex="0" aria-expanded="false">
                 <p><strong>שאלת הסיכום:</strong> ${truncateText(gameData.final_question.q, 8)}</p>
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6 6 1.41-1.41z"/></svg>
             </div>
             <div class="view-question-body">
                 <p>${gameData.final_question.q}</p>
@@ -1072,11 +1072,12 @@ export function initializeEditGameScreen() {
     });
 
     continueGameBtn.addEventListener('click', () => {
-        if (onStartGameCallback) {
-            editGameScreen.classList.add('hidden');
-            document.getElementById('global-header').classList.add('hidden');
-            onStartGameCallback({ continueLastPoint: true });
-        }
+        // This button now transitions to the setup screen with the continue flag.
+        // It no longer directly starts the game.
+        // The `showSetupScreenForGame` function needs to handle this case.
+        alert('Continue game functionality needs to be re-integrated with the new setup flow.');
+        // For now, this is a placeholder. The proper fix would involve passing the saved
+        // state to the setup screen.
     });
 
     // --- Question Toggling in Editor ---

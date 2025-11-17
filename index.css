@@ -3630,14 +3630,16 @@ body.participant-view .app-version {
     height: calc(var(--vh, 1dvh) * 100);
     padding: 1.5rem;
     gap: 1.5rem;
+    box-sizing: border-box;
 }
 #host-remote-screen h1 {
     font-size: 2.5rem;
     color: #ffeb3b;
+    margin: 0;
 }
 #host-remote-screen p {
     font-size: 1.2rem;
-    margin-bottom: 1rem;
+    margin: 0;
     text-align: center;
 }
 .remote-panel {
@@ -3654,8 +3656,8 @@ body.participant-view .app-version {
     width: 100%;
 }
 .remote-panel .btn {
-     padding: 1rem;
-    font-size: 1.3rem;
+    padding: 1.2rem;
+    font-size: 1.5rem;
 }
 .remote-chests {
     display: flex;
@@ -3665,20 +3667,32 @@ body.participant-view .app-version {
 .remote-chests button {
     flex: 1;
     aspect-ratio: 1/1;
-    font-size: 2rem;
+    font-size: 2.5rem;
 }
 .remote-panel .answer-btn {
     width: auto;
     flex: 1;
     height: auto;
-    padding: 1rem;
-    border-radius: 0.5rem;
+    padding: 1.2rem;
+    border-radius: 0.75rem;
 }
 .remote-panel .answer-btn svg {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 3rem;
+    height: 3rem;
 }
 .remote-panel-row {
     display: flex;
     gap: 1rem;
+}
+#remote-panel-grading .answer-btn {
+    box-shadow: none; /* Simplify shadow for remote */
+}
+#remote-panel-grading .answer-btn:active {
+    transform: translateY(2px);
+}
+#remote-correct-btn {
+    background-color: #2ecc71;
+}
+#remote-incorrect-btn {
+    background-color: #e74c3c;
 }
