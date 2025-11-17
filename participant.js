@@ -354,6 +354,7 @@ function updateGameView(state) {
         case 'incorrectAnswer':
             showScreen('game');
             const activeTeamForIncorrect = state.teams.find(t => t.index === state.activeTeamIndex);
+            const isMyTeamInCorrect = myTeam && activeTeamForIncorrect && myTeam.index === activeTeamForIncorrect.index;
             if (activeTeamForIncorrect) {
                 const sadIcon = `
                     <svg xmlns="http://www.w3.org/2000/svg" height="80px" viewBox="0 0 24 24" width="80px" fill="#FF5252" style="margin-bottom: 1rem;">
@@ -366,7 +367,7 @@ function updateGameView(state) {
                         ${sadIcon}
                         <p style="font-size: 2.2rem; color: #FF5252; font-weight: bold;">תשובה שגויה</p>
                         <p>במה תבחרו?</p>
-                        <p>במה ${activeTeamForIncorrect ? 'הם יבחרו?' : 'תבחרו'}</p>
+                        <p>במה ${isMyTeamInCorrect ? 'הם יבחרו?' : 'תבחרו'}</p>
                     </div>
                 `;
             } else {
