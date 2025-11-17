@@ -1,10 +1,8 @@
-
-
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
 import { initializeNotification, showNotification } from './js/ui.js';
-import { getGameSession, subscribeToSessionUpdates, sendAction, unsubscribeAllRealtime } from './js/appwriteService.js';
+import { getGameSession, subscribeToSessionUpdates, sendAction, unsubscribeAllRealtime, getAccount } from './js/appwriteService.js';
 import { IMAGE_URLS } from './js/assets.js';
 
 
@@ -13,7 +11,8 @@ const screens = {
     join: document.getElementById('join-screen'),
     teamSelect: document.getElementById('team-select-screen'),
     game: document.getElementById('participant-game-screen'),
-    boxes: document.getElementById('participant-boxes-screen')
+    boxes: document.getElementById('participant-boxes-screen'),
+    hostRemote: document.getElementById('host-remote-screen')
 };
 const joinForm = document.getElementById('join-form');
 const gameCodeInput = document.getElementById('game-code-input');
@@ -31,6 +30,9 @@ const versionElement = document.querySelector('.app-version');
 const participantTimerContainer = document.getElementById('participant-timer-container');
 const participantTimerValue = document.getElementById('participant-timer-value');
 const participantTimerProgressRing = document.getElementById('participant-timer-progress-ring');
+const hostRemoteGameName = document.getElementById('host-remote-game-name');
+const hostRemoteStatus = document.getElementById('host-remote-status');
+const hostRemoteControls = document.getElementById('host-remote-controls');
 
 
 // --- State ---
@@ -46,6 +48,7 @@ let currentHostState = null;
 let sessionDocumentId = null;
 let participantTimerInterval = null;
 let wakeLockSentinel = null; // For Screen Wake Lock API
+let isHostRemote = false;
 
 
 // --- Utility Functions ---
@@ -326,9 +329,87 @@ async function handleParticipantChestSelection(index) {
     }
 }
 
+function renderHostRemoteControls(state) {
+    hostRemoteGameName.textContent = state.gameName;
+    hostRemoteControls.innerHTML = ''; // Clear existing controls
+
+    const createButton = (text, action, style = 'primary') => {
+        const btn = document.createElement('button');
+        btn.className = `btn btn-${style} remote-btn`;
+        btn.textContent = text;
+        btn.dataset.action = action;
+        return btn;
+    };
+
+    switch (state.gameState) {
+        case 'waiting':
+            hostRemoteStatus.textContent = 'הכן את השאלה הבאה';
+            hostRemoteControls.appendChild(createButton('השאלה הבאה', 'hostNextQuestion'));
+            break;
+
+        case 'question':
+            hostRemoteStatus.textContent = 'שאלה פעילה. ממתין לעצירת הטיימר...';
+            // No controls here, host stops timer on main screen or waits for participant
+            break;
+
+        case 'grading':
+            hostRemoteStatus.textContent = 'בדוק את תשובת הקבוצה';
+            hostRemoteControls.appendChild(createButton('תשובה נכונה', 'hostCorrectAnswer', 'primary'));
+            hostRemoteControls.appendChild(createButton('תשובה שגויה', 'hostIncorrectAnswer', 'secondary'));
+            break;
+
+        case 'correctAnswer':
+            hostRemoteStatus.textContent = 'הקבוצה ענתה נכון!';
+            hostRemoteControls.appendChild(createButton('המשך לתיבת נצחון', 'hostShowVictoryBox'));
+            break;
+
+        case 'incorrectAnswer':
+             hostRemoteStatus.textContent = 'הקבוצה טעתה. מה השלב הבא?';
+             const isPassed = state.teams.find(t => t.index === state.activeTeamIndex)?.isQuestionPassed;
+             if (!isPassed) {
+                hostRemoteControls.appendChild(createButton('העבר שאלה', 'hostPassQuestion', 'secondary'));
+             }
+             hostRemoteControls.appendChild(createButton('המשך לתיבת כישלון', 'hostShowFailureBox'));
+            break;
+        
+        case 'boxes':
+        case 'boxes-revealed':
+            hostRemoteStatus.textContent = 'ממתין לבחירת תיבה...';
+            if (state.boxesData && state.boxesData.selectedIndex !== null) {
+                hostRemoteStatus.textContent = 'תיבה נבחרה. לחץ להמשיך.';
+                hostRemoteControls.appendChild(createButton('חזרה למשחק', 'hostReturnFromBoxes'));
+            }
+            break;
+
+        case 'betting':
+            hostRemoteStatus.textContent = 'שלב ההימורים. לחץ להצגת השאלה הסופית.';
+            hostRemoteControls.appendChild(createButton('הצג שאלת סיכום', 'hostShowFinalQuestion'));
+            break;
+        
+        case 'finalQuestion':
+             hostRemoteStatus.textContent = 'שאלת הסיכום הוצגה.';
+             hostRemoteControls.appendChild(createButton('הצג תשובה וסיים', 'hostShowFinalAnswer'));
+            break;
+            
+        default:
+            hostRemoteStatus.textContent = 'ממתין למשחק...';
+    }
+}
+
+
+function initializeHostRemoteView(initialState) {
+    showScreen('hostRemote');
+    renderHostRemoteControls(initialState);
+}
+
 
 function updateGameView(state) {
     currentHostState = state; // Update global state
+    
+    if (isHostRemote) {
+        renderHostRemoteControls(state);
+        return;
+    }
 
     // If the game is over, reset the view to the join screen
     if (state.gameState === 'finished') {
@@ -402,7 +483,7 @@ function updateGameView(state) {
             if (activeTeamForIncorrect) {
                 const isMyTeamIncorrect = myTeam && myTeam.index === activeTeamForIncorrect.index;
                 const sadIcon = `
-                    <svg xmlns="http://www.w3.org/2000/svg" height="80px" viewBox="0 0 24 24" width="80px" fill="#FF5252" style="margin-bottom: 1rem;">
+                    <svg xmlns="http://www.w.org/2000/svg" height="80px" viewBox="0 0 24 24" width="80px" fill="#FF5252" style="margin-bottom: 1rem;">
                         <path d="M0 0h24v24H0V0z" fill="none"/>
                         <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-5-6c.78 2.34 2.72 4 5 4s4.22-1.66 5-4H7zM9 13c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/>
                     </svg>
@@ -535,7 +616,6 @@ function initializeJoinScreen() {
                 return;
             }
             
-            // Check if the game session has expired (older than 3 hours)
             const createdAt = new Date(sessionDoc.$createdAt);
             const now = new Date();
             const threeHoursInMillis = 3 * 60 * 60 * 1000;
@@ -543,25 +623,28 @@ function initializeJoinScreen() {
             if (now - createdAt > threeHoursInMillis) {
                 joinError.textContent = 'תוקף המשחק פג. אנא בקש מהמנחה קוד חדש.';
                 joinError.classList.remove('hidden');
-                gameCodeInput.value = ''; // Clear input for new code
+                gameCodeInput.value = '';
                 return;
             }
 
             gameCode = code;
             sessionDocumentId = sessionDoc.$id;
             const sessionData = JSON.parse(sessionDoc.sessionData);
-            
             joinError.classList.add('hidden');
             
-            // Subscribe to updates for this session
             subscribeToSessionUpdates(sessionDocumentId, (response) => {
                 const updatedData = JSON.parse(response.payload.sessionData);
                 updateGameView(updatedData);
             });
-            
-            // Initial render and switch to team select screen
-            updateGameView(sessionData);
-            showScreen('teamSelect');
+
+            const user = await getAccount().catch(() => null);
+            if (user && user.$id === sessionDoc.hostId) {
+                isHostRemote = true;
+                initializeHostRemoteView(sessionData);
+            } else {
+                updateGameView(sessionData);
+                showScreen('teamSelect');
+            }
 
         } catch (error) {
             console.error("Failed to join game:", error);
@@ -573,7 +656,6 @@ function initializeJoinScreen() {
 
 function initializeGameScreen() {
     stopBtn.addEventListener('click', async () => {
-        // Disable button immediately to prevent multiple clicks
         stopBtn.disabled = true; 
         try {
             await sendAction(gameCode, {
@@ -581,10 +663,28 @@ function initializeGameScreen() {
                 teamIndex: myTeam.index,
                 participantId: participantId
             });
-            // Host will receive this and update state, which will hide the button via the listener.
         } catch (error) {
             showNotification('שגיאה בשליחת הפעולה.', 'error');
-            stopBtn.disabled = false; // Re-enable on error
+            stopBtn.disabled = false;
+        }
+    });
+
+    hostRemoteControls.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.remote-btn');
+        if (!btn) return;
+        
+        const action = btn.dataset.action;
+        if (action) {
+            try {
+                btn.disabled = true;
+                await sendAction(gameCode, { type: action, participantId: 'host' });
+                // The host machine will receive the action and update the state.
+                // The remote will get the updated state via the realtime subscription.
+                // Re-enabling the button will happen automatically when the state changes and controls are re-rendered.
+            } catch (error) {
+                showNotification('שגיאה בשליחת הפקודה.', 'error');
+                btn.disabled = false; // Re-enable on error
+            }
         }
     });
 }
@@ -627,20 +727,30 @@ async function attemptRejoin() {
         gameCode = savedCode;
         sessionDocumentId = sessionDoc.$id;
         const sessionData = JSON.parse(sessionDoc.sessionData);
+
+        subscribeToSessionUpdates(sessionDocumentId, (response) => {
+            const updatedData = JSON.parse(response.payload.sessionData);
+            updateGameView(updatedData);
+        });
+
+        const user = await getAccount().catch(() => null);
+        if (user && user.$id === sessionDoc.hostId) {
+            isHostRemote = true;
+            initializeHostRemoteView(sessionData);
+            showNotification('התחברת מחדש לשלט!', 'success');
+            return true;
+        }
+
         const myTeamInSession = sessionData.teams.find(t => t.index === savedTeamIndex);
         
         if (myTeamInSession && myTeamInSession.participantId === participantId) {
             joinError.classList.add('hidden');
-            subscribeToSessionUpdates(sessionDocumentId, (response) => {
-                const updatedData = JSON.parse(response.payload.sessionData);
-                updateGameView(updatedData);
-            });
             myTeam = { ...myTeamInSession, icon: IMAGE_URLS[myTeamInSession.iconKey] };
             myTeamName.textContent = `אתם קבוצת ${myTeam.name}`;
             myTeamIcon.src = myTeam.icon;
             updateGameView(sessionData);
             showNotification('התחברת מחדש בהצלחה!', 'success');
-            return true; // SUCCESS
+            return true;
         } else {
             throw new Error('הקבוצה שלך כבר לא שמורה. אנא הצטרף מחדש.');
         }
@@ -652,39 +762,35 @@ async function attemptRejoin() {
             joinError.classList.add('hidden');
             gameCodeInput.value = '';
         }, 3500);
-        return false; // FAILURE
+        return false;
     }
 }
 
 
 // --- Main Execution ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // A robust way to handle mobile viewport height changes
     const setViewportHeight = () => {
         const vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${vh}px`);
     };
     window.addEventListener('resize', setViewportHeight);
-    setViewportHeight(); // Initial call
+    setViewportHeight();
 
     initializeNotification();
     initializeJoinScreen();
     initializeGameScreen();
 
-    // Clean up subscriptions when the user closes the page
     window.addEventListener('beforeunload', () => {
         unsubscribeAllRealtime();
         manageWakeLock('release');
     });
 
-    // Handle visibility changes to re-acquire wake lock if necessary
     document.addEventListener('visibilitychange', () => {
         if (wakeLockSentinel !== null && document.visibilityState === 'visible') {
             manageWakeLock('request');
         }
     });
 
-    // --- New Join/Rejoin Logic ---
     const urlParams = new URLSearchParams(window.location.search);
     const codeFromUrl = urlParams.get('code');
     const savedGameJSON = sessionStorage.getItem('activeGame');
@@ -692,49 +798,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     let successfullyRejoined = false;
 
-    // Priority 1: A saved game session exists. Try to rejoin it,
-    // unless the URL is for a different game.
     if (savedGame) {
         if (!codeFromUrl || codeFromUrl === savedGame.gameCode) {
             successfullyRejoined = await attemptRejoin();
         }
     }
 
-    // Priority 2: If no successful rejoin, and there's a code in the URL, join it fresh.
     if (!successfullyRejoined && codeFromUrl && /^\d{6}$/.test(codeFromUrl)) {
-        // Clear any old session storage that might conflict
         sessionStorage.removeItem('activeGame'); 
-
         gameCodeInput.value = codeFromUrl;
         joinError.textContent = 'מתחבר למשחק...';
         joinError.classList.remove('hidden');
         
-        // Short delay to allow DOM to update before simulating submit.
         setTimeout(() => {
-            // The submit event listener is in initializeJoinScreen
             joinForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
         }, 100);
     
-    // Priority 3: No rejoin, no URL code. Just show the clean join screen.
     } else if (!successfullyRejoined) {
          showScreen('join');
     }
 
-    // Fetch and display the app version
     fetch('metadata.json')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
+        .then(response => response.ok ? response.json() : Promise.reject('Network response was not ok'))
         .then(data => {
             const version = data.version;
-            if (version) {
-                const versionElement = document.querySelector('.app-version');
-                if (versionElement) {
-                    versionElement.textContent = `גרסה ${version}`;
-                }
+            if (version && versionElement) {
+                versionElement.textContent = `גרסה ${version}`;
             }
         })
         .catch(error => console.error('Error fetching app version:', error));

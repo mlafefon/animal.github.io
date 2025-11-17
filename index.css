@@ -3619,3 +3619,33 @@ body.participant-view .app-version {
         box-shadow: 0 0.3125rem 0.9375rem rgba(0,0,0,0.2), 0 0 1rem rgba(231, 76, 60, 0.5);
     }
 }
+
+
+/* --- Host Remote Control Styles --- */
+#host-remote-screen .participant-container {
+    height: calc(var(--vh, 1dvh) * 90);
+    justify-content: space-around;
+}
+
+#host-remote-status {
+    font-size: 1.5rem;
+    color: #ffeb3b;
+    font-weight: bold;
+    min-height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#host-remote-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    width: 100%;
+}
+
+.remote-btn {
+    width: 100%;
+    padding: 1.25rem;
+    font-size: 1.5rem;
+}
