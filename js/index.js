@@ -151,6 +151,9 @@ export function initializeApp() {
      // Preload all critical assets as soon as the DOM is ready to prevent UI lag.
     preloadGameAssets();
 
+    // Helper state to redirect user to remote screen if they logged in via the remote button
+    let pendingLoginRedirect = null;
+
     /**
      * Callback function that is passed to the setup module.
      * It's called when the user clicks the "Start" button on the simplified setup screen.
@@ -224,7 +227,12 @@ export function initializeApp() {
         authScreen.classList.add('hidden');
         try {
             const user = await getAccount();
-            showMainApp(user);
+            if (pendingLoginRedirect === 'remote') {
+                pendingLoginRedirect = null;
+                showHostRemoteLogin();
+            } else {
+                showMainApp(user);
+            }
         } catch (error) {
             // Should not happen, but as a fallback, go to start.
             document.getElementById('start-screen').classList.remove('hidden');
@@ -245,7 +253,7 @@ export function initializeApp() {
     initializeQuestionScreen(onQuestionComplete);
     initializeBoxesScreen(onBoxesScoreAwarded, onBoxesContinue);
     initializeScoreControls();
-    initializeEditGameScreen();
+    initializeEditGameScreen(onGameStart);
     initializeFinalRound();
     initializeFullscreenControls();
     initializeGlobalHomeButton();
@@ -266,14 +274,21 @@ export function initializeApp() {
     // Hook up the "Remote Control" button on Start Screen
     const remoteBtn = document.getElementById('go-to-remote-btn');
     if(remoteBtn) {
+        // We use CSS media queries to hide/show this button based on screen size.
+        // JS logic for detection was unreliable.
         remoteBtn.addEventListener('click', async () => {
+             remoteBtn.disabled = true; // Prevent double clicks
              try {
                 await getAccount(); // Check login
                 document.getElementById('start-screen').classList.add('hidden');
                 showHostRemoteLogin();
             } catch(e) {
+                 // User not logged in, send to auth but remember they wanted to go to remote
+                 pendingLoginRedirect = 'remote';
                  document.getElementById('start-screen').classList.add('hidden');
                  document.getElementById('auth-screen').classList.remove('hidden');
+            } finally {
+                remoteBtn.disabled = false;
             }
         });
     }

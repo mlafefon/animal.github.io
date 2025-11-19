@@ -272,6 +272,18 @@ h1, h2, h3, h4, h5, h6 {
     padding: 0.625rem;
 }
 
+/* Remote Button Visibility - Desktop Hidden, Mobile Visible */
+#go-to-remote-btn {
+    display: none;
+}
+
+@media (max-width: 1024px) {
+    #go-to-remote-btn {
+        display: inline-block;
+    }
+}
+
+
 /* --- Unified Button Styles --- */
 .btn {
     display: inline-block;
