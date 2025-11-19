@@ -108,11 +108,18 @@ function updateRemoteUI(state) {
         case 'grading':
             renderButton('תשובה נכונה', 'remote-btn-correct', 'remote_correct');
             renderButton('תשובה שגויה', 'remote-btn-incorrect', 'remote_incorrect');
-            renderButton('העבר שאלה', 'remote-btn-pass', 'remote_pass');
             break;
 
         case 'correctAnswer':
+             // When answer is correct, Desktop shows Victory Box button.
+             // remote_next triggers the visible button on desktop.
+             renderButton('תיבת ניצחון', 'remote-btn-primary', 'remote_next');
+             break;
+
         case 'incorrectAnswer':
+            renderButton('המשך', 'remote-btn-primary', 'remote_next');
+            break;
+
         case 'learningTime':
         case 'boxes-revealed':
             renderButton('השאלה הבאה', 'remote-btn-primary', 'remote_next');
