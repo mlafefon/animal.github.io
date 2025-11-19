@@ -1,10 +1,11 @@
 
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
 import * as gameState from './gameState.js';
 import { subscribeToActions, updateGameSession, unsubscribeAllRealtime } from './appwriteService.js';
-import { triggerManualGrading } from './question.js';
+import { triggerManualGrading, stopTimer } from './question.js';
 import { revealChest } from './boxes.js';
 import { showNotification } from './ui.js';
 
@@ -211,6 +212,52 @@ async function handleParticipantAction(actionPayload) {
         const actionData = JSON.parse(actionPayload.actionData);
         const currentState = gameState.getState();
 
+        // --- HOST REMOTE ACTIONS ---
+        if (actionData.type.startsWith('remote_')) {
+            switch (actionData.type) {
+                case 'remote_stop':
+                    if (document.getElementById('stop-game-btn').offsetParent !== null) {
+                        triggerManualGrading();
+                    }
+                    break;
+                case 'remote_correct':
+                    if (document.getElementById('correct-answer-btn').offsetParent !== null) {
+                        document.getElementById('correct-answer-btn').click();
+                    }
+                    break;
+                case 'remote_incorrect':
+                    if (document.getElementById('incorrect-answer-btn').offsetParent !== null) {
+                        document.getElementById('incorrect-answer-btn').click();
+                    }
+                    break;
+                case 'remote_pass':
+                    if (document.getElementById('pass-question-btn').offsetParent !== null) {
+                        document.getElementById('pass-question-btn').click();
+                    }
+                    break;
+                case 'remote_next':
+                    // Logic for "Next" depends on context
+                    if (document.getElementById('next-question-btn').offsetParent !== null) {
+                        document.getElementById('next-question-btn').click();
+                    } else if (document.getElementById('victory-box-btn').offsetParent !== null) {
+                        document.getElementById('victory-box-btn').click();
+                    } else if (document.getElementById('return-from-boxes-btn').offsetParent !== null) {
+                        document.getElementById('return-from-boxes-btn').click();
+                    } else if (document.getElementById('failure-box-btn').offsetParent !== null) {
+                         document.getElementById('failure-box-btn').click();
+                    }
+                    break;
+                case 'remote_select_chest':
+                    if (document.getElementById('boxes-screen').offsetParent !== null) {
+                         await revealChest(actionData.chestIndex);
+                    }
+                    break;
+            }
+            return; // Exit after handling remote action
+        }
+
+
+        // --- PARTICIPANT ACTIONS ---
         if (actionData.type === 'selectTeam') {
             const team = currentState.teams.find(t => t.index === actionData.teamIndex);
             

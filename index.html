@@ -56,7 +56,37 @@
         <div class="start-content">
             <h1>משחק החיות</h1>
             <img id="start-screen-image" alt="חיות משחקות">
-            <button id="go-to-setup-btn" class="btn btn-primary btn-large">התחל</button>
+            <div class="start-actions">
+                <button id="go-to-setup-btn" class="btn btn-primary btn-large">התחל</button>
+                <button id="go-to-remote-btn" class="btn btn-secondary btn-medium" style="margin-top: 1rem;">שלט למנחה</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Host Remote Login / Screen -->
+    <div id="host-remote-screen" class="container hidden">
+        
+        <!-- Step 1: Login to Remote -->
+        <div id="host-remote-login" class="participant-container">
+            <h1>שלט למנחה</h1>
+            <p>הזן את קוד המשחק כדי לשלוט בו מהנייד</p>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="remote-code-input" placeholder="123456" maxlength="6">
+            <button id="connect-remote-btn" class="btn btn-primary">התחבר</button>
+            <p id="remote-error" class="auth-error-message hidden"></p>
+             <button id="close-remote-btn" class="btn btn-secondary btn-small" style="margin-top: 1rem;">חזור</button>
+        </div>
+
+        <!-- Step 2: Control Panel -->
+        <div id="host-remote-panel" class="hidden">
+            <div class="remote-header">
+                <h2 id="remote-game-code-display"></h2>
+                <p id="remote-status">ממתין...</p>
+            </div>
+            
+            <div class="remote-body">
+                <!-- Dynamic Controls -->
+                <div id="remote-controls-container"></div>
+            </div>
         </div>
     </div>
 

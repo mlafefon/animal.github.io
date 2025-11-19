@@ -248,6 +248,13 @@ h1, h2, h3, h4, h5, h6 {
     gap: 1.25rem;
 }
 
+.start-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 #start-screen h1 {
     font-size: 5rem;
     font-weight: bold;
@@ -674,6 +681,128 @@ h1, h2, h3, h4, h5, h6 {
 #start-game-from-join-btn {
     margin-top: 1rem;
 }
+
+/* --- Host Remote Screen --- */
+#host-remote-screen {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1.25rem;
+}
+
+#host-remote-login {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+#remote-code-input {
+    width: 100%;
+    padding: 0.9375rem;
+    font-size: 2rem;
+    text-align: center;
+    letter-spacing: 0.5rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 0.0625rem solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.5rem;
+    color: #f0f8ff;
+}
+
+#host-remote-panel {
+    width: 100%;
+    max-width: 600px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.remote-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.remote-header h2 {
+    color: #ffeb3b;
+    font-size: 2.5rem;
+    letter-spacing: 0.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.remote-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
+#remote-controls-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.remote-btn {
+    width: 100%;
+    padding: 1.5rem;
+    font-size: 1.8rem;
+    border-radius: 1rem;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: transform 0.1s;
+}
+
+.remote-btn:active {
+    transform: scale(0.98);
+}
+
+.remote-btn-primary {
+    background-color: #3f51b5;
+    color: white;
+}
+
+.remote-btn-stop {
+    background-color: #e74c3c;
+    color: white;
+    font-size: 2.2rem;
+}
+
+.remote-btn-correct {
+    background-color: #2ecc71;
+    color: white;
+}
+
+.remote-btn-incorrect {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.remote-btn-pass {
+    background-color: #f39c12;
+    color: white;
+}
+
+.remote-chests-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.remote-chest-btn {
+    aspect-ratio: 1/1;
+    font-size: 2rem;
+    background-color: rgba(255,255,255,0.2);
+    border: 2px solid white;
+    color: white;
+    border-radius: 10px;
+}
+
 
 /* --- Pre-Question Screen --- */
 #pre-question-screen {
@@ -3618,81 +3747,4 @@ body.participant-view .app-version {
         transform: scale(1);
         box-shadow: 0 0.3125rem 0.9375rem rgba(0,0,0,0.2), 0 0 1rem rgba(231, 76, 60, 0.5);
     }
-}
-
-/* --- Host Remote Control Screen --- */
-#host-remote-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100vw;
-    height: calc(var(--vh, 1dvh) * 100);
-    padding: 1.5rem;
-    gap: 1.5rem;
-    box-sizing: border-box;
-}
-#host-remote-screen h1 {
-    font-size: 2.5rem;
-    color: #ffeb3b;
-    margin: 0;
-}
-#host-remote-screen p {
-    font-size: 1.2rem;
-    margin: 0;
-    text-align: center;
-}
-.remote-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    width: 100%;
-    max-width: 400px;
-    background-color: rgba(0,0,0,0.2);
-    padding: 1.5rem;
-    border-radius: 0.75rem;
-}
-.remote-panel button {
-    width: 100%;
-}
-.remote-panel .btn {
-    padding: 1.2rem;
-    font-size: 1.5rem;
-}
-.remote-chests {
-    display: flex;
-    justify-content: space-around;
-    gap: 1rem;
-}
-.remote-chests button {
-    flex: 1;
-    aspect-ratio: 1/1;
-    font-size: 2.5rem;
-}
-.remote-panel .answer-btn {
-    width: auto;
-    flex: 1;
-    height: auto;
-    padding: 1.2rem;
-    border-radius: 0.75rem;
-}
-.remote-panel .answer-btn svg {
-    width: 3rem;
-    height: 3rem;
-}
-.remote-panel-row {
-    display: flex;
-    gap: 1rem;
-}
-#remote-panel-grading .answer-btn {
-    box-shadow: none; /* Simplify shadow for remote */
-}
-#remote-panel-grading .answer-btn:active {
-    transform: translateY(2px);
-}
-#remote-correct-btn {
-    background-color: #2ecc71;
-}
-#remote-incorrect-btn {
-    background-color: #e74c3c;
 }

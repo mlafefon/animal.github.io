@@ -14,6 +14,7 @@ import { initializeAuth } from './js/auth.js';
 import { clearAllCaches, logout, getAccount, unsubscribeAllRealtime } from './js/appwriteService.js';
 import { initializeConfirmModal, initializeLinkModal, showNotification, initializeQuestionPreviewModal, initializeNotification } from './js/ui.js';
 import { getState } from './js/gameState.js';
+import { initializeHostRemote, showHostRemoteLogin } from './js/hostRemote.js';
 
 
 /**
@@ -85,6 +86,7 @@ function initializeGlobalHomeButton() {
                 document.getElementById('betting-screen'),
                 document.getElementById('final-question-screen'),
                 document.getElementById('edit-game-screen'),
+                document.getElementById('host-remote-screen'),
             ];
             allScreens.forEach(screen => screen.classList.add('hidden'));
             
@@ -148,6 +150,9 @@ function showMainApp(user) {
 export function initializeApp() {
      // Preload all critical assets as soon as the DOM is ready to prevent UI lag.
     preloadGameAssets();
+
+    // Helper state to redirect user to remote screen if they logged in via the remote button
+    let pendingLoginRedirect = null;
 
     /**
      * Callback function that is passed to the setup module.
@@ -222,7 +227,12 @@ export function initializeApp() {
         authScreen.classList.add('hidden');
         try {
             const user = await getAccount();
-            showMainApp(user);
+            if (pendingLoginRedirect === 'remote') {
+                pendingLoginRedirect = null;
+                showHostRemoteLogin();
+            } else {
+                showMainApp(user);
+            }
         } catch (error) {
             // Should not happen, but as a fallback, go to start.
             document.getElementById('start-screen').classList.remove('hidden');
@@ -254,6 +264,41 @@ export function initializeApp() {
     initializeNotification();
     initKeyboardNav(document.body); // Initialize keyboard navigation for the whole app
     initializeAuth(onLoginSuccess);
+    
+    // Initialize Host Remote
+    initializeHostRemote(() => {
+        document.getElementById('host-remote-screen').classList.add('hidden');
+        document.getElementById('start-screen').classList.remove('hidden');
+    });
+
+    // Hook up the "Remote Control" button on Start Screen
+    const remoteBtn = document.getElementById('go-to-remote-btn');
+    if(remoteBtn) {
+        // Basic check for mobile device user agent
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (!isMobile) {
+            // If on desktop, hide the button completely
+            remoteBtn.classList.add('hidden');
+        } else {
+            // If on mobile, enable the listener
+            remoteBtn.addEventListener('click', async () => {
+                 remoteBtn.disabled = true; // Prevent double clicks
+                 try {
+                    await getAccount(); // Check login
+                    document.getElementById('start-screen').classList.add('hidden');
+                    showHostRemoteLogin();
+                } catch(e) {
+                     // User not logged in, send to auth but remember they wanted to go to remote
+                     pendingLoginRedirect = 'remote';
+                     document.getElementById('start-screen').classList.add('hidden');
+                     document.getElementById('auth-screen').classList.remove('hidden');
+                } finally {
+                    remoteBtn.disabled = false;
+                }
+            });
+        }
+    }
 }
 
 
