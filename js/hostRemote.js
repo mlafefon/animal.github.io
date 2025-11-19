@@ -112,7 +112,6 @@ function updateRemoteUI(state) {
 
         case 'correctAnswer':
              // When answer is correct, Desktop shows Victory Box button.
-             // remote_next triggers the visible button on desktop.
              renderButton('תיבת ניצחון', 'remote-btn-primary', 'remote_next');
              break;
 
@@ -121,8 +120,11 @@ function updateRemoteUI(state) {
             break;
 
         case 'learningTime':
+             renderButton('המשך לתיבה', 'remote-btn-primary', 'remote_next');
+             break;
+        
         case 'boxes-revealed':
-            renderButton('השאלה הבאה', 'remote-btn-primary', 'remote_next');
+            renderButton('חזרה', 'remote-btn-primary', 'remote_next');
             break;
         
         case 'boxes':
