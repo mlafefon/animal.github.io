@@ -116,7 +116,8 @@ function updateRemoteUI(state) {
              break;
 
         case 'incorrectAnswer':
-            renderButton('המשך', 'remote-btn-primary', 'remote_next');
+            renderButton('תיבת כשלון', 'remote-btn-incorrect', 'remote_next');
+            renderButton('העבר שאלה', 'remote-btn-pass', 'remote_pass');
             break;
 
         case 'learningTime':
