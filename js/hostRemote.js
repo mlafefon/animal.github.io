@@ -15,6 +15,8 @@ const statusDisplay = document.getElementById('remote-status');
 
 let currentGameCode = null;
 let hostId = null;
+let isPassingMode = false; // New local state
+let latestState = null; // Cache state for re-rendering
 
 export function initializeHostRemote(onClose) {
     if (!remoteScreen) return;
@@ -93,12 +95,60 @@ function enterRemoteMode(initialSessionDoc) {
 }
 
 function updateRemoteUI(state) {
+    latestState = state;
     controlsContainer.innerHTML = '';
     const activeTeam = state.teams.find(t => t.index === state.activeTeamIndex);
     const activeTeamName = activeTeam ? activeTeam.name : 'לא ידוע';
 
     statusDisplay.textContent = `תור: ${activeTeamName} | מצב: ${getHebrewState(state.gameState)}`;
 
+    // Safety reset: If state is not incorrectAnswer, we shouldn't be in passing mode
+    if (state.gameState !== 'incorrectAnswer') {
+        isPassingMode = false;
+    }
+
+    // --- Passing Mode View ---
+    if (isPassingMode) {
+        const p = document.createElement('p');
+        p.style.color = 'white';
+        p.style.textAlign = 'center';
+        p.style.fontSize = '1.2rem';
+        p.style.marginBottom = '1rem';
+        p.textContent = 'בחר קבוצה להעביר אליה את השאלה:';
+        controlsContainer.appendChild(p);
+
+        const grid = document.createElement('div');
+        grid.className = 'remote-chests-grid'; // Reuse grid style
+        
+        state.teams.forEach(team => {
+            if (team.index !== state.activeTeamIndex) {
+                const btn = document.createElement('button');
+                btn.className = 'remote-chest-btn';
+                btn.style.fontSize = '1.2rem'; // Adjust font for names
+                btn.textContent = team.name;
+                btn.onclick = () => {
+                    isPassingMode = false; // Exit mode locally
+                    sendRemoteAction('remote_pass_to', { teamIndex: team.index });
+                };
+                grid.appendChild(btn);
+            }
+        });
+        controlsContainer.appendChild(grid);
+
+        // Cancel button
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'remote-btn remote-btn-incorrect'; // Red style
+        cancelBtn.style.marginTop = '1.5rem';
+        cancelBtn.textContent = 'ביטול';
+        cancelBtn.onclick = () => {
+            isPassingMode = false;
+            updateRemoteUI(latestState);
+        };
+        controlsContainer.appendChild(cancelBtn);
+        return; // Stop standard rendering
+    }
+
+    // --- Standard Views ---
     // Render controls based on state
     switch (state.gameState) {
         case 'question':
@@ -117,7 +167,15 @@ function updateRemoteUI(state) {
 
         case 'incorrectAnswer':
             renderButton('תיבת כשלון', 'remote-btn-incorrect', 'remote_next');
-            renderButton('העבר שאלה', 'remote-btn-pass', 'remote_pass');
+            // Instead of sending action immediately, switch local mode
+            const passBtn = document.createElement('button');
+            passBtn.className = 'remote-btn remote-btn-pass';
+            passBtn.textContent = 'העבר שאלה';
+            passBtn.onclick = () => {
+                isPassingMode = true;
+                updateRemoteUI(latestState);
+            };
+            controlsContainer.appendChild(passBtn);
             break;
 
         case 'learningTime':

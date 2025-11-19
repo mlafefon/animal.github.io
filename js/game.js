@@ -1,5 +1,6 @@
 
 
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -251,6 +252,16 @@ async function handleParticipantAction(actionPayload) {
                     if (document.getElementById('boxes-screen').offsetParent !== null) {
                          await revealChest(actionData.chestIndex);
                     }
+                    break;
+                case 'remote_pass_to':
+                    // 1. Perform the logic to pass the team
+                    passQuestionToTeam(actionData.teamIndex);
+                    
+                    // 2. Update the Desktop UI to match the "Answer Phase" state
+                    // (Hide modal if open, hide failure controls, show answer controls)
+                    document.getElementById('pass-question-modal-overlay').classList.add('hidden');
+                    document.getElementById('failure-controls').classList.add('hidden');
+                    document.getElementById('answer-controls').classList.remove('hidden');
                     break;
             }
             return; // Exit after handling remote action
