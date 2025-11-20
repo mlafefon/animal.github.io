@@ -1,4 +1,3 @@
-
 // --- Constants ---
 const GAME_STATE_KEY = 'animalGameState';
 
@@ -37,6 +36,7 @@ function _resetInternalState() {
         gameStateForParticipant: 'waiting', // The high-level state for participant view
         boxesData: null, // To hold scores and selection for the boxes screen
         timerEndTime: null, // To sync timers with participants
+        bets: {}, // To store final bets { teamIndex: { amount: number, locked: boolean } }
     };
 }
 
@@ -304,4 +304,17 @@ export function setParticipantState(newState) {
  */
 export function setTimerEndTime(timestamp) {
     _state.timerEndTime = timestamp;
+}
+
+/**
+ * Records a team's final bet and marks it as locked.
+ * @param {number} teamIndex The index of the team.
+ * @param {number} amount The amount of the bet.
+ */
+export function lockBet(teamIndex, amount) {
+    if (!_state.bets) {
+        _state.bets = {};
+    }
+    _state.bets[teamIndex] = { amount, locked: true };
+    _saveState();
 }
