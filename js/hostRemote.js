@@ -1,4 +1,6 @@
 
+
+
 import { getGameSession, getAccount, subscribeToSessionUpdates, sendAction, unsubscribeAllRealtime } from './appwriteService.js';
 import { showNotification } from './ui.js';
 
@@ -204,6 +206,10 @@ function updateRemoteUI(state) {
             p.textContent = 'בחר תיבה עבור הקבוצה';
             controlsContainer.appendChild(p);
             break;
+        
+        case 'finalRoundPre':
+            renderButton('שאלת ההימור', 'remote-btn-primary', 'remote_next');
+            break;
             
         default:
             renderButton('השאלה הבאה / התחל', 'remote-btn-primary', 'remote_next');
@@ -228,7 +234,8 @@ function getHebrewState(state) {
         'incorrectAnswer': 'תשובה שגויה',
         'learningTime': 'זמן למידה',
         'boxes': 'בחירת תיבה',
-        'boxes-revealed': 'תיבה נחשפה'
+        'boxes-revealed': 'תיבה נחשפה',
+        'finalRoundPre': 'הסיבוב האחרון'
     };
     return map[state] || state;
 }

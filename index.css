@@ -1,3 +1,4 @@
+
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -1608,6 +1609,15 @@ h1, h2, h3, h4, h5, h6 {
     width: 5rem;
     text-align: center;
     direction: ltr;
+}
+
+.bet-display-large {
+    font-size: 6rem; /* Large base size for betting display */
+    font-weight: bold;
+    color: #ffeb3b;
+    text-shadow: 0 0 10px rgba(0,0,0,0.5);
+    margin-bottom: 1rem;
+    line-height: 1;
 }
 
 /* --- Final Question Screen --- */

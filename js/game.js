@@ -3,6 +3,8 @@
 
 
 
+
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -152,6 +154,9 @@ function updateActiveTeam() {
 }
 
 function prepareForFinalRound() {
+    // Update state for participants and remote to show "Final Round" specific UI
+    gameState.setParticipantState('finalRoundPre');
+    
     gameScreen.classList.add('hidden');
     showPreQuestionScreen({ isFinalRound: true });
 }
@@ -243,6 +248,8 @@ async function handleParticipantAction(actionPayload) {
                     // Logic for "Next" depends on context
                     if (document.getElementById('next-question-btn').offsetParent !== null) {
                         document.getElementById('next-question-btn').click();
+                    } else if (document.getElementById('bet-question-btn').offsetParent !== null) {
+                         document.getElementById('bet-question-btn').click();
                     } else if (document.getElementById('victory-box-btn').offsetParent !== null) {
                         document.getElementById('victory-box-btn').click();
                     } else if (document.getElementById('return-from-boxes-btn').offsetParent !== null) {
