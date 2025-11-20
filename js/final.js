@@ -1,8 +1,10 @@
+
+
 import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState } from './game.js';
 import { playSound } from './audio.js';
 import { showLinkModal } from './ui.js';
 import { unsubscribeAllRealtime, updateGameSession } from './appwriteService.js';
-import { getState } from './gameState.js';
+import { getState, setParticipantState } from './gameState.js';
 
 
 // --- Elements ---
@@ -10,6 +12,7 @@ const bettingScreen = document.getElementById('betting-screen');
 const finalQuestionScreen = document.getElementById('final-question-screen');
 const bettingTeamsContainer = document.getElementById('betting-teams-container');
 const showFinalQuestionBtn = document.getElementById('show-final-question-btn');
+const revealBetsBtn = document.getElementById('reveal-bets-btn');
 const finalQuestionText = document.getElementById('final-question-text');
 const finalAnswerContainer = document.getElementById('final-answer-container');
 const finalAnswerText = document.getElementById('final-answer-text');
@@ -29,7 +32,7 @@ let teamsData = [];
 function checkAllBetsPlaced() {
     const allPlaced = teamsData.every(team => teamBets.hasOwnProperty(team.index) && teamBets[team.index] >= 0);
     if (allPlaced) {
-        showFinalQuestionBtn.classList.remove('hidden');
+        revealBetsBtn.classList.remove('hidden');
     }
 }
 
@@ -44,6 +47,7 @@ function renderBettingCards() {
 
         const card = document.createElement('div');
         card.className = 'betting-team-card';
+        card.dataset.index = team.index; // Add index for easier selector lookup
         card.innerHTML = `
             <div class="team-icon">
                 <img src="${team.icon}" alt="${team.name}">
@@ -208,6 +212,10 @@ function handleFinalScore(teamIndex, wasCorrect) {
 
 
 export function showBettingScreen() {
+    // Update state for participants and broadcast
+    setParticipantState('betting');
+    document.dispatchEvent(new Event('gamestatechange'));
+
     renderBettingCards();
     
     // When moving to the final betting screen, remove the active team highlight
@@ -273,8 +281,44 @@ function showFinalQuestion() {
     finalQuestionScreen.classList.remove('hidden');
 }
 
+/**
+ * Updates the UI when a participant submits a bet remotely.
+ * Stores the value but masks the display.
+ * @param {object} actionData 
+ */
+function handleRemoteBet(actionData) {
+    const { teamIndex, betAmount } = actionData;
+    
+    // Store the actual value
+    teamBets[teamIndex] = betAmount;
+    
+    // Update UI visually to show "Ready" state without revealing number
+    const card = bettingTeamsContainer.querySelector(`.betting-team-card[data-index="${teamIndex}"]`);
+    const amountEl = bettingTeamsContainer.querySelector(`.bet-amount[data-index="${teamIndex}"]`);
+    
+    if (card && amountEl) {
+        card.classList.add('bet-submitted');
+        amountEl.classList.add('hidden-val');
+        amountEl.textContent = betAmount; // Store it in DOM but hidden via CSS
+        
+        // Disable manual controls for this team since they submitted remotely
+        const controls = card.querySelector('.bet-control');
+        if (controls) {
+            controls.style.pointerEvents = 'none';
+            controls.style.opacity = '0.7';
+        }
+    }
+    
+    checkAllBetsPlaced();
+    playSound('correct'); // Feedback sound
+}
 
 export function initializeFinalRound() {
+    // Listener for remote bets
+    document.addEventListener('participant_bet_submitted', (e) => {
+        handleRemoteBet(e.detail);
+    });
+
     let longPressTimer = null;
     let longPressTriggered = false;
 
@@ -325,6 +369,17 @@ export function initializeFinalRound() {
     bettingTeamsContainer.addEventListener('mouseleave', cancelPress);
     bettingTeamsContainer.addEventListener('touchstart', startPress);
     bettingTeamsContainer.addEventListener('touchend', cancelPress);
+
+    revealBetsBtn.addEventListener('click', () => {
+        // Remove the "hidden" class to reveal numbers
+        const hiddenEls = document.querySelectorAll('.bet-amount.hidden-val');
+        hiddenEls.forEach(el => el.classList.remove('hidden-val'));
+        
+        // Show the final question button
+        revealBetsBtn.classList.add('hidden');
+        showFinalQuestionBtn.classList.remove('hidden');
+        showFinalQuestionBtn.focus();
+    });
 
     showFinalQuestionBtn.addEventListener('click', showFinalQuestion);
 
@@ -413,6 +468,8 @@ export function initializeFinalRound() {
         showFinalAnswerBtn.classList.remove('hidden');
         endGameBtn.classList.add('hidden');
         finalAnswerLinkBtn.classList.add('hidden');
+        revealBetsBtn.classList.add('hidden');
+        showFinalQuestionBtn.classList.add('hidden');
         
         // Last action: clear the saved state for the completed game.
         clearGameState();

@@ -1,3 +1,8 @@
+
+
+
+
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -155,7 +160,7 @@ function prepareForFinalRound() {
  * Gathers the current game state and broadcasts it to participants via Appwrite.
  */
 async function broadcastGameState() {
-    const { sessionDocumentId, gameCode, gameName, teams, activeTeamIndex, gameStateForParticipant, finalQuestionData, boxesData, timerEndTime, bets } = gameState.getState();
+    const { sessionDocumentId, gameCode, gameName, teams, activeTeamIndex, gameStateForParticipant, finalQuestionData, boxesData, timerEndTime } = gameState.getState();
     if (!sessionDocumentId) return;
 
     // Determine the high-level state for participants
@@ -192,7 +197,6 @@ async function broadcastGameState() {
         gameState: currentGameState,
         currentQuestionData: questionDataForParticipant, // Use new name
         boxesData: boxesData,
-        bets: bets,
     };
 
     try {
@@ -305,17 +309,9 @@ async function handleParticipantAction(actionPayload) {
                     await revealChest(actionData.chestIndex);
                 }
             }
-        } else if (actionData.type === 'lockBet') {
-            if (actionData.participantId && actionData.teamIndex !== undefined && actionData.betAmount !== undefined) {
-                const team = currentState.teams.find(t => t.index === actionData.teamIndex);
-                // Verify the action came from the correct participant for that team
-                if (team && team.participantId === actionData.participantId) {
-                    gameState.lockBet(actionData.teamIndex, actionData.betAmount);
-                    // Fire a custom event for the host UI to react to
-                    document.dispatchEvent(new CustomEvent('betlocked', { detail: { teamIndex: actionData.teamIndex } }));
-                    await broadcastGameState();
-                }
-            }
+        } else if (actionData.type === 'submitBet') {
+            // Dispatch an event so final.js can handle the logic
+            document.dispatchEvent(new CustomEvent('participant_bet_submitted', { detail: actionData }));
         }
     } catch (error) {
         console.error("Error processing participant action:", error);

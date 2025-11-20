@@ -70,27 +70,18 @@
             <p id="participant-boxes-message">התור שלך! בחר תיבת אוצר.</p>
         </div>
     </div>
-
+    
     <div id="participant-betting-screen" class="container hidden">
-        <div class="betting-content">
-            <h1>הגיע הזמן להמר!</h1>
-            <p>בחר את סכום ההימור שלך. במענה נכון, הסכום יתווסף לניקוד. בטעות, הוא יופחת.</p>
-            <div class="betting-team-card">
-                 <div class="team-icon">
-                    <img id="betting-my-team-icon" src="" alt="My Team Icon">
-                </div>
-                <p id="betting-my-team-name" class="team-name"></p>
-                <p id="betting-my-team-score" class="team-score"></p>
-                <div class="bet-control">
-                    <button class="bet-stepper-btn bet-increase">+</button>
-                    <span class="bet-amount">0</span>
-                    <button class="bet-stepper-btn bet-decrease">-</button>
-                </div>
+        <div class="participant-container">
+            <h1>שאלת ההימור</h1>
+            <p>הניקוד שלך: <span id="participant-current-score">0</span></p>
+            <div class="bet-control">
+                <button id="participant-bet-increase" class="bet-stepper-btn">+</button>
+                <span id="participant-bet-amount" class="bet-amount">0</span>
+                <button id="participant-bet-decrease" class="bet-stepper-btn">-</button>
             </div>
-            <button id="lock-bet-btn" class="btn btn-primary btn-large" style="margin-top: 1.5rem;">נעל הימור</button>
-        </div>
-        <div id="betting-waiting-message" class="waiting-message hidden" style="margin-top: 2rem;">
-            <p>ההימור ננעל! ממתין לשאר הקבוצות...</p>
+            <button id="participant-submit-bet-btn" class="btn btn-primary btn-large">אשר הימור</button>
+            <p id="bet-waiting-msg" class="hidden">ההימור התקבל. ממתין למנחה...</p>
         </div>
     </div>
     
