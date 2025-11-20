@@ -5,6 +5,7 @@
 
 
 
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -182,6 +183,9 @@ export async function broadcastGameState() {
     } else if (currentGameState === 'correctAnswer' || currentGameState === 'learningTime') { // When answer is correct or it's learning time
         const q_and_a = getCurrentQuestion();
         questionDataForParticipant = { q: q_and_a.q, a: q_and_a.a }; // Send Q and A
+    } else if (currentGameState === 'finalQuestionActive') {
+        // For final question, send the text so they can answer it
+        questionDataForParticipant = { q: finalQuestionData.q };
     }
 
     // Create a "lean" version of the teams array to reduce payload size.
@@ -331,6 +335,19 @@ async function handleParticipantAction(actionPayload) {
             // Broadcast not strictly necessary here as participant already knows they locked,
             // but good for keeping everyone in sync if there are multiple devices or spectators.
             await broadcastGameState();
+        } else if (actionData.type === 'submitFinalAnswer') {
+            // Handle final answer submission
+            const teamIndex = actionData.teamIndex;
+            const text = actionData.text;
+
+            // Update global state
+            gameState.updateFinalAnswer(teamIndex, text);
+
+            // Trigger UI update for the host to show "Submitted" status
+            document.dispatchEvent(new CustomEvent('finalanswerupdate', { detail: { teamIndex } }));
+            
+            // NOTE: We do NOT broadcast immediately here. The participant's phone shows "submitted" locally.
+            // Broadcasting every keystroke or submission might be overkill, but we can if needed.
         }
     } catch (error) {
         console.error("Error processing participant action:", error);

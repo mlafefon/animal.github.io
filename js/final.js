@@ -1,9 +1,10 @@
 
+
 import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState, broadcastGameState } from './game.js';
 import { playSound } from './audio.js';
 import { showLinkModal } from './ui.js';
 import { unsubscribeAllRealtime, updateGameSession } from './appwriteService.js';
-import { getState, initializeBettingState, updateTeamBet, getBettingData, revealBets } from './gameState.js';
+import { getState, initializeBettingState, updateTeamBet, getBettingData, revealBets, setParticipantState, getFinalAnswers, getAreFinalAnswersRevealed, revealFinalAnswers } from './gameState.js';
 
 
 // --- Elements ---
@@ -22,6 +23,8 @@ const endGameBtn = document.getElementById('end-game-btn');
 const startScreen = document.getElementById('start-screen');
 const mainGameFooter = document.getElementById('main-game-footer');
 const revealBetsBtn = document.getElementById('reveal-bets-btn');
+const revealTeamsAnswersBtn = document.getElementById('reveal-teams-answers-btn');
+const finalAnswersGrid = document.getElementById('final-answers-grid');
 
 
 // --- State ---
@@ -155,6 +158,67 @@ function renderFinalScoringControls() {
         finalScoringTeams.appendChild(scoreControl);
     });
 }
+
+function renderFinalAnswersGrid() {
+    finalAnswersGrid.innerHTML = '';
+    const submittedAnswers = getFinalAnswers();
+    const isRevealed = getAreFinalAnswersRevealed();
+    
+    teamsData.forEach(team => {
+        if (team.score <= 0) return; // Skip teams that couldn't bet
+
+        const answerData = submittedAnswers[team.index];
+        const hasAnswer = !!answerData;
+        
+        const card = document.createElement('div');
+        card.className = 'final-answer-card';
+        if (hasAnswer && !isRevealed) card.classList.add('submitted');
+        if (isRevealed) card.classList.add('revealed');
+
+        // Determine content
+        let contentHtml;
+        if (isRevealed) {
+            contentHtml = `<div class="final-answer-text-display">${hasAnswer ? answerData.text : '-'}</div>`;
+        } else {
+            if (hasAnswer) {
+                contentHtml = `
+                    <div class="status-indicator success">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="48px" viewBox="0 0 24 24" width="48px" fill="#fff"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                        <span>תשובה הוגשה</span>
+                    </div>
+                `;
+            } else {
+                contentHtml = `
+                    <div class="status-indicator waiting">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="48px" viewBox="0 0 24 24" width="48px" fill="#ccc"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/></svg>
+                        <span>ממתין...</span>
+                    </div>
+                `;
+            }
+        }
+
+        card.innerHTML = `
+            <div class="team-header">
+                <img src="${team.icon}" alt="${team.name}">
+                <span>${team.name}</span>
+            </div>
+            <div class="answer-body">
+                ${contentHtml}
+            </div>
+        `;
+        finalAnswersGrid.appendChild(card);
+    });
+    
+    // Show the Reveal button if not already revealed
+    if (!isRevealed) {
+        revealTeamsAnswersBtn.classList.remove('hidden');
+        showFinalAnswerBtn.classList.add('hidden'); // Hide "Show Correct Answer" until teams revealed
+    } else {
+        revealTeamsAnswersBtn.classList.add('hidden');
+        showFinalAnswerBtn.classList.remove('hidden');
+    }
+}
+
 
 /**
  * Finds the winner(s) and displays a celebratory announcement.
@@ -324,9 +388,17 @@ function showFinalQuestion() {
         finalQuestionText.textContent = 'לא נמצאה שאלה סופית.';
         finalAnswerText.textContent = '';
     }
+    
+    // Set state to 'finalQuestionActive' to show the input form to participants
+    setParticipantState('finalQuestionActive');
+    broadcastGameState();
 
     // Always hide the link button initially
     finalAnswerLinkBtn.classList.add('hidden');
+    
+    // Render the empty answers grid
+    finalAnswersGrid.classList.remove('hidden');
+    renderFinalAnswersGrid();
 
     updateFooterWithBets(); // Show the bets in the footer
     finalQuestionScreen.classList.remove('hidden');
@@ -404,6 +476,11 @@ export function initializeFinalRound() {
         finalScoringContainer.classList.remove('hidden');
     });
     
+    revealTeamsAnswersBtn.addEventListener('click', () => {
+        revealFinalAnswers();
+        renderFinalAnswersGrid();
+    });
+    
     finalAnswerLinkBtn.addEventListener('click', () => {
         const finalQuestion = getFinalQuestionData();
         if (finalQuestion && finalQuestion.url) {
@@ -475,7 +552,9 @@ export function initializeFinalRound() {
         // Reset the state of the final screen itself.
         finalAnswerContainer.classList.add('hidden');
         finalScoringContainer.classList.add('hidden');
+        finalAnswersGrid.classList.add('hidden'); // Hide grid
         showFinalAnswerBtn.classList.remove('hidden');
+        revealTeamsAnswersBtn.classList.add('hidden');
         endGameBtn.classList.add('hidden');
         finalAnswerLinkBtn.classList.add('hidden');
         
@@ -487,6 +566,13 @@ export function initializeFinalRound() {
     document.addEventListener('bettingupdate', () => {
         if (!bettingScreen.classList.contains('hidden')) {
              renderBettingCards();
+        }
+    });
+    
+    // Listener for updating final answer submitted status
+    document.addEventListener('finalanswerupdate', () => {
+        if (!finalQuestionScreen.classList.contains('hidden')) {
+            renderFinalAnswersGrid();
         }
     });
 }

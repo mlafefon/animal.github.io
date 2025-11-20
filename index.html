@@ -256,6 +256,11 @@
                 <div id="final-question-container">
                     <p id="final-question-text"></p>
                 </div>
+                
+                <div id="final-answers-grid" class="final-answers-grid hidden">
+                    <!-- Dynamically populated answers from teams -->
+                </div>
+
                 <div id="final-answer-container" class="hidden">
                     <p id="final-answer-text"></p>
                      <button id="final-answer-link-btn" class="btn-icon-round hidden" title="מידע נוסף">
@@ -263,7 +268,8 @@
                     </button>
                 </div>
             </div>
-            <button id="show-final-answer-btn" class="btn btn-secondary">הצג תשובה</button>
+            <button id="reveal-teams-answers-btn" class="btn btn-primary btn-large hidden">חשוף את כל התשובות</button>
+            <button id="show-final-answer-btn" class="btn btn-secondary hidden">הצג תשובה נכונה</button>
             <div id="final-scoring-container" class="hidden">
                 <h2>מי ענה נכון?</h2>
                 <div id="final-scoring-teams">

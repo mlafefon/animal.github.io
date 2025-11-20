@@ -3,6 +3,8 @@
 
 
 
+
+
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
@@ -45,6 +47,12 @@ const participantLockBetBtn = document.getElementById('participant-lock-bet-btn'
 const participantBetStatus = document.getElementById('participant-bet-status');
 const betControlContainer = document.querySelector('.bet-control-container');
 
+// Final Answer Elements
+const participantFinalInputContainer = document.getElementById('participant-final-input-container');
+const participantFinalAnswerInput = document.getElementById('participant-final-answer-input');
+const participantSubmitFinalBtn = document.getElementById('participant-submit-final-btn');
+const participantFinalStatus = document.getElementById('participant-final-status');
+
 
 // --- State ---
 // Get participantId from sessionStorage or create a new one. This persists across refreshes.
@@ -59,6 +67,7 @@ let currentHostState = null;
 let sessionDocumentId = null;
 let participantTimerInterval = null;
 let wakeLockSentinel = null; // For Screen Wake Lock API
+let finalAnswerSubmitted = false; // Local flag
 
 // Local Betting State
 let currentBetValue = 0;
@@ -454,6 +463,8 @@ function updateGameView(state) {
     // Default UI state: hide controls and waiting messages.
     participantControls.classList.add('hidden');
     waitingMessage.classList.add('hidden');
+    participantFinalInputContainer.classList.add('hidden');
+    participantFinalStatus.classList.add('hidden');
     stopParticipantTimer(); // Stop timer by default for every state change
     
     // In an active game state, request the wake lock
@@ -476,6 +487,20 @@ function updateGameView(state) {
             waitingMessage.classList.add('hidden');
             break;
 
+        case 'finalQuestionActive':
+            showScreen('game');
+            questionContainer.innerHTML = `<p id="participant-question-text">${state.currentQuestionData.q}</p>`;
+            
+            // Check if we should show the input or the "submitted" status
+            if (finalAnswerSubmitted) {
+                participantFinalInputContainer.classList.add('hidden');
+                participantFinalStatus.classList.remove('hidden');
+            } else {
+                participantFinalInputContainer.classList.remove('hidden');
+                participantFinalStatus.classList.add('hidden');
+            }
+            break;
+
         case 'learningTime':
             showScreen('game');
             questionContainer.innerHTML = `
@@ -496,7 +521,7 @@ function updateGameView(state) {
                 const sadIcon = `
                     <svg xmlns="http://www.w3.org/2000/svg" height="80px" viewBox="0 0 24 24" width="80px" fill="#FF5252" style="margin-bottom: 1rem;">
                         <path d="M0 0h24v24H0V0z" fill="none"/>
-                        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-5-6c.78 2.34 2.72 4 5 4s4.22-1.66 5-4H7zM9 13c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/>
+                        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-5-6c.78 2.34 2.72 4 5 4s4.22-1.66 5-4H7zM9 13c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/>
                     </svg>
                 `;
                 const choiceMessage = isMyTeamIncorrect 
@@ -697,6 +722,34 @@ function initializeGameScreen() {
     });
 
     participantLockBetBtn.addEventListener('click', handleBetSubmission);
+
+    participantSubmitFinalBtn.addEventListener('click', async () => {
+        if (!myTeam) return;
+        const answerText = participantFinalAnswerInput.value.trim();
+        if (!answerText) {
+            showNotification('אנא כתבו תשובה.', 'info');
+            return;
+        }
+
+        participantSubmitFinalBtn.disabled = true;
+        
+        try {
+            await sendAction(gameCode, {
+                type: 'submitFinalAnswer',
+                teamIndex: myTeam.index,
+                text: answerText,
+                participantId: participantId
+            });
+            
+            finalAnswerSubmitted = true;
+            participantFinalInputContainer.classList.add('hidden');
+            participantFinalStatus.classList.remove('hidden');
+            
+        } catch(e) {
+             showNotification('שגיאה בשליחת התשובה.', 'error');
+             participantSubmitFinalBtn.disabled = false;
+        }
+    });
 }
 
 /**
