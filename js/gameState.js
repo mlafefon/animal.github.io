@@ -38,8 +38,6 @@ function _resetInternalState() {
         boxesData: null, // To hold scores and selection for the boxes screen
         timerEndTime: null, // To sync timers with participants
         bettingData: null, // New: Tracks bets { currentBets: {}, lockedBets: {}, revealed: false }
-        finalAnswers: {}, // New: Map teamIndex -> { text: string, submitted: boolean }
-        areFinalAnswersRevealed: false // Flag to track if host revealed the answers
     };
 }
 
@@ -356,42 +354,4 @@ export function revealBets() {
  */
 export function getBettingData() {
     return _state.bettingData || { currentBets: {}, lockedBets: {}, revealed: false };
-}
-
-/**
- * Updates the final answer text for a team.
- * @param {number} teamIndex 
- * @param {string} text 
- */
-export function updateFinalAnswer(teamIndex, text) {
-    if (!_state.finalAnswers) {
-        _state.finalAnswers = {};
-    }
-    _state.finalAnswers[teamIndex] = {
-        text: text,
-        submitted: true
-    };
-    _saveState();
-}
-
-/**
- * Reveals all final answers to the host (and optionally participants if we decide to show them there too).
- */
-export function revealFinalAnswers() {
-    _state.areFinalAnswersRevealed = true;
-    _saveState();
-}
-
-/**
- * Gets the map of final answers.
- */
-export function getFinalAnswers() {
-    return _state.finalAnswers || {};
-}
-
-/**
- * Checks if final answers have been revealed.
- */
-export function getAreFinalAnswersRevealed() {
-    return !!_state.areFinalAnswersRevealed;
 }
