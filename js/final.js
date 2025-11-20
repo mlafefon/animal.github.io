@@ -1,10 +1,9 @@
 
-
-import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState } from './game.js';
+import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState, broadcastGameState } from './game.js';
 import { playSound } from './audio.js';
 import { showLinkModal } from './ui.js';
 import { unsubscribeAllRealtime, updateGameSession } from './appwriteService.js';
-import { getState, setParticipantState } from './gameState.js';
+import { getState, initializeBettingState, updateTeamBet, getBettingData, revealBets } from './gameState.js';
 
 
 // --- Elements ---
@@ -12,7 +11,6 @@ const bettingScreen = document.getElementById('betting-screen');
 const finalQuestionScreen = document.getElementById('final-question-screen');
 const bettingTeamsContainer = document.getElementById('betting-teams-container');
 const showFinalQuestionBtn = document.getElementById('show-final-question-btn');
-const revealBetsBtn = document.getElementById('reveal-bets-btn');
 const finalQuestionText = document.getElementById('final-question-text');
 const finalAnswerContainer = document.getElementById('final-answer-container');
 const finalAnswerText = document.getElementById('final-answer-text');
@@ -23,57 +21,104 @@ const finalScoringTeams = document.getElementById('final-scoring-teams');
 const endGameBtn = document.getElementById('end-game-btn');
 const startScreen = document.getElementById('start-screen');
 const mainGameFooter = document.getElementById('main-game-footer');
+const revealBetsBtn = document.getElementById('reveal-bets-btn');
 
 
 // --- State ---
-let teamBets = {};
 let teamsData = [];
 
 function checkAllBetsPlaced() {
-    const allPlaced = teamsData.every(team => teamBets.hasOwnProperty(team.index) && teamBets[team.index] >= 0);
-    if (allPlaced) {
-        revealBetsBtn.classList.remove('hidden');
-    }
+    const bettingData = getBettingData();
+    // We consider a bet "placed" if it exists in currentBets or lockedBets.
+    // Note: In this new logic, the button visibility is less critical as the Host can adjust manually
+    // or wait for participants.
+    // However, we can check if all teams have *some* bet value recorded.
+    
+    // For now, we let the Reveal button be always active or active if > 0 bets exist.
+    // Simpler: Always show Reveal button. Logic for "Next" is handled by Reveal click.
 }
 
 function renderBettingCards() {
     bettingTeamsContainer.innerHTML = '';
     teamsData = getTeamsWithScores();
-    teamBets = {}; // Reset bets
+    const bettingData = getBettingData();
+    const { currentBets, lockedBets, revealed } = bettingData;
 
     teamsData.forEach(team => {
         const canBet = team.score > 0;
-        teamBets[team.index] = 0; // Default bet to 0 for everyone.
-
+        const currentBet = currentBets[team.index] || 0;
+        const isLocked = lockedBets[team.index];
+        
         const card = document.createElement('div');
         card.className = 'betting-team-card';
-        card.dataset.index = team.index; // Add index for easier selector lookup
+        
+        let betDisplayContent = '';
+        
+        if (!canBet) {
+             betDisplayContent = `
+                <div class="bet-control no-bet">
+                    <p>לא ניתן להמר</p>
+                </div>`;
+        } else {
+            if (revealed) {
+                // Show actual numbers, disable controls
+                 betDisplayContent = `
+                    <div class="bet-control revealed">
+                        <span class="bet-amount">${currentBet}</span>
+                    </div>`;
+            } else {
+                 // Not revealed. Show controls (Host manual override) AND Lock Status
+                 // If locked by participant, show a lock/check icon.
+                 // The number is still visible to the host for manual adjustment if needed, 
+                 // OR we hide it if we want true "blind" betting until reveal.
+                 // User request: "Host button to reveal bets of everyone". This implies hidden by default.
+                 
+                 // DECISION: Host sees values they manually set. If participant locks, it shows "Locked".
+                 // To avoid cheating/peeking, we can hide the value if locked, or show a placeholder.
+                 
+                 if (isLocked) {
+                      betDisplayContent = `
+                        <div class="bet-control locked">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 0 24 24" width="40px" fill="#4CAF50"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                            <p style="margin:0; font-weight:bold; color:#4CAF50;">הימור התקבל</p>
+                        </div>`;
+                 } else {
+                     // Standard manual controls
+                     betDisplayContent = `
+                        <div class="bet-control">
+                            <button class="bet-stepper-btn bet-increase" data-index="${team.index}">+</button>
+                            <span class="bet-amount" data-index="${team.index}">${currentBet}</span>
+                            <button class="bet-stepper-btn bet-decrease" data-index="${team.index}">-</button>
+                        </div>`;
+                 }
+            }
+        }
+
         card.innerHTML = `
             <div class="team-icon">
                 <img src="${team.icon}" alt="${team.name}">
             </div>
             <p class="team-name">${team.name}</p>
             <p class="team-score">ניקוד: ${team.score}</p>
-            ${canBet ? `
-                <div class="bet-control">
-                    <button class="bet-stepper-btn bet-increase" data-index="${team.index}">+</button>
-                    <span class="bet-amount" data-index="${team.index}">0</span>
-                    <button class="bet-stepper-btn bet-decrease" data-index="${team.index}">-</button>
-                </div>
-            ` : `
-                <div class="bet-control no-bet">
-                    <p>לא ניתן להמר</p>
-                </div>
-            `}
+            ${betDisplayContent}
         `;
         bettingTeamsContainer.appendChild(card);
     });
-    checkAllBetsPlaced(); // Check initially
+    
+    // Button visibility logic
+    if (revealed) {
+        revealBetsBtn.classList.add('hidden');
+        showFinalQuestionBtn.classList.remove('hidden');
+    } else {
+        revealBetsBtn.classList.remove('hidden');
+        showFinalQuestionBtn.classList.add('hidden');
+    }
 }
 
 function handleBetChange(teamIndex, direction) {
     const maxBet = teamsData.find(t => t.index === teamIndex)?.score || 0;
-    let currentBet = teamBets[teamIndex];
+    const bettingData = getBettingData();
+    let currentBet = bettingData.currentBets[teamIndex] || 0;
 
     if (direction === 'increase') {
         currentBet = Math.min(currentBet + 5, maxBet);
@@ -81,13 +126,18 @@ function handleBetChange(teamIndex, direction) {
         currentBet = Math.max(currentBet - 5, 0);
     }
 
-    teamBets[teamIndex] = currentBet;
+    // Update state
+    updateTeamBet(teamIndex, currentBet, false); // False = not locked (manual edit)
     
+    // Update UI locally
     const amountEl = bettingTeamsContainer.querySelector(`.bet-amount[data-index="${teamIndex}"]`);
     if (amountEl) {
         amountEl.textContent = currentBet;
     }
-    checkAllBetsPlaced();
+    
+    // We don't broadcast every single increment to participants to save bandwidth/flicker,
+    // as they have their own controls. But if Host changes it, it might overwrite.
+    // Simplified: Host wins.
 }
 
 function renderFinalScoringControls() {
@@ -185,7 +235,8 @@ function checkAllTeamsScored() {
 }
 
 function handleFinalScore(teamIndex, wasCorrect) {
-    const betAmount = teamBets[teamIndex];
+    const bettingData = getBettingData();
+    const betAmount = bettingData.currentBets[teamIndex] || 0;
     const scoreChange = wasCorrect ? betAmount : -betAmount;
 
     // Play the correct sound based on the result
@@ -212,10 +263,9 @@ function handleFinalScore(teamIndex, wasCorrect) {
 
 
 export function showBettingScreen() {
-    // Update state for participants and broadcast
-    setParticipantState('betting');
-    document.dispatchEvent(new Event('gamestatechange'));
-
+    initializeBettingState(); // Reset bets structure in state
+    broadcastGameState(); // Let participants know we are in betting mode
+    
     renderBettingCards();
     
     // When moving to the final betting screen, remove the active team highlight
@@ -243,13 +293,14 @@ export function showBettingScreen() {
 function updateFooterWithBets() {
     const mainTeamsContainer = document.getElementById('main-teams-container');
     if (!mainTeamsContainer) return;
+    const bettingData = getBettingData();
 
     teamsData.forEach(team => {
         const teamElement = mainTeamsContainer.querySelector(`.team-member[data-index="${team.index}"]`);
         if (teamElement) {
             const scoreElement = teamElement.querySelector('.team-score');
             if (scoreElement) {
-                const betAmount = teamBets[team.index];
+                const betAmount = bettingData.currentBets[team.index] || 0;
                 // team.score holds the score at the time the betting screen was shown.
                 scoreElement.innerHTML = `${team.score} <span class="bet-display">(${betAmount})</span>`;
             }
@@ -281,44 +332,8 @@ function showFinalQuestion() {
     finalQuestionScreen.classList.remove('hidden');
 }
 
-/**
- * Updates the UI when a participant submits a bet remotely.
- * Stores the value but masks the display.
- * @param {object} actionData 
- */
-function handleRemoteBet(actionData) {
-    const { teamIndex, betAmount } = actionData;
-    
-    // Store the actual value
-    teamBets[teamIndex] = betAmount;
-    
-    // Update UI visually to show "Ready" state without revealing number
-    const card = bettingTeamsContainer.querySelector(`.betting-team-card[data-index="${teamIndex}"]`);
-    const amountEl = bettingTeamsContainer.querySelector(`.bet-amount[data-index="${teamIndex}"]`);
-    
-    if (card && amountEl) {
-        card.classList.add('bet-submitted');
-        amountEl.classList.add('hidden-val');
-        amountEl.textContent = betAmount; // Store it in DOM but hidden via CSS
-        
-        // Disable manual controls for this team since they submitted remotely
-        const controls = card.querySelector('.bet-control');
-        if (controls) {
-            controls.style.pointerEvents = 'none';
-            controls.style.opacity = '0.7';
-        }
-    }
-    
-    checkAllBetsPlaced();
-    playSound('correct'); // Feedback sound
-}
 
 export function initializeFinalRound() {
-    // Listener for remote bets
-    document.addEventListener('participant_bet_submitted', (e) => {
-        handleRemoteBet(e.detail);
-    });
-
     let longPressTimer = null;
     let longPressTriggered = false;
 
@@ -332,13 +347,13 @@ export function initializeFinalRound() {
                 const index = parseInt(target.dataset.index, 10);
                 const maxBet = teamsData.find(t => t.index === index)?.score || 0;
                 
-                teamBets[index] = maxBet;
+                // Update directly
+                updateTeamBet(index, maxBet, false);
                 
                 const amountEl = bettingTeamsContainer.querySelector(`.bet-amount[data-index="${index}"]`);
                 if (amountEl) {
                     amountEl.textContent = maxBet;
                 }
-                checkAllBetsPlaced();
             }, 500); // Long press duration
         }
     };
@@ -370,18 +385,13 @@ export function initializeFinalRound() {
     bettingTeamsContainer.addEventListener('touchstart', startPress);
     bettingTeamsContainer.addEventListener('touchend', cancelPress);
 
-    revealBetsBtn.addEventListener('click', () => {
-        // Remove the "hidden" class to reveal numbers
-        const hiddenEls = document.querySelectorAll('.bet-amount.hidden-val');
-        hiddenEls.forEach(el => el.classList.remove('hidden-val'));
-        
-        // Show the final question button
-        revealBetsBtn.classList.add('hidden');
-        showFinalQuestionBtn.classList.remove('hidden');
-        showFinalQuestionBtn.focus();
-    });
-
     showFinalQuestionBtn.addEventListener('click', showFinalQuestion);
+    
+    revealBetsBtn.addEventListener('click', () => {
+        revealBets(); // Update state
+        renderBettingCards(); // Re-render UI
+        broadcastGameState(); // Broadcast revealed state
+    });
 
     showFinalAnswerBtn.addEventListener('click', () => {
         finalAnswerContainer.classList.remove('hidden');
@@ -468,10 +478,15 @@ export function initializeFinalRound() {
         showFinalAnswerBtn.classList.remove('hidden');
         endGameBtn.classList.add('hidden');
         finalAnswerLinkBtn.classList.add('hidden');
-        revealBetsBtn.classList.add('hidden');
-        showFinalQuestionBtn.classList.add('hidden');
         
         // Last action: clear the saved state for the completed game.
         clearGameState();
+    });
+
+    // Listener for re-rendering betting UI when a participant locks a bet
+    document.addEventListener('bettingupdate', () => {
+        if (!bettingScreen.classList.contains('hidden')) {
+             renderBettingCards();
+        }
     });
 }

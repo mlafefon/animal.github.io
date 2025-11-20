@@ -37,6 +37,7 @@ function _resetInternalState() {
         gameStateForParticipant: 'waiting', // The high-level state for participant view
         boxesData: null, // To hold scores and selection for the boxes screen
         timerEndTime: null, // To sync timers with participants
+        bettingData: null, // New: Tracks bets { currentBets: {}, lockedBets: {}, revealed: false }
     };
 }
 
@@ -304,4 +305,53 @@ export function setParticipantState(newState) {
  */
 export function setTimerEndTime(timestamp) {
     _state.timerEndTime = timestamp;
+}
+
+/**
+ * Initialize betting data structure in the state.
+ */
+export function initializeBettingState() {
+    _state.bettingData = {
+        currentBets: {}, // Map teamIndex -> amount
+        lockedBets: {},  // Map teamIndex -> boolean (is locked?)
+        revealed: false
+    };
+    _state.gameStateForParticipant = 'betting';
+    _saveState();
+}
+
+/**
+ * Update a single team's bet amount and lock status.
+ * @param {number} teamIndex
+ * @param {number} amount
+ * @param {boolean} isLocked
+ */
+export function updateTeamBet(teamIndex, amount, isLocked = false) {
+    if (!_state.bettingData) {
+        initializeBettingState();
+    }
+    _state.bettingData.currentBets[teamIndex] = amount;
+    _state.bettingData.lockedBets[teamIndex] = isLocked;
+    _saveState();
+}
+
+/**
+ * Set the betting phase to revealed.
+ */
+export function revealBets() {
+    if (_state.bettingData) {
+        _state.bettingData.revealed = true;
+        // Lock all bets upon reveal to prevent further changes
+        Object.keys(_state.bettingData.lockedBets).forEach(key => {
+            _state.bettingData.lockedBets[key] = true;
+        });
+        _saveState();
+    }
+}
+
+/**
+ * Get the current betting data.
+ */
+export function getBettingData() {
+    return _state.bettingData || { currentBets: {}, lockedBets: {}, revealed: false };
 }

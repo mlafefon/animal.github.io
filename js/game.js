@@ -159,8 +159,8 @@ function prepareForFinalRound() {
 /**
  * Gathers the current game state and broadcasts it to participants via Appwrite.
  */
-async function broadcastGameState() {
-    const { sessionDocumentId, gameCode, gameName, teams, activeTeamIndex, gameStateForParticipant, finalQuestionData, boxesData, timerEndTime } = gameState.getState();
+export async function broadcastGameState() {
+    const { sessionDocumentId, gameCode, gameName, teams, activeTeamIndex, gameStateForParticipant, finalQuestionData, boxesData, timerEndTime, bettingData } = gameState.getState();
     if (!sessionDocumentId) return;
 
     // Determine the high-level state for participants
@@ -197,6 +197,7 @@ async function broadcastGameState() {
         gameState: currentGameState,
         currentQuestionData: questionDataForParticipant, // Use new name
         boxesData: boxesData,
+        bettingData: bettingData, // Include betting data in broadcast
     };
 
     try {
@@ -310,8 +311,19 @@ async function handleParticipantAction(actionPayload) {
                 }
             }
         } else if (actionData.type === 'submitBet') {
-            // Dispatch an event so final.js can handle the logic
-            document.dispatchEvent(new CustomEvent('participant_bet_submitted', { detail: actionData }));
+            // Handle betting submission
+            const teamIndex = actionData.teamIndex;
+            const amount = actionData.amount;
+            
+            // Update global betting state
+            gameState.updateTeamBet(teamIndex, amount, true);
+            
+            // Trigger UI update on Host (re-render cards)
+            document.dispatchEvent(new Event('bettingupdate'));
+
+            // Broadcast not strictly necessary here as participant already knows they locked,
+            // but good for keeping everyone in sync if there are multiple devices or spectators.
+            await broadcastGameState();
         }
     } catch (error) {
         console.error("Error processing participant action:", error);

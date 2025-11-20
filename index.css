@@ -1556,23 +1556,7 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     gap: 0.9375rem;
     width: 13.75rem;
-    transition: border-color 0.3s, box-shadow 0.3s;
 }
-
-/* Style for when a remote bet is received */
-.betting-team-card.bet-submitted {
-    border-color: #2ecc71;
-    box-shadow: 0 0 15px rgba(46, 204, 113, 0.5);
-}
-.betting-team-card.bet-submitted .bet-amount.hidden-val::before {
-    content: "\2714"; /* Checkmark */
-    font-size: 2rem;
-    color: #2ecc71;
-}
-.betting-team-card.bet-submitted .bet-amount.hidden-val {
-    font-size: 0; /* Hide the number */
-}
-
 .betting-team-card .team-icon {
     width: 6.25rem;
     height: 6.25rem;
@@ -1624,12 +1608,6 @@ h1, h2, h3, h4, h5, h6 {
     width: 5rem;
     text-align: center;
     direction: ltr;
-}
-
-.betting-actions {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
 }
 
 /* --- Final Question Screen --- */
