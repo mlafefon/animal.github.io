@@ -1,11 +1,12 @@
 
 
 
+
 import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState, broadcastGameState } from './game.js';
 import { playSound } from './audio.js';
 import { showLinkModal } from './ui.js';
 import { unsubscribeAllRealtime, updateGameSession } from './appwriteService.js';
-import { getState, initializeBettingState, updateTeamBet, getBettingData, revealBets, setParticipantState } from './gameState.js';
+import { getState, initializeBettingState, updateTeamBet, unlockTeamBet, getBettingData, revealBets, setParticipantState } from './gameState.js';
 
 
 // --- Elements ---
@@ -74,8 +75,11 @@ function renderBettingCards() {
                  if (isLocked) {
                       betDisplayContent = `
                         <div class="bet-control locked">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 0 24 24" width="40px" fill="#4CAF50"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                            <p style="margin:0; font-weight:bold; color:#4CAF50;">הימור התקבל</p>
+                            <div class="locked-content">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 0 24 24" width="40px" fill="#4CAF50"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                                <p>הימור התקבל</p>
+                            </div>
+                            <button class="unlock-bet-btn" data-index="${team.index}" title="בטל הימור ואפשר למשתתף לשלוח שוב">✕</button>
                         </div>`;
                  } else {
                      // Standard manual controls
@@ -412,6 +416,12 @@ export function initializeFinalRound() {
             const index = parseInt(target.dataset.index, 10);
             const direction = target.classList.contains('bet-increase') ? 'increase' : 'decrease';
             handleBetChange(index, direction);
+        } else if (target.classList.contains('unlock-bet-btn')) {
+            // Handle unlock click
+            const index = parseInt(target.dataset.index, 10);
+            unlockTeamBet(index);
+            renderBettingCards(); // Re-render to show manual controls
+            broadcastGameState(); // Notify participant to re-enable betting
         }
     });
 

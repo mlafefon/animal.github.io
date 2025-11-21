@@ -1,4 +1,6 @@
 
+
+
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -1612,6 +1614,56 @@ h1, h2, h3, h4, h5, h6 {
     color: #f0f8ff;
     padding: 0.3125rem 0;
 }
+
+/* Locked betting status control */
+.bet-control.locked {
+    display: flex;
+    justify-content: space-between; /* Spread items out */
+    align-items: center;
+    width: 100%;
+    gap: 0.5rem;
+    padding: 0 0.3rem;
+}
+
+.bet-control.locked .locked-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-grow: 1;
+    justify-content: center;
+}
+
+.bet-control.locked p {
+    margin: 0;
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+.unlock-bet-btn {
+    background-color: rgba(231, 76, 60, 0.8); /* Red background */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+    padding: 0;
+    margin-right: 5px;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.unlock-bet-btn:hover {
+    background-color: #c0392b;
+    transform: scale(1.1);
+}
+
+
 .bet-stepper-btn {
     width: 2.5rem;
     height: 2.5rem;

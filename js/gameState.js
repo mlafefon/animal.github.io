@@ -337,6 +337,17 @@ export function updateTeamBet(teamIndex, amount, isLocked = false) {
 }
 
 /**
+ * Unlocks a bet for a specific team, allowing them to resubmit.
+ * @param {number} teamIndex
+ */
+export function unlockTeamBet(teamIndex) {
+    if (_state.bettingData) {
+        _state.bettingData.lockedBets[teamIndex] = false;
+        _saveState();
+    }
+}
+
+/**
  * Set the betting phase to revealed.
  */
 export function revealBets() {
