@@ -1,4 +1,6 @@
 
+
+
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -1648,6 +1650,46 @@ h1, h2, h3, h4, h5, h6 {
     margin-bottom: 1rem;
     line-height: 1;
 }
+
+/* Locked Bet Controls (Host View) */
+.bet-control.locked {
+    flex-direction: row;
+    gap: 0.5rem;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.locked-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.locked-amount {
+    font-size: 1.5rem;
+    color: #4CAF50; /* Green */
+    font-weight: bold;
+}
+
+.unlock-bet-btn {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: #e74c3c;
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+.unlock-bet-btn:hover {
+    transform: scale(1.1);
+    background-color: #c0392b;
+}
+
 
 /* Participant Betting Layout Updates */
 .max-bet-label {
@@ -3987,4 +4029,43 @@ body.participant-view .app-version {
 
 #participant-lock-bet-btn {
     margin-top: 3rem; /* Explicit margin just in case */
+}
+
+/* Locked Bet Controls (Host View) */
+.bet-control.locked {
+    flex-direction: row;
+    gap: 0.5rem;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.locked-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.locked-amount {
+    font-size: 1.5rem;
+    color: #4CAF50; /* Green */
+    font-weight: bold;
+}
+
+.unlock-bet-btn {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: #e74c3c;
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+.unlock-bet-btn:hover {
+    transform: scale(1.1);
+    background-color: #c0392b;
 }
