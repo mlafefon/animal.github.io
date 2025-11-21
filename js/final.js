@@ -1,5 +1,6 @@
 
 
+
 import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState, broadcastGameState } from './game.js';
 import { playSound } from './audio.js';
 import { showLinkModal } from './ui.js';
@@ -17,6 +18,7 @@ const finalAnswerContainer = document.getElementById('final-answer-container');
 const finalAnswerText = document.getElementById('final-answer-text');
 const finalAnswerLinkBtn = document.getElementById('final-answer-link-btn');
 const showFinalAnswerBtn = document.getElementById('show-final-answer-btn');
+const revealScoringBtn = document.getElementById('reveal-scoring-btn');
 const finalScoringContainer = document.getElementById('final-scoring-container');
 const finalScoringTeams = document.getElementById('final-scoring-teams');
 const endGameBtn = document.getElementById('end-game-btn');
@@ -431,9 +433,27 @@ export function initializeFinalRound() {
         finalAnswerContainer.classList.remove('hidden');
         showFinalAnswerBtn.classList.add('hidden');
 
+        // Reveal the new "Who Answered Correctly" button instead of showing scoring immediately
+        revealScoringBtn.classList.remove('hidden');
+
         const finalQuestion = getFinalQuestionData();
         finalAnswerLinkBtn.classList.toggle('hidden', !finalQuestion || !finalQuestion.url);
         
+        // Do NOT show scoring controls yet
+        // renderFinalScoringControls(); 
+        // finalScoringContainer.classList.remove('hidden');
+    });
+    
+    revealScoringBtn.addEventListener('click', () => {
+        const finalContent = document.querySelector('.final-question-content');
+        
+        // Add class to shrink the question part
+        finalContent.classList.add('compact-mode');
+        
+        // Hide this button
+        revealScoringBtn.classList.add('hidden');
+        
+        // Show the scoring container
         renderFinalScoringControls();
         finalScoringContainer.classList.remove('hidden');
     });
@@ -491,6 +511,10 @@ export function initializeFinalRound() {
         if (winnerAnnouncement) {
             winnerAnnouncement.remove();
         }
+        
+        // Reset Compact Mode
+        const finalContent = document.querySelector('.final-question-content');
+        if (finalContent) finalContent.classList.remove('compact-mode');
 
         // Remove the winner/answered highlights from the footer icons.
         const footerIcons = mainGameFooter.querySelectorAll('.team-member');
@@ -515,6 +539,7 @@ export function initializeFinalRound() {
         showFinalAnswerBtn.classList.remove('hidden');
         endGameBtn.classList.add('hidden');
         finalAnswerLinkBtn.classList.add('hidden');
+        revealScoringBtn.classList.add('hidden'); // Ensure reset
         
         // Last action: clear the saved state for the completed game.
         clearGameState();
