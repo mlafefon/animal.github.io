@@ -352,12 +352,6 @@ function showFinalQuestion() {
     if (finalQuestion) {
         finalQuestionText.textContent = finalQuestion.q;
         finalAnswerText.textContent = finalQuestion.a;
-        
-        // Set title for hover state (when shrunk)
-        const finalQuestionContainer = document.getElementById('final-question-container');
-        if (finalQuestionContainer) {
-            finalQuestionContainer.title = finalQuestion.q;
-        }
     } else {
         finalQuestionText.textContent = 'לא נמצאה שאלה סופית.';
         finalAnswerText.textContent = '';
@@ -437,12 +431,9 @@ export function initializeFinalRound() {
     showFinalAnswerBtn.addEventListener('click', () => {
         finalAnswerContainer.classList.remove('hidden');
         showFinalAnswerBtn.classList.add('hidden');
-        
-        // Shrink the final question container to make space
-        const finalQuestionContainer = document.getElementById('final-question-container');
-        if (finalQuestionContainer) {
-            finalQuestionContainer.classList.add('shrunk');
-        }
+
+        // NEW: Activate compressed mode for the Q&A area to fit the scoring cards
+        document.querySelector('.final-question-content').classList.add('results-active');
 
         const finalQuestion = getFinalQuestionData();
         finalAnswerLinkBtn.classList.toggle('hidden', !finalQuestion || !finalQuestion.url);
@@ -505,13 +496,6 @@ export function initializeFinalRound() {
             winnerAnnouncement.remove();
         }
 
-        // Reset shrunk state
-        const finalQuestionContainer = document.getElementById('final-question-container');
-        if (finalQuestionContainer) {
-            finalQuestionContainer.classList.remove('shrunk');
-            finalQuestionContainer.title = '';
-        }
-
         // Remove the winner/answered highlights from the footer icons.
         const footerIcons = mainGameFooter.querySelectorAll('.team-member');
         footerIcons.forEach(icon => {
@@ -535,6 +519,9 @@ export function initializeFinalRound() {
         showFinalAnswerBtn.classList.remove('hidden');
         endGameBtn.classList.add('hidden');
         finalAnswerLinkBtn.classList.add('hidden');
+        
+        // Reset the compressed layout mode
+        document.querySelector('.final-question-content').classList.remove('results-active');
         
         // Last action: clear the saved state for the completed game.
         clearGameState();
