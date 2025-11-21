@@ -1,4 +1,5 @@
 
+
 import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState, broadcastGameState } from './game.js';
 import { playSound } from './audio.js';
 import { showLinkModal } from './ui.js';
@@ -68,14 +69,6 @@ function renderBettingCards() {
                     </div>`;
             } else {
                  // Not revealed. Show controls (Host manual override) AND Lock Status
-                 // If locked by participant, show a lock/check icon.
-                 // The number is still visible to the host for manual adjustment if needed, 
-                 // OR we hide it if we want true "blind" betting until reveal.
-                 // User request: "Host button to reveal bets of everyone". This implies hidden by default.
-                 
-                 // DECISION: Host sees values they manually set. If participant locks, it shows "Locked".
-                 // To avoid cheating/peeking, we can hide the value if locked, or show a placeholder.
-                 
                  if (isLocked) {
                       betDisplayContent = `
                         <div class="bet-control locked">
@@ -134,25 +127,39 @@ function handleBetChange(teamIndex, direction) {
     if (amountEl) {
         amountEl.textContent = currentBet;
     }
-    
-    // We don't broadcast every single increment to participants to save bandwidth/flicker,
-    // as they have their own controls. But if Host changes it, it might overwrite.
-    // Simplified: Host wins.
 }
 
 function renderFinalScoringControls() {
     finalScoringTeams.innerHTML = '';
+    const state = getState();
+    const finalAnswers = state.finalAnswers || {};
+
     teamsData.forEach(team => {
-        const scoreControl = document.createElement('div');
-        scoreControl.className = 'final-scoring-card';
-        scoreControl.innerHTML = `
-            <p class="team-name">${team.name}</p>
+        const submittedAnswer = finalAnswers[team.index];
+        const hasAnswer = submittedAnswer !== undefined && submittedAnswer !== null && submittedAnswer.trim() !== '';
+        
+        const answerCard = document.createElement('div');
+        answerCard.className = 'final-answer-card';
+        
+        // If no answer was submitted, display a placeholder message
+        const answerDisplayHtml = hasAnswer 
+            ? `<div class="final-answer-text-display">${submittedAnswer}</div>`
+            : `<div class="final-answer-text-display no-answer">לא התקבלה תשובה</div>`;
+
+        answerCard.innerHTML = `
+            <div class="team-header">
+                <div class="team-icon">
+                    <img src="${team.icon}" alt="${team.name}">
+                </div>
+                <p class="team-name">${team.name}</p>
+            </div>
+            ${answerDisplayHtml}
             <div class="final-scoring-controls" data-index="${team.index}">
                 <button class="final-scoring-correct">צדק</button>
                 <button class="final-scoring-incorrect">טעה</button>
             </div>
         `;
-        finalScoringTeams.appendChild(scoreControl);
+        finalScoringTeams.appendChild(answerCard);
     });
 }
 
@@ -255,7 +262,11 @@ function handleFinalScore(teamIndex, wasCorrect) {
         const parentCard = controls.parentElement;
         controls.remove();
         const p = document.createElement('p');
-        p.textContent = `הניקוד עודכן!`;
+        p.style.textAlign = 'center';
+        p.style.fontWeight = 'bold';
+        p.style.marginTop = '1rem';
+        p.style.color = wasCorrect ? '#2ecc71' : '#e74c3c';
+        p.textContent = wasCorrect ? 'תשובה נכונה' : 'תשובה שגויה';
         parentCard.appendChild(p);
     }
     checkAllTeamsScored();
@@ -307,6 +318,26 @@ function updateFooterWithBets() {
         }
     });
 }
+
+/**
+ * Updates the UI to indicate which teams have submitted an answer.
+ * Adds a visual class to the team icon in the footer.
+ */
+function updateAnswerReceivedIndicators() {
+    const state = getState();
+    const finalAnswers = state.finalAnswers || {};
+    const mainTeamsContainer = document.getElementById('main-teams-container');
+    
+    if (!mainTeamsContainer) return;
+
+    Object.keys(finalAnswers).forEach(teamIndex => {
+        const teamElement = mainTeamsContainer.querySelector(`.team-member[data-index="${teamIndex}"]`);
+        if (teamElement) {
+            teamElement.classList.add('answered');
+        }
+    });
+}
+
 
 function showFinalQuestion() {
     bettingScreen.classList.add('hidden');
@@ -461,9 +492,12 @@ export function initializeFinalRound() {
             winnerAnnouncement.remove();
         }
 
-        // Remove the winner highlight from the footer icons.
-        const winnerIcons = mainGameFooter.querySelectorAll('.team-member.winner');
-        winnerIcons.forEach(icon => icon.classList.remove('winner'));
+        // Remove the winner/answered highlights from the footer icons.
+        const footerIcons = mainGameFooter.querySelectorAll('.team-member');
+        footerIcons.forEach(icon => {
+            icon.classList.remove('winner');
+            icon.classList.remove('answered');
+        });
 
         // Clean up bet display from scores in the footer
         const footerScores = mainGameFooter.querySelectorAll('.team-score');
@@ -492,4 +526,7 @@ export function initializeFinalRound() {
              renderBettingCards();
         }
     });
+
+    // Listener for updating the UI when a final answer is received
+    document.addEventListener('finalanswerreceived', updateAnswerReceivedIndicators);
 }

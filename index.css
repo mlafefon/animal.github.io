@@ -1160,7 +1160,7 @@ h1, h2, h3, h4, h5, h6 {
     z-index: 100;
     height: 15.625rem;
     background: rgba(0, 0, 0, 0.4);
-    border-top: 0.1875rem solid rgba(255, 255, 255, 0.3);
+    border--top: 0.1875rem solid rgba(255, 255, 255, 0.3);
     padding: 1.25rem;
     display: flex;
     align-items: center;
@@ -1276,6 +1276,33 @@ h1, h2, h3, h4, h5, h6 {
     border-width: 0.625rem;
     box-shadow: 0 0 0.9375rem rgba(255, 235, 59, 0.8);
 }
+
+/* Answered Indicator Style */
+.team-member.answered .team-icon-wrapper::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 2rem;
+    height: 2rem;
+    background-color: #4CAF50; /* Green */
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>');
+    background-size: 1.5rem;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 50%;
+    border: 0.125rem solid white;
+    box-shadow: 0 0.125rem 0.3125rem rgba(0,0,0,0.3);
+    z-index: 10;
+    animation: pop-in 0.3s ease-out, pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+    0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+    70% { box-shadow: 0 0 0 0.625rem rgba(76, 175, 80, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+}
+
 
 .team-icon img {
     width: 90%;
@@ -1673,26 +1700,73 @@ h1, h2, h3, h4, h5, h6 {
     flex-wrap: wrap;
     margin-top: 0.9375rem;
 }
-.final-scoring-card {
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 0.625rem;
-    padding: 0.9375rem;
+
+/* --- Final Answer Cards (Replacing simple scoring buttons) --- */
+.final-answer-card {
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.9375rem;
+    padding: 1.25rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.625rem;
-    min-width: 11.25rem;
+    gap: 1rem;
+    width: 18rem; /* Fixed width for consistency */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
-.final-scoring-card .team-name {
+
+.final-answer-card .team-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    justify-content: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 0.75rem;
+}
+
+.final-answer-card .team-icon {
+    width: 3rem;
+    height: 3rem;
+    border-width: 2px;
+}
+
+.final-answer-card .team-name {
+    font-size: 1.2rem;
+}
+
+.final-answer-text-display {
+    width: 100%;
+    min-height: 4rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    color: #f0f8ff;
     font-size: 1.1rem;
+    text-align: center;
+    white-space: pre-wrap;
 }
+
+.final-answer-text-display.no-answer {
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+}
+
+.final-scoring-controls {
+    display: flex;
+    gap: 0.75rem;
+    width: 100%;
+    justify-content: center;
+}
+
 .final-scoring-controls button {
-    margin: 0 0.3125rem;
-    padding: 0.5rem 0.9375rem;
-    border-radius: 1.25rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 2rem;
     border: none;
     cursor: pointer;
     font-weight: bold;
+    font-size: 1rem;
+    flex: 1;
 }
 .final-scoring-correct {
     background-color: #2ecc71;

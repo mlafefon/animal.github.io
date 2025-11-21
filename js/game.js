@@ -7,6 +7,8 @@
 
 
 
+
+
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -342,6 +344,9 @@ async function handleParticipantAction(actionPayload) {
             
             gameState.submitFinalAnswer(teamIndex, answerText);
             
+            // Trigger UI update on Host (show indicator)
+            document.dispatchEvent(new CustomEvent('finalanswerreceived', { detail: { teamIndex } }));
+
             // Broadcast so all clients (and the host logic if needed later) have the latest data
             await broadcastGameState();
         }
