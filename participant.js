@@ -5,6 +5,8 @@
 
 
 
+
+
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
@@ -46,6 +48,12 @@ const participantMaxBetLabel = document.getElementById('participant-max-bet-labe
 const participantLockBetBtn = document.getElementById('participant-lock-bet-btn');
 const participantBetStatus = document.getElementById('participant-bet-status');
 const betControlContainer = document.querySelector('.bet-control-container');
+
+// Final Answer Elements
+const finalAnswerInputInteraction = document.getElementById('final-answer-interaction');
+const finalAnswerInput = document.getElementById('final-answer-input');
+const submitFinalAnswerBtn = document.getElementById('submit-final-answer-btn');
+const finalAnswerSentMsg = document.getElementById('final-answer-sent-msg');
 
 
 // --- State ---
@@ -404,6 +412,37 @@ async function handleBetSubmission() {
     }
 }
 
+/**
+ * Handles sending the final answer text to the host.
+ */
+async function handleFinalAnswerSubmission() {
+    if (!myTeam) return;
+    const answerText = finalAnswerInput.value.trim();
+    if (!answerText) {
+        showNotification('יש לכתוב תשובה לפני השליחה', 'error');
+        return;
+    }
+
+    submitFinalAnswerBtn.disabled = true;
+
+    try {
+        await sendAction(gameCode, {
+            type: 'submitFinalAnswer',
+            teamIndex: myTeam.index,
+            answerText: answerText,
+            participantId: participantId
+        });
+
+        // Update local UI
+        finalAnswerInputInteraction.classList.add('hidden');
+        finalAnswerSentMsg.classList.remove('hidden');
+
+    } catch (e) {
+        showNotification('שגיאה בשליחת התשובה.', 'error');
+        submitFinalAnswerBtn.disabled = false;
+    }
+}
+
 
 function updateGameView(state) {
     currentHostState = state; // Update global state
@@ -456,6 +495,11 @@ function updateGameView(state) {
     // Default UI state: hide controls and waiting messages.
     participantControls.classList.add('hidden');
     waitingMessage.classList.add('hidden');
+    
+    // Hide final answer elements by default
+    finalAnswerInputInteraction.classList.add('hidden');
+    finalAnswerSentMsg.classList.add('hidden');
+
     stopParticipantTimer(); // Stop timer by default for every state change
     
     // In an active game state, request the wake lock
@@ -486,6 +530,17 @@ function updateGameView(state) {
                     <p id="participant-question-text" style="font-size: 1.8rem; white-space: pre-wrap;">${state.currentQuestionData ? state.currentQuestionData.q : '...'}</p>
                 </div>
             `;
+            
+            // Check if my team has already submitted an answer
+            const hasSubmitted = state.finalAnswers && state.finalAnswers[myTeam.index];
+            
+            if (hasSubmitted) {
+                finalAnswerSentMsg.classList.remove('hidden');
+            } else {
+                finalAnswerInputInteraction.classList.remove('hidden');
+                submitFinalAnswerBtn.disabled = false; // Ensure button is active
+            }
+            
             participantControls.classList.add('hidden');
             waitingMessage.classList.add('hidden');
             break;
@@ -711,6 +766,9 @@ function initializeGameScreen() {
     });
 
     participantLockBetBtn.addEventListener('click', handleBetSubmission);
+    
+    // Listener for Final Answer
+    submitFinalAnswerBtn.addEventListener('click', handleFinalAnswerSubmission);
 }
 
 /**

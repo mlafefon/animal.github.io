@@ -3536,6 +3536,51 @@ body.participant-view .app-version {
 }
 
 
+/* --- Final Answer Section (Participant) --- */
+#final-answer-interaction {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    margin-top: 2rem;
+    width: 100%;
+    max-width: 30rem;
+}
+
+#final-answer-input {
+    width: 100%;
+    min-height: 6rem;
+    padding: 1rem;
+    font-size: 1.2rem;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 0.125rem solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.75rem;
+    color: #f0f8ff;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+#final-answer-input:focus {
+    outline: none;
+    border-color: #ffeb3b;
+}
+
+#final-answer-sent-msg {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    animation: fadeInScaleUp 0.5s ease-out;
+}
+
+#final-answer-sent-msg p {
+    font-size: 1.5rem;
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+
 /* --- Responsive Overrides --- */
 
 @media (max-width: 600px) {

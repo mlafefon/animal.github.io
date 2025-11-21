@@ -38,6 +38,7 @@ function _resetInternalState() {
         boxesData: null, // To hold scores and selection for the boxes screen
         timerEndTime: null, // To sync timers with participants
         bettingData: null, // New: Tracks bets { currentBets: {}, lockedBets: {}, revealed: false }
+        finalAnswers: {}, // New: Map teamIndex -> answer string
     };
 }
 
@@ -354,4 +355,17 @@ export function revealBets() {
  */
 export function getBettingData() {
     return _state.bettingData || { currentBets: {}, lockedBets: {}, revealed: false };
+}
+
+/**
+ * Submit a final answer for a team.
+ * @param {number} teamIndex
+ * @param {string} answerText
+ */
+export function submitFinalAnswer(teamIndex, answerText) {
+    if (!_state.finalAnswers) {
+        _state.finalAnswers = {};
+    }
+    _state.finalAnswers[teamIndex] = answerText;
+    _saveState();
 }
