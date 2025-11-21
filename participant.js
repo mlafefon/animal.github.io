@@ -9,6 +9,8 @@
 
 
 
+
+
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
@@ -74,6 +76,7 @@ let wakeLockSentinel = null; // For Screen Wake Lock API
 
 // Local Betting State
 let currentBetValue = 0;
+let wasBetLocked = false;
 
 
 // --- Utility Functions ---
@@ -380,13 +383,21 @@ function renderBettingScreen(state) {
         participantLockBetBtn.classList.remove('hidden');
         participantBetStatus.classList.add('hidden');
         
-        // Initialize local bet value to 0 if new
+        // If the bet was previously locked and now unlocked, check for reset from server.
+        // If the server value is 0 (reset) and we were previously locked, reset local value.
+        if (wasBetLocked && !isLocked && (bettingData.currentBets[myTeam.index] || 0) === 0) {
+            currentBetValue = 0;
+        }
+        
+        // Initialize local bet value to 0 if new (undefined)
         if (currentBetValue === undefined) currentBetValue = 0;
         participantBetAmount.textContent = currentBetValue;
         
         // Disable confirm if score is 0
         participantLockBetBtn.disabled = (currentScore <= 0 && currentBetValue > 0) || currentScore < 0; // Edge case for negative score
     }
+    
+    wasBetLocked = !!isLocked;
 }
 
 async function handleBetSubmission() {
@@ -407,6 +418,7 @@ async function handleBetSubmission() {
         participantLockBetBtn.classList.add('hidden');
         participantBetStatus.classList.remove('hidden');
         participantBetStatus.textContent = 'שולח...';
+        wasBetLocked = true; // Optimistic update
         
     } catch (e) {
         showNotification('שגיאה בשליחת ההימור.', 'error');

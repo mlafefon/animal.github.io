@@ -343,6 +343,7 @@ export function updateTeamBet(teamIndex, amount, isLocked = false) {
 export function unlockTeamBet(teamIndex) {
     if (_state.bettingData) {
         _state.bettingData.lockedBets[teamIndex] = false;
+        _state.bettingData.currentBets[teamIndex] = 0; // Reset bet amount when unlocking
         _saveState();
     }
 }
