@@ -1,13 +1,11 @@
 
 
 
-
-
 import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState, broadcastGameState } from './game.js';
 import { playSound } from './audio.js';
 import { showLinkModal } from './ui.js';
 import { unsubscribeAllRealtime, updateGameSession } from './appwriteService.js';
-import { getState, initializeBettingState, updateTeamBet, getBettingData, revealBets, setParticipantState, unlockTeamBet } from './gameState.js';
+import { getState, initializeBettingState, updateTeamBet, getBettingData, revealBets, setParticipantState } from './gameState.js';
 
 
 // --- Elements ---
@@ -76,13 +74,8 @@ function renderBettingCards() {
                  if (isLocked) {
                       betDisplayContent = `
                         <div class="bet-control locked">
-                            <div class="locked-status">
-                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#4CAF50"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                                <span class="locked-amount">ההימור התקבל</span>
-                            </div>
-                            <button class="unlock-bet-btn" data-index="${team.index}" title="בטל הימור ושחרר">
-                                <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                            </button>
+                            <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 0 24 24" width="40px" fill="#4CAF50"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                            <p style="margin:0; font-weight:bold; color:#4CAF50;">הימור התקבל</p>
                         </div>`;
                  } else {
                      // Standard manual controls
@@ -407,7 +400,7 @@ export function initializeFinalRound() {
         }
     };
 
-    bettingTeamsContainer.addEventListener('click', async (e) => {
+    bettingTeamsContainer.addEventListener('click', (e) => {
         if (longPressTriggered) {
             e.preventDefault(); // Prevent click from firing after long press
             longPressTriggered = false; // Reset for next interaction
@@ -415,17 +408,6 @@ export function initializeFinalRound() {
         }
         
         const target = e.target;
-        
-        // Handle unlock button click
-        const unlockBtn = target.closest('.unlock-bet-btn');
-        if (unlockBtn) {
-            const index = parseInt(unlockBtn.dataset.index, 10);
-            unlockTeamBet(index);
-            renderBettingCards();
-            await broadcastGameState();
-            return;
-        }
-
         if (target.matches('.bet-stepper-btn')) {
             const index = parseInt(target.dataset.index, 10);
             const direction = target.classList.contains('bet-increase') ? 'increase' : 'decrease';
