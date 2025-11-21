@@ -1,6 +1,5 @@
 
 
-
 import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState, broadcastGameState } from './game.js';
 import { playSound } from './audio.js';
 import { showLinkModal } from './ui.js';
@@ -432,9 +431,6 @@ export function initializeFinalRound() {
         finalAnswerContainer.classList.remove('hidden');
         showFinalAnswerBtn.classList.add('hidden');
 
-        // NEW: Activate compressed mode for the Q&A area to fit the scoring cards
-        document.querySelector('.final-question-content').classList.add('results-active');
-
         const finalQuestion = getFinalQuestionData();
         finalAnswerLinkBtn.classList.toggle('hidden', !finalQuestion || !finalQuestion.url);
         
@@ -519,9 +515,6 @@ export function initializeFinalRound() {
         showFinalAnswerBtn.classList.remove('hidden');
         endGameBtn.classList.add('hidden');
         finalAnswerLinkBtn.classList.add('hidden');
-        
-        // Reset the compressed layout mode
-        document.querySelector('.final-question-content').classList.remove('results-active');
         
         // Last action: clear the saved state for the completed game.
         clearGameState();

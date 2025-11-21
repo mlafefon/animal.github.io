@@ -1701,64 +1701,6 @@ h1, h2, h3, h4, h5, h6 {
     margin-top: 0.9375rem;
 }
 
-/* New styles for Final Round Results Mode */
-.final-question-content.results-active {
-    justify-content: flex-start; /* Align to top to maximize space */
-    padding-top: 1rem;
-}
-
-.final-question-content.results-active h1 {
-    font-size: 2rem; /* Shrink title */
-    margin-bottom: 0.5rem;
-}
-
-.final-question-content.results-active #final-q-a-wrapper {
-    gap: 0.5rem; /* Reduce gap */
-}
-
-.final-question-content.results-active #final-question-container {
-    min-height: 0;
-    padding: 0.5rem 1rem;
-    background-color: rgba(0, 0, 0, 0.4);
-}
-
-.final-question-content.results-active #final-question-text {
-    font-size: 1.2rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin: 0;
-}
-
-.final-question-content.results-active #final-answer-container {
-    min-height: 0;
-    padding: 1rem;
-}
-
-.final-question-content.results-active #final-answer-text {
-    font-size: 1.8rem; /* Slightly smaller than original 2.5rem/2rem */
-}
-
-.final-question-content.results-active #final-scoring-container {
-    margin-top: 0.5rem;
-    width: 100%;
-    flex: 1;
-    overflow-y: auto; /* Allow scrolling if teams barely fit */
-    min-height: 0; /* For flex scrolling */
-    margin-bottom: 1rem; /* Space before footer */
-}
-
-/* Adjust grid for scoring cards to fit more */
-.final-question-content.results-active #final-scoring-teams {
-    gap: 1rem;
-    padding-bottom: 1rem; 
-}
-
-.final-question-content.results-active .final-answer-card {
-    padding: 0.75rem;
-    width: 16rem; /* Slightly narrower */
-}
-
 /* --- Final Answer Cards (Replacing simple scoring buttons) --- */
 .final-answer-card {
     background-color: rgba(0, 0, 0, 0.3);
