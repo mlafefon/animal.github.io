@@ -1649,6 +1649,30 @@ h1, h2, h3, h4, h5, h6 {
     line-height: 1;
 }
 
+/* Participant Betting Layout Updates */
+.max-bet-label {
+    font-size: 1.2rem;
+    color: #ffeb3b;
+    margin-bottom: 1.5rem;
+    opacity: 0.9;
+}
+
+.bet-control-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 3rem; /* The requested gap */
+}
+
+.bet-buttons {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    width: 100%;
+    margin-top: 1rem;
+}
+
 /* --- Final Question Screen --- */
 #final-question-screen {
     width: 100vw;
@@ -3935,4 +3959,32 @@ body.participant-view .app-version {
         transform: scale(1);
         box-shadow: 0 0.3125rem 0.9375rem rgba(0,0,0,0.2), 0 0 1rem rgba(231, 76, 60, 0.5);
     }
+}
+
+/* Participant Betting Layout Updates */
+.max-bet-label {
+    font-size: 1.2rem;
+    color: #ffeb3b;
+    margin-bottom: 1.5rem;
+    opacity: 0.9;
+}
+
+.bet-control-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 3rem; /* The requested gap */
+}
+
+.bet-buttons {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+#participant-lock-bet-btn {
+    margin-top: 3rem; /* Explicit margin just in case */
 }
