@@ -1,5 +1,6 @@
 
 
+
 import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState, broadcastGameState } from './game.js';
 import { playSound } from './audio.js';
 import { showLinkModal } from './ui.js';
@@ -351,6 +352,12 @@ function showFinalQuestion() {
     if (finalQuestion) {
         finalQuestionText.textContent = finalQuestion.q;
         finalAnswerText.textContent = finalQuestion.a;
+        
+        // Set title for hover state (when shrunk)
+        const finalQuestionContainer = document.getElementById('final-question-container');
+        if (finalQuestionContainer) {
+            finalQuestionContainer.title = finalQuestion.q;
+        }
     } else {
         finalQuestionText.textContent = 'לא נמצאה שאלה סופית.';
         finalAnswerText.textContent = '';
@@ -430,6 +437,12 @@ export function initializeFinalRound() {
     showFinalAnswerBtn.addEventListener('click', () => {
         finalAnswerContainer.classList.remove('hidden');
         showFinalAnswerBtn.classList.add('hidden');
+        
+        // Shrink the final question container to make space
+        const finalQuestionContainer = document.getElementById('final-question-container');
+        if (finalQuestionContainer) {
+            finalQuestionContainer.classList.add('shrunk');
+        }
 
         const finalQuestion = getFinalQuestionData();
         finalAnswerLinkBtn.classList.toggle('hidden', !finalQuestion || !finalQuestion.url);
@@ -490,6 +503,13 @@ export function initializeFinalRound() {
         const winnerAnnouncement = finalQuestionScreen.querySelector('.winner-announcement');
         if (winnerAnnouncement) {
             winnerAnnouncement.remove();
+        }
+
+        // Reset shrunk state
+        const finalQuestionContainer = document.getElementById('final-question-container');
+        if (finalQuestionContainer) {
+            finalQuestionContainer.classList.remove('shrunk');
+            finalQuestionContainer.title = '';
         }
 
         // Remove the winner/answered highlights from the footer icons.
