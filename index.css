@@ -60,7 +60,10 @@ body {
 body.participant-view {
     align-items: flex-start; /* Align top to handle content flow better */
     padding: 0; /* Handle padding in containers */
+    height: 100vh;
     height: 100dvh; /* Force dynamic viewport height */
+    /* JS Fallback variable */
+    height: calc(var(--vh, 1vh) * 100);
     overflow: hidden;
 }
 
@@ -3933,43 +3936,54 @@ body.participant-view .app-version {
     
     /* Participant Boxes Screen */
     #participant-boxes-screen {
-        width: 100vw;
-        height: 100dvh; /* Use dynamic viewport height */
+        height: 100dvh;
+        height: calc(var(--vh, 1vh) * 100);
+        padding: 10px;
         display: flex;
         flex-direction: column;
-        padding: 0.5rem;
+        justify-content: center; /* Vertical centering */
+        align-items: center;
         overflow: hidden; /* Prevent accidental scrolling */
-        justify-content: center;
     }
+
     #participant-boxes-screen .boxes-content {
-        gap: 0.5rem; /* Tighter gap */
-        padding-top: 0;
-        justify-content: center; /* Center vertically */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
         align-items: center;
         flex: 1;
-        min-height: 0; /* Allow flex item to shrink */
-    }
-    
-    #participant-boxes-screen .boxes-content h1 {
-        font-size: clamp(1.5rem, 5vw, 2rem); /* Responsive font size */
-        margin-bottom: 0.5rem;
-        flex-shrink: 0;
-    }
-        
-    #participant-chests-container {
-        flex-direction: row; /* Horizontal layout */
-        flex-wrap: wrap; /* Allow wrap if extremely narrow */
-        gap: 0.5rem;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 1;
         width: 100%;
+        max-height: 100%;
+        gap: 1rem;
     }
-    
+
+    #participant-boxes-title {
+        margin: 0;
+        font-size: 2rem;
+        flex-shrink: 0; /* Keep title visible */
+    }
+
+    #participant-chests-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        gap: 10px;
+        flex: 1; /* Take available space */
+        max-height: 60%; /* Don't crowd text too much */
+    }
+
     #participant-chests-container .treasure-chest {
+        flex: 1;
+        max-width: 30vw;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
         padding: 0.5rem;
-        width: 30%;   /* Fit 3 in a row roughly */
-        min-width: 5rem;
+        /* Ensure aspect ratio is maintained */
+        aspect-ratio: 1/1.2; 
         flex-shrink: 1;
     }
 
@@ -3979,9 +3993,10 @@ body.participant-view .app-version {
         opacity: 0.8; /* Make it less faded for readability */
     }
     
+    /* Fix image sizing inside small boxes */
     #participant-chests-container .treasure-chest img {
-        width: 100%;
-        height: auto;
+        max-height: 70%;
+        width: auto;
         object-fit: contain;
     }
     

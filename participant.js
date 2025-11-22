@@ -937,8 +937,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
     // Run it initially
     setViewportHeight();
-    // Run it on resize
+    // Run it on resize and orientation changes
     window.addEventListener('resize', setViewportHeight);
+    window.addEventListener('orientationchange', () => {
+        // Slight delay to allow browser layout to settle
+        setTimeout(setViewportHeight, 100);
+    });
 
     initializeNotification();
     initializeJoinScreen();
