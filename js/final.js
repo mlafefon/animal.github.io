@@ -2,11 +2,12 @@
 
 
 
+
 import { getTeamsWithScores, getFinalQuestionData, adjustScoreForTeam, clearGameState, broadcastGameState } from './game.js';
 import { playSound } from './audio.js';
 import { showLinkModal } from './ui.js';
 import { unsubscribeAllRealtime, updateGameSession } from './appwriteService.js';
-import { getState, initializeBettingState, updateTeamBet, unlockTeamBet, getBettingData, revealBets, setParticipantState } from './gameState.js';
+import { getState, initializeBettingState, updateTeamBet, unlockTeamBet, getBettingData, revealBets, setParticipantState, setWinnerData } from './gameState.js';
 
 
 // --- Elements ---
@@ -181,6 +182,12 @@ function findAndDisplayWinner() {
     const maxScore = Math.max(...finalScores.map(t => t.score));
     const winners = finalScores.filter(t => t.score === maxScore);
 
+    // 1. Update State for participants
+    setWinnerData(winners);
+    setParticipantState('winnerAnnouncement');
+    broadcastGameState(); // Broadcast to all participants
+
+    // 2. Display locally on host
     const finalContent = document.querySelector('.final-question-content');
     
     const winnerDisplay = document.createElement('div');

@@ -13,12 +13,15 @@
 
 
 
+
+
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
 import { initializeNotification, showNotification } from './js/ui.js';
 import { getGameSession, subscribeToSessionUpdates, sendAction, unsubscribeAllRealtime } from './js/appwriteService.js';
 import { IMAGE_URLS } from './js/assets.js';
+import { playSound } from './js/audio.js'; // Imported playSound for participant
 
 
 // --- DOM Elements ---
@@ -64,6 +67,12 @@ const finalAnswerInput = document.getElementById('final-answer-input');
 const submitFinalAnswerBtn = document.getElementById('submit-final-answer-btn');
 const finalAnswerSentMsg = document.getElementById('final-answer-sent-msg');
 
+// Winner Elements
+const winnerOverlay = document.getElementById('participant-winner-overlay');
+const winnerCardsContainer = document.getElementById('winner-cards-container');
+const confettiContainer = document.getElementById('confetti-container');
+const winnerTitle = document.getElementById('winner-title');
+
 
 // --- State ---
 // Get participantId from sessionStorage or create a new one. This persists across refreshes.
@@ -94,7 +103,64 @@ function showScreen(screenName) {
     if (versionElement) {
         versionElement.classList.toggle('hidden', screenName !== 'join');
     }
+    // Reset winner overlay if switching screens (except for winnerAnnouncement)
+    if (winnerOverlay && screenName !== 'winnerAnnouncement') {
+        winnerOverlay.classList.add('hidden');
+        confettiContainer.innerHTML = ''; // Stop confetti
+    }
 }
+
+// --- Confetti Effect ---
+function createConfetti() {
+    const colors = ['#fce18a', '#ff726d', '#b48def', '#f4306d', '#2ecc71', '#3498db'];
+    const confettiCount = 50;
+
+    for (let i = 0; i < confettiCount; i++) {
+        const confetti = document.createElement('div');
+        confetti.classList.add('confetti');
+        
+        // Random properties
+        const bg = colors[Math.floor(Math.random() * colors.length)];
+        const left = Math.floor(Math.random() * 100) + 'vw';
+        const animDuration = (Math.random() * 3 + 2) + 's'; // 2-5s
+        const animDelay = (Math.random() * 2) + 's';
+        
+        confetti.style.backgroundColor = bg;
+        confetti.style.left = left;
+        confetti.style.animationDuration = animDuration;
+        confetti.style.animationDelay = animDelay;
+        
+        confettiContainer.appendChild(confetti);
+    }
+}
+
+function showWinnerScreen(winnerData) {
+    if (!winnerData || winnerData.length === 0) return;
+    
+    winnerCardsContainer.innerHTML = '';
+    winnerTitle.textContent = winnerData.length > 1 ? 'תיקו!' : 'המנצחים!';
+    
+    winnerData.forEach(winner => {
+        const card = document.createElement('div');
+        card.className = 'winner-card';
+        // Use the image URL directly from the object broadcasted by host
+        const iconUrl = IMAGE_URLS[winner.iconKey] || winner.icon; 
+        
+        card.innerHTML = `
+            <div class="team-icon">
+                <img src="${iconUrl}" alt="${winner.name}">
+            </div>
+            <p class="team-name">${winner.name}</p>
+            <p class="team-score">${winner.score}</p>
+        `;
+        winnerCardsContainer.appendChild(card);
+    });
+
+    winnerOverlay.classList.remove('hidden');
+    playSound('winner');
+    createConfetti();
+}
+
 
 // --- Screen Wake Lock ---
 
@@ -568,6 +634,11 @@ function updateGameView(state) {
             
             participantControls.classList.add('hidden');
             waitingMessage.classList.add('hidden');
+            break;
+            
+        case 'winnerAnnouncement':
+            // Show the special winner overlay
+            showWinnerScreen(state.winnerData);
             break;
 
         case 'learningTime':

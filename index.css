@@ -3,6 +3,8 @@
 
 
 
+
+
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -3945,112 +3947,4 @@ body.participant-view .app-version {
         height: auto;
     }
     
-    #participant-chests-container .treasure-chest span {
-        font-size: 1.9rem; /* Increased size by 35% */
-    }
-    
-    /* Larger font for revealed scores on participant screen */
-    #participant-chests-container .score-reveal-above {
-        font-size: 2.8rem;
-        z-index: 2;
-    }
-    
-    #participant-chests-container .score-reveal-above.selected-score {
-        font-size: 4rem;
-        z-index: 3;
-    }
-    
-    #participant-boxes-message {
-        font-size: 1.2rem; /* Slightly reduced message size */
-        margin-top: 0;
-        flex-shrink: 0;
-        font-weight: bold;
-    }
-
-    /* Responsive for join screen */
-    .join-host-content {
-        padding: 1.5rem;
-        gap: 1rem;
-    }
-    .team-slot {
-        width: 5rem;
-        height: 5rem;
-        border-width: 0.2rem;
-    }
-    
-    #in-game-join-modal {
-        padding: 1.5rem;
-        width: 95%;
-    }
-    
-    .in-game-join-content {
-        flex-direction: column-reverse;
-        gap: 2rem;
-    }
-}
-
-#participant-stop-btn.btn-large {
-    background-color: #e74c3c; /* Alizarin Red */
-    color: white;
-    border-bottom-color: #c0392b; /* Darker red */
-    box-shadow: 0 0.3125rem 0.9375rem rgba(0,0,0,0.2), 0 0 1rem rgba(231, 76, 60, 0.5);
-    animation: pulse-stop-btn 2s infinite ease-in-out;
-}
-#participant-stop-btn.btn-large:hover:not(:disabled) {
-    background-color: #c0392b;
-}
-
-@keyframes pulse-stop-btn {
-    0% {
-        transform: scale(1);
-        box-shadow: 0 0.3125rem 0.9375rem rgba(0,0,0,0.2), 0 0 1rem rgba(231, 76, 60, 0.5);
-    }
-    50% {
-        transform: scale(1.05);
-        box-shadow: 0 0.5rem 1.25rem rgba(0,0,0,0.3), 0 0 1.5rem rgba(231, 76, 60, 0.8);
-    }
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0.3125rem 0.9375rem rgba(0,0,0,0.2), 0 0 1rem rgba(231, 76, 60, 0.5);
-    }
-}
-
-/* Participant Betting Layout Updates */
-.max-bet-label {
-    font-size: 1.2rem;
-    color: #ffeb3b;
-    margin-bottom: 1.5rem;
-    opacity: 0.9;
-}
-
-.bet-control-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 3rem; /* The requested gap */
-}
-
-.bet-buttons {
-    display: flex;
-    gap: 1.5rem;
-    justify-content: center;
-    width: 100%;
-    margin-top: 1rem;
-}
-
-#participant-lock-bet-btn {
-    margin-top: 3rem; /* Explicit margin just in case */
-}
-
-/* Participant Betting Screen Specifics */
-#participant-betting-screen {
-    width: 100vw;
-    height: calc(var(--vh, 1dvh) * 100);
-    display: flex;
-    flex-direction: column;
-    padding: 1.25rem;
-    position: relative;
-    align-items: center;
-    justify-content: center;
-}
+    #participant-chests-container
