@@ -9,8 +9,6 @@
 
 
 
-
-
 import { showPreQuestionScreen } from './preq.js';
 import { playSound, stopSound } from './audio.js';
 import { IMAGE_URLS } from './assets.js';
@@ -168,10 +166,10 @@ function prepareForFinalRound() {
 }
 
 /**
- * Gathers the current game state and broadcast it to participants via Appwrite.
+ * Gathers the current game state and broadcasts it to participants via Appwrite.
  */
 export async function broadcastGameState() {
-    const { sessionDocumentId, gameCode, gameName, teams, activeTeamIndex, gameStateForParticipant, finalQuestionData, boxesData, timerEndTime, bettingData, finalAnswers, winners } = gameState.getState();
+    const { sessionDocumentId, gameCode, gameName, teams, activeTeamIndex, gameStateForParticipant, finalQuestionData, boxesData, timerEndTime, bettingData, finalAnswers } = gameState.getState();
     if (!sessionDocumentId) return;
 
     // Determine the high-level state for participants
@@ -212,7 +210,6 @@ export async function broadcastGameState() {
         boxesData: boxesData,
         bettingData: bettingData, // Include betting data in broadcast
         finalAnswers: finalAnswers, // Include final answers in broadcast
-        winners: winners, // Include the winners array
     };
 
     try {
