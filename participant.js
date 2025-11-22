@@ -15,8 +15,6 @@
 
 
 
-
-
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
@@ -528,9 +526,6 @@ function updateGameView(state) {
     // Hide final answer elements by default
     finalAnswerInputInteraction.classList.add('hidden');
     finalAnswerSentMsg.classList.add('hidden');
-    
-    // Remove winner mode class by default
-    questionContainer.classList.remove('winner-mode');
 
     stopParticipantTimer(); // Stop timer by default for every state change
     
@@ -703,27 +698,14 @@ function updateGameView(state) {
             const winners = state.winners || [];
             let winnerHtml = '';
             
-            // Use a special container style for winners
-            questionContainer.classList.add('winner-mode');
-            
             // Check if it's a tie
             const isTie = winners.length > 1;
             
             // Check if "I" won
             const amIWinner = myTeam && winners.includes(myTeam.index);
             
-            // Confetti HTML elements for the cool effect
-            const confettiHtml = `
-                <div class="confetti-container">
-                    <div class="confetti"></div><div class="confetti"></div><div class="confetti"></div>
-                    <div class="confetti"></div><div class="confetti"></div><div class="confetti"></div>
-                    <div class="confetti"></div><div class="confetti"></div><div class="confetti"></div>
-                </div>
-            `;
-            
             if (amIWinner) {
                 winnerHtml = `
-                    ${confettiHtml}
                     <div class="mobile-winner-container">
                         <h1 class="winner-title">🏆 ניצחתם! 🏆</h1>
                         <div class="winner-icon-wrapper winner">
@@ -737,17 +719,14 @@ function updateGameView(state) {
                 const winningTeamsData = state.teams.filter(t => winners.includes(t.index));
                 
                 if (winningTeamsData.length > 0) {
-                    let winnersDisplay = winningTeamsData.map(t => {
-                        // Fallback for icon URL if key is provided but direct URL is missing in local state
-                        const iconUrl = IMAGE_URLS[t.iconKey] || t.icon;
-                        return `
+                    let winnersDisplay = winningTeamsData.map(t => `
                         <div class="winner-card small">
                             <div class="team-icon" style="width: 5rem; height: 5rem; border-width: 3px;">
-                                <img src="${iconUrl}" alt="${t.name}">
+                                <img src="${IMAGE_URLS[t.iconKey]}" alt="${t.name}">
                             </div>
                             <p class="team-name" style="font-size: 1.2rem;">${t.name}</p>
                         </div>
-                    `}).join('');
+                    `).join('');
 
                     winnerHtml = `
                         <div class="mobile-winner-container">
@@ -758,8 +737,6 @@ function updateGameView(state) {
                             <p class="winner-msg">תודה שהשתתפתם!</p>
                         </div>
                     `;
-                } else {
-                    winnerHtml = `<div class="mobile-winner-container"><h1>המשחק הסתיים!</h1></div>`;
                 }
             }
             
