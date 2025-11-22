@@ -6,6 +6,8 @@
 
 
 
+
+
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -3954,15 +3956,17 @@ body.participant-view .app-version {
     
     /* Participant Winner Screen Overrides */
     #participant-winner-overlay .winner-card .team-icon {
-        width: 6rem;
-        height: 6rem;
-        border-width: 0.25rem;
+        width: 12rem;
+        height: 12rem;
+        border-width: 0.4rem;
+        box-shadow: 0 0 2rem rgba(255, 235, 59, 0.6);
     }
     #participant-winner-overlay .winner-card .team-name {
-        font-size: 1.5rem;
+        font-size: 2rem;
+        margin-top: 1rem;
     }
     #participant-winner-overlay h1 {
-        font-size: 2.5rem;
+        font-size: 3rem;
     }
 }
 
