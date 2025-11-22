@@ -8,6 +8,7 @@
 
 
 
+
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -680,7 +681,7 @@ h1, h2, h3, h4, h5, h6 {
 .team-slot.filled {
     border-style: solid;
     border-color: #ffeb3b;
-    padding: 0.3125rem;
+    padding: 0; /* Changed from 0.3125rem */
     background-color: rgba(255, 255, 255, 0.1);
     transform: scale(1.05);
 }
@@ -1316,9 +1317,10 @@ h1, h2, h3, h4, h5, h6 {
 
 
 .team-icon img {
-    width: 90%;
-    height: 90%;
+    width: 100%; /* Changed from 90% */
+    height: 100%; /* Changed from 90% */
     object-fit: cover;
+    border-radius: 50%; /* Added to ensure image is circular if it overflows slightly or for Safari */
 }
 
 .team-icon-wrapper .participant-phone-icon {
@@ -3141,9 +3143,10 @@ input:disabled + .slider:before {
 }
 
 .team-member-modal-select .team-icon img {
-    width: 90%;
-    height: 90%;
+    width: 100%; /* Changed from 90% */
+    height: 100%; /* Changed from 90% */
     object-fit: cover;
+    border-radius: 50%;
 }
 
 .team-member-modal-select span {
@@ -3659,7 +3662,7 @@ input:disabled + .slider:before {
     height: 2.8rem;
     border-radius: 50%;
     border: 0.125rem solid #ffeb3b;
-    padding: 0.125rem;
+    padding: 0; /* Changed from 0.125rem */
     background-color: rgba(0,0,0,0.4);
     animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     object-fit: cover;
