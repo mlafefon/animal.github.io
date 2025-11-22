@@ -1,17 +1,10 @@
 
-
-
-
-
-
-
-
-
-
-
+/* --- Global Defaults --- */
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
+    height: 100%;
+    overflow: hidden; /* Prevent global scroll */
 }
 
 @media (max-width: 1400px) {
@@ -45,6 +38,8 @@ html {
     margin: 0;
     padding: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /* Prevent pull-to-refresh on mobile */
+    overscroll-behavior: none; 
 }
 
 body {
@@ -54,8 +49,19 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    /* Fallback */
+    min-height: 100dvh; 
     direction: rtl;
-    overflow-x: hidden; /* Prevent horizontal scroll */
+    overflow: hidden; /* Prevent body scroll */
+    width: 100vw;
+}
+
+/* --- Participant View Specific Body --- */
+body.participant-view {
+    align-items: flex-start; /* Align top to handle content flow better */
+    padding: 0; /* Handle padding in containers */
+    height: 100dvh; /* Force dynamic viewport height */
+    overflow: hidden;
 }
 
 body.game-active #pre-question-screen,
@@ -85,8 +91,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* --- Auth Screen --- */
 #auth-screen {
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -3589,10 +3595,13 @@ input:disabled + .slider:before {
     width: 100vw;
     /* Use JS-calculated height to reliably handle mobile browser UI */
     height: calc(var(--vh, 1dvh) * 100);
+    /* Fallback to standard dynamic viewport height */
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     padding: 1.25rem;
     position: relative;
+    overflow: hidden; /* Prevent scrolling */
 }
 
 .participant-team-info {
@@ -3612,7 +3621,11 @@ input:disabled + .slider:before {
 }
 
 #participant-game-screen #q-a-wrapper {
-    margin-top: 6.25rem; /* Make space for header and timer */
+    margin-top: 0; /* Remove heavy margin */
+    flex-grow: 1;
+    justify-content: center; /* Center content vertically */
+    padding-top: 4rem; /* Space for header */
+    overflow-y: auto; /* Internal scroll if text is huge */
 }
 
 .waiting-message {
@@ -3749,9 +3762,10 @@ body.participant-view .app-version {
     flex-direction: column;
     align-items: center;
     gap: 1.25rem;
-    margin-top: 2rem;
+    margin-top: 1rem;
     width: 100%;
     max-width: 30rem;
+    flex-shrink: 0; /* Prevent from disappearing */
 }
 
 #final-answer-input {
@@ -3793,7 +3807,7 @@ body.participant-view .app-version {
 @media (max-width: 600px) {
     body.participant-view {
         align-items: flex-start;
-        padding-top: 2rem;
+        padding-top: 0; /* Remove padding top */
     }
     
     /* Join and Team Select Screens */
@@ -3801,6 +3815,7 @@ body.participant-view .app-version {
         padding: 1rem; /* Reduced padding for compact view */
         width: 95%;
         gap: 0.75rem; /* Reduced gap */
+        margin-top: 2rem; /* Add margin top for spacing */
     }
 
     .participant-container h1 {
@@ -3817,15 +3832,16 @@ body.participant-view .app-version {
         padding: 0.75rem;
     }
 
-    /* NEW: Redesigned Team Selection List */
+    /* NEW: Redesigned Team Selection List - Scroll-free */
     #team-selection-grid {
         display: flex;
         flex-direction: column; /* Vertical list layout */
+        justify-content: center;
         gap: 0.75rem; /* Tighter gap */
-        width: 90%;
-        margin-left: auto; /* Push to the right in RTL */
-        margin-right: 0;
+        width: 100%;
         margin-top: 1rem;
+        max-height: 60dvh; /* Limit height to avoid full page scroll */
+        overflow-y: auto; /* Internal scroll if really needed */
     }
 
     #team-selection-grid .team-member {
@@ -3839,54 +3855,64 @@ body.participant-view .app-version {
     }
     
     #team-selection-grid .team-icon {
-        width: 4rem; /* Adjusted icon size */
-        height: 4rem;
+        width: 3.5rem; /* Smaller icon size */
+        height: 3.5rem;
         border-width: 0.15rem;
         flex-shrink: 0; /* Prevent icon from shrinking */
     }
     
     #team-selection-grid .team-name {
-        font-size: clamp(1.3rem, 5vw, 1.6rem); /* Larger, responsive font */
+        font-size: clamp(1.1rem, 5vw, 1.4rem); /* Responsive font */
         font-weight: bold;
     }
 
     /* Participant Game Screen */
     #participant-game-screen {
-        padding: 1rem;
+        padding: 0.5rem;
+        height: 100dvh; /* Ensure full dynamic height */
     }
 
     #participant-game-screen #q-a-wrapper {
-        margin-top: 5rem; /* Adjust for smaller header */
+        padding-top: 4.5rem; /* Adjust for header */
+        padding-bottom: 1rem;
         flex-grow: 1; /* Ensure wrapper takes available space */
         display: flex;
         flex-direction: column;
-        min-height: 0;
+        justify-content: center;
+        min-height: 0; /* Allow shrinking */
     }
     
     .participant-team-info {
         gap: 0.75rem;
-        top: 1rem;
-        right: 1rem;
+        top: 0.5rem;
+        right: 0.5rem;
+        z-index: 20; /* Ensure above other content */
     }
 
     .participant-team-info img {
-        width: 3.5rem;
-        height: 3.5rem;
+        width: 3rem;
+        height: 3rem;
     }
 
     .participant-team-info h2 {
-        font-size: 1.2rem;
+        font-size: 1rem;
+        max-width: 40vw;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     #participant-game-screen #question-container,
     #participant-game-screen #answer-container {
         min-height: 0; /* Allow the container to shrink to fit content */
-        flex-grow: 1; /* Make the container fill the available flexible space */
+        flex-grow: 0; /* Don't force expand */
         padding: 1rem;
+        max-height: 60dvh;
+        overflow-y: auto;
     }
 
     #participant-question-text {
-        font-size: 1.8rem;
+        font-size: clamp(1.2rem, 4vw, 1.8rem); /* Dynamic font size */
         white-space: pre-wrap; /* Respect newlines */
     }
 
@@ -3897,49 +3923,54 @@ body.participant-view .app-version {
 
     #participant-controls {
         flex-shrink: 0; /* Prevent the button container from shrinking */
+        margin: 0.5rem auto;
     }
     
     #participant-stop-btn.btn-large {
-        padding: 1rem 3rem;
-        font-size: 1.5rem;
+        padding: 0.8rem 2rem;
+        font-size: 1.2rem;
     }
     
     /* Participant Boxes Screen */
     #participant-boxes-screen {
         width: 100vw;
-        height: 100vh;
         height: 100dvh; /* Use dynamic viewport height */
         display: flex;
         flex-direction: column;
-        padding: 0.5rem 0.5rem 2.5rem 0.5rem; /* More padding at the bottom */
+        padding: 0.5rem;
         overflow: hidden; /* Prevent accidental scrolling */
+        justify-content: center;
     }
     #participant-boxes-screen .boxes-content {
         gap: 0.5rem; /* Tighter gap */
         padding-top: 0;
-        justify-content: space-around; /* Better vertical distribution */
+        justify-content: center; /* Center vertically */
         align-items: center;
         flex: 1;
         min-height: 0; /* Allow flex item to shrink */
     }
     
     #participant-boxes-screen .boxes-content h1 {
-        font-size: clamp(1.6rem, 5vw, 2rem); /* Responsive font size */
-        margin-bottom: 0;
+        font-size: clamp(1.5rem, 5vw, 2rem); /* Responsive font size */
+        margin-bottom: 0.5rem;
         flex-shrink: 0;
     }
         
     #participant-chests-container {
-        flex-direction: column;
-        gap: 0.75rem;
+        flex-direction: row; /* Horizontal layout */
+        flex-wrap: wrap; /* Allow wrap if extremely narrow */
+        gap: 0.5rem;
         align-items: center;
+        justify-content: center;
         flex-shrink: 1;
+        width: 100%;
     }
     
     #participant-chests-container .treasure-chest {
-        padding: 0.675rem; /* Increased size by 35% */
-        width: 14.8rem;   /* Increased size by 35% */
-        flex-shrink: 0;
+        padding: 0.5rem;
+        width: 30%;   /* Fit 3 in a row roughly */
+        min-width: 5rem;
+        flex-shrink: 1;
     }
 
     #participant-chests-container .treasure-chest.disabled {
@@ -3949,27 +3980,56 @@ body.participant-view .app-version {
     }
     
     #participant-chests-container .treasure-chest img {
-        width: 8rem;     /* Increased size by 35% */
+        width: 100%;
         height: auto;
+        object-fit: contain;
     }
     
     #participant-chests-container span {
-        font-size: 1.8rem;
+        font-size: 1.5rem;
     }
     
     /* Participant Winner Screen Overrides */
     #participant-winner-overlay .winner-card .team-icon {
-        width: 12rem;
-        height: 12rem;
-        border-width: 0.4rem;
-        box-shadow: 0 0 2rem rgba(255, 235, 59, 0.6);
+        width: 8rem;
+        height: 8rem;
+        border-width: 0.3rem;
+        box-shadow: 0 0 1rem rgba(255, 235, 59, 0.6);
     }
     #participant-winner-overlay .winner-card .team-name {
-        font-size: 2rem;
-        margin-top: 1rem;
+        font-size: 1.5rem;
+        margin-top: 0.5rem;
     }
     #participant-winner-overlay h1 {
-        font-size: 3rem;
+        font-size: 2.5rem;
+    }
+
+    /* Participant Betting Screen */
+    #participant-betting-screen {
+        padding: 0.5rem;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #participant-betting-screen .participant-container {
+        margin-top: 3rem; /* Make space for header */
+        padding: 1rem;
+    }
+
+    .bet-display-large {
+        font-size: 4rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .bet-buttons {
+        gap: 1rem;
+    }
+    
+    .bet-control-container {
+        margin-bottom: 1.5rem;
     }
 }
 
@@ -3982,7 +4042,7 @@ body.participant-view .app-version {
     justify-content: center;
     align-items: center;
     position: relative;
-    min-height: 50vh; /* Ensure it takes space */
+    min-height: 100dvh; /* Ensure it takes space */
 }
 
 #participant-winner-overlay .winner-content {
@@ -3990,7 +4050,7 @@ body.participant-view .app-version {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2rem;
+    gap: 1.5rem;
     width: 100%;
 }
 

@@ -1,3 +1,4 @@
+
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
@@ -934,8 +935,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${vh}px`);
     };
+    // Run it initially
+    setViewportHeight();
+    // Run it on resize
     window.addEventListener('resize', setViewportHeight);
-    setViewportHeight(); // Initial call
 
     initializeNotification();
     initializeJoinScreen();
