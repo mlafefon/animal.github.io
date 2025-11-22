@@ -39,6 +39,7 @@ function _resetInternalState() {
         timerEndTime: null, // To sync timers with participants
         bettingData: null, // New: Tracks bets { currentBets: {}, lockedBets: {}, revealed: false }
         finalAnswers: {}, // New: Map teamIndex -> answer string
+        winners: [] // New: Array of indices of winning teams
     };
 }
 
@@ -379,5 +380,15 @@ export function submitFinalAnswer(teamIndex, answerText) {
         _state.finalAnswers = {};
     }
     _state.finalAnswers[teamIndex] = answerText;
+    _saveState();
+}
+
+/**
+ * Sets the winning teams indices and updates the participant state.
+ * @param {Array<number>} winningIndices
+ */
+export function setWinners(winningIndices) {
+    _state.winners = winningIndices;
+    _state.gameStateForParticipant = 'winnersAnnounced';
     _saveState();
 }

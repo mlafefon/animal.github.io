@@ -3,6 +3,8 @@
 
 
 
+
+
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -1972,6 +1974,57 @@ h1, h2, h3, h4, h5, h6 {
     100% { transform: scale(1.1); box-shadow: 0 0 1.5625rem #ffeb3b, 0 0 2.5rem white; }
 }
 
+
+/* --- Mobile Winner Screen --- */
+.mobile-winner-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 2rem;
+    padding: 1rem;
+    animation: fadeInScaleUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.winner-title {
+    font-size: 3.5rem;
+    color: #ffeb3b;
+    text-shadow: 0 0 10px rgba(0,0,0,0.5);
+    line-height: 1.2;
+}
+
+.winner-icon-wrapper {
+    position: relative;
+}
+
+.winner-icon-wrapper img {
+    width: 12rem;
+    height: 12rem;
+    border-radius: 50%;
+    border: 0.5rem solid #ffeb3b;
+    box-shadow: 0 0 2rem #ffeb3b;
+    object-fit: cover;
+    background-color: white;
+}
+
+.winner-icon-wrapper.winner img {
+    animation: winnerPulse 1.5s infinite;
+}
+
+.winner-team-name {
+    font-size: 2.5rem;
+    font-weight: bold;
+}
+
+.winner-msg {
+    font-size: 1.5rem;
+    opacity: 0.9;
+}
+
+.winners-container.mobile {
+    gap: 1.5rem;
+}
 
 /* --- Edit Game Screen --- */
 #edit-game-screen {

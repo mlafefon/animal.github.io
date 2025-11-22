@@ -13,6 +13,8 @@
 
 
 
+
+
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
@@ -689,6 +691,58 @@ function updateGameView(state) {
         case 'setup':
             showScreen('game');
             questionContainer.innerHTML = `<p id="participant-question-text">המשחק יתחיל בקרוב...</p>`;
+            break;
+
+        case 'winnersAnnounced':
+            showScreen('game');
+            const winners = state.winners || [];
+            let winnerHtml = '';
+            
+            // Check if it's a tie
+            const isTie = winners.length > 1;
+            
+            // Check if "I" won
+            const amIWinner = myTeam && winners.includes(myTeam.index);
+            
+            if (amIWinner) {
+                winnerHtml = `
+                    <div class="mobile-winner-container">
+                        <h1 class="winner-title">🏆 ניצחתם! 🏆</h1>
+                        <div class="winner-icon-wrapper winner">
+                            <img src="${myTeam.icon}" alt="${myTeam.name}">
+                        </div>
+                        <p class="winner-team-name">כל הכבוד לקבוצת ${myTeam.name}!</p>
+                    </div>
+                `;
+            } else {
+                // I lost, show who won
+                const winningTeamsData = state.teams.filter(t => winners.includes(t.index));
+                
+                if (winningTeamsData.length > 0) {
+                    let winnersDisplay = winningTeamsData.map(t => `
+                        <div class="winner-card small">
+                            <div class="team-icon" style="width: 5rem; height: 5rem; border-width: 3px;">
+                                <img src="${IMAGE_URLS[t.iconKey]}" alt="${t.name}">
+                            </div>
+                            <p class="team-name" style="font-size: 1.2rem;">${t.name}</p>
+                        </div>
+                    `).join('');
+
+                    winnerHtml = `
+                        <div class="mobile-winner-container">
+                            <h1 class="winner-title">${isTie ? 'תיקו!' : 'המנצחים!'}</h1>
+                            <div class="winners-container mobile">
+                                ${winnersDisplay}
+                            </div>
+                            <p class="winner-msg">תודה שהשתתפתם!</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            questionContainer.innerHTML = winnerHtml;
+            participantControls.classList.add('hidden');
+            waitingMessage.classList.add('hidden');
             break;
 
         case 'waiting':
