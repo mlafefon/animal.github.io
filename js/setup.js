@@ -1,3 +1,4 @@
+
 import { getSavedState, initializeSetupState, getState, clearSessionDetails, unassignParticipant } from './gameState.js';
 import { TEAMS_MASTER_DATA } from './game.js';
 import { showNotification } from './ui.js';
@@ -254,7 +255,7 @@ export async function showSetupScreenForGame(gameDoc) {
  * Handles the host's action to kick a participant from a team.
  * @param {number} teamIndex The index of the team to free up.
  */
-function handleKickParticipant(teamIndex) {
+async function handleKickParticipant(teamIndex) {
     unassignParticipant(teamIndex);
 
     // Update the UI on the host's join screen immediately.
@@ -265,7 +266,24 @@ function handleKickParticipant(teamIndex) {
         if (img) img.style.display = 'none';
     }
 
-    // Trigger a state change event to broadcast to all participants.
+    // Update the server state so the participant gets kicked on their device
+    const { sessionDocumentId, teams, gameCode, gameName } = getState();
+    if (sessionDocumentId) {
+        try {
+            const sessionData = {
+                gameCode,
+                gameName,
+                teams,
+                gameState: 'setup'
+            };
+            await updateGameSession(sessionDocumentId, sessionData);
+        } catch (error) {
+            console.error("Failed to update session after kick:", error);
+            showNotification("שגיאה בעדכון השרת.", "error");
+        }
+    }
+
+    // Trigger a state change event to broadcast internally (if needed)
     document.dispatchEvent(new Event('gamestatechange'));
 
     showNotification(`המשתתף מקבוצה ${teamIndex + 1} הוסר.`, 'info');
