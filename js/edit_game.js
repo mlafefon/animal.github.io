@@ -2,7 +2,7 @@
 import { listGames, createGame, updateGame, deleteGame, listCategories, getFileUrl } from './appwriteService.js';
 import { showSetupScreenForGame } from './setup.js';
 import { showConfirmModal, showLinkModal, showNotification, showQuestionPreview } from './ui.js';
-import { getSavedState } from './gameState.js';
+import { getSavedState, resetState } from './gameState.js';
 
 // --- Elements ---
 const editGameScreen = document.getElementById('edit-game-screen');
@@ -668,14 +668,19 @@ function refreshContinueToggleState() {
     const continueLabel = document.querySelector('label[for="continue-last-point"]');
     const savedState = getSavedState();
 
-    if (savedState && savedState.gameName) {
+    // Check if game is finished (winner announced)
+    const isFinished = savedState && savedState.gameStateForParticipant === 'winnerAnnouncement';
+
+    if (savedState && savedState.gameName && !isFinished) {
         continueCheckbox.disabled = false;
         continueLabel.textContent = `המשך "${savedState.gameName}"`;
     } else {
         continueCheckbox.disabled = true;
         continueLabel.textContent = 'המשך מנקודה אחרונה';
-        if (savedState) { // Corrupt state
-            localStorage.removeItem('animalGameState');
+        
+        // Clear state if it exists but is finished or corrupt
+        if (savedState) { 
+            resetState();
         }
     }
     continueCheckbox.checked = false;
