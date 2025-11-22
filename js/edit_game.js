@@ -115,8 +115,19 @@ function showSavedState() {
  */
 function autoResizeTextarea(textarea) {
     if (!textarea) return;
+    
+    // Capture scroll position of the form container to prevent jumping
+    // when the textarea momentarily shrinks (setting height to 'auto').
+    const previousScrollTop = gameEditorForm ? gameEditorForm.scrollTop : 0;
+
     textarea.style.height = 'auto';
     textarea.style.height = `${textarea.scrollHeight}px`;
+
+    if (gameEditorForm) {
+        // Restore scroll position. If the content shrank during 'auto' and 
+        // clamped the scroll, this puts it back to the stable position.
+        gameEditorForm.scrollTop = previousScrollTop;
+    }
 }
 
 /**
@@ -773,6 +784,13 @@ export async function checkForUnsavedChangesAndProceed(actionCallback) {
 export function initializeEditGameScreen(onStart) {
     onStartGameCallback = onStart;
 
+    // --- Final Question Auto-Resize ---
+    [finalQuestionQInput, finalQuestionAInput].forEach(textarea => {
+        if(textarea) {
+            textarea.addEventListener('input', () => autoResizeTextarea(textarea));
+        }
+    });
+
     categoryListContainer.addEventListener('click', (e) => {
         const selectedCard = e.target.closest('.category-card');
         if (!selectedCard || selectedCard.classList.contains('selected')) return;
@@ -833,6 +851,11 @@ export function initializeEditGameScreen(onStart) {
                 finalQuestionAInput.value = '';
                 finalQuestionUrlInput.value = '';
             }
+
+            // Resize final question textareas
+            [finalQuestionQInput, finalQuestionAInput].forEach(el => {
+                 setTimeout(() => autoResizeTextarea(el), 0);
+            });
 
             // Set initial state for preview button in final question
             const finalPreviewBtn = document.getElementById('final-question-preview-btn');
