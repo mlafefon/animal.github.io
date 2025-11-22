@@ -1,75 +1,3 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>משחק חידות ידע - משתתף</title>
-    <link rel="stylesheet" href="index.css">
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@11.0.0"></script>
-</head>
-<body class="participant-view">
-
-    <div id="join-screen" class="container">
-        <div class="participant-container">
-            <h1>הצטרף למשחק</h1>
-            <p>הכנס את קוד המשחק שקיבלת מהמנחה</p>
-            <form id="join-form">
-                <input type="text" inputmode="numeric" pattern="[0-9]*" id="game-code-input" placeholder="123456" maxlength="6" required>
-                <button type="submit" id="join-game-btn" class="btn btn-primary">הצטרף</button>
-            </form>
-            <p id="join-error" class="auth-error-message hidden"></p>
-        </div>
-    </div>
-
-    <div id="team-select-screen" class="container hidden">
-        <div class="participant-container">
-            <h1 id="team-select-game-name"></h1>
-            <h2>בחר את הקבוצה שלך</h2>
-            <div id="team-selection-grid" class="teams-container">
-                <!-- Team icons will be injected here by JS -->
-            </div>
-             <p id="team-select-error" class="auth-error-message hidden"></p>
-        </div>
-    </div>
-
-    <div id="participant-game-screen" class="hidden">
-        <div id="participant-timer-container" class="hidden">
-            <svg class="timer-svg" viewBox="0 0 100 100">
-                <!-- Background track -->
-                <circle class="timer-bg-track" cx="50" cy="50" r="42" />
-                <!-- Progress ring -->
-                <circle id="participant-timer-progress-ring" cx="50" cy="50" r="42" />
-            </svg>
-            <span id="participant-timer-value">30</span>
-        </div>
-        <div class="game-header">
-            <div class="participant-team-info">
-                <img id="my-team-icon" src="" alt="Team Icon">
-                <h2 id="my-team-name"></h2>
-            </div>
-            <div id="q-a-wrapper">
-                <div id="question-container">
-                    <p id="participant-question-text">ממתין לשאלה מהמנחה...</p>
-                </div>
-                <!-- New Final Answer Section -->
-                <div id="final-answer-interaction" class="hidden">
-                    <textarea id="final-answer-input" placeholder="כתבו את התשובה שלכם כאן..."></textarea>
-                    <button id="submit-final-answer-btn" class="btn btn-primary btn-medium">שלח תשובה</button>
-                </div>
-                <div id="final-answer-sent-msg" class="hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#4CAF50" width="60px" height="60px"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                    <p>התשובה נשלחה בהצלחה!</p>
-                </div>
-            </div>
-        </div>
-        <div id="participant-controls" class="main-action-container hidden">
-            <button id="participant-stop-btn" class="btn btn-primary btn-large">עצור טיימר!</button>
-        </div>
-        <div id="waiting-message" class="waiting-message hidden">
-            <p>ממתינים לתורכם...</p>
-        </div>
-    </div>
-
     <div id="participant-boxes-screen" class="hidden">
         <div class="boxes-content">
             <h1 id="participant-boxes-title">בחר תיבה</h1>
@@ -81,6 +9,10 @@
     </div>
     
     <div id="participant-betting-screen" class="hidden">
+        <div class="participant-team-info">
+            <img id="betting-team-icon" src="" alt="Team Icon">
+            <h2 id="betting-team-name"></h2>
+        </div>
         <div class="participant-container">
             <h1>הימור סופי</h1>
             <p>בחרו את סכום ההימור שלכם</p>
@@ -99,8 +31,3 @@
     </div>
     
     <div id="notification-toast"></div>
-
-    <p class="app-version"></p>
-    <script src="participant.js" type="module"></script>
-</body>
-</html>
