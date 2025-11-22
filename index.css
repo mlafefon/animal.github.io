@@ -5,6 +5,7 @@
 
 
 
+
 html {
     /* Base size for Full HD. 1rem = 16px at this size. */
     font-size: 16px;
@@ -3947,4 +3948,66 @@ body.participant-view .app-version {
         height: auto;
     }
     
-    #participant-chests-container
+    #participant-chests-container span {
+        font-size: 1.8rem;
+    }
+    
+    /* Participant Winner Screen Overrides */
+    #participant-winner-overlay .winner-card .team-icon {
+        width: 6rem;
+        height: 6rem;
+        border-width: 0.25rem;
+    }
+    #participant-winner-overlay .winner-card .team-name {
+        font-size: 1.5rem;
+    }
+    #participant-winner-overlay h1 {
+        font-size: 2.5rem;
+    }
+}
+
+/* Participant Winner Screen Specific Styles */
+#participant-winner-overlay {
+    flex-grow: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    min-height: 50vh; /* Ensure it takes space */
+}
+
+#participant-winner-overlay .winner-content {
+    z-index: 10; /* Above confetti */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    width: 100%;
+}
+
+#confetti-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    top: -10px;
+    animation: fall linear forwards;
+}
+
+@keyframes fall {
+    to {
+        transform: translateY(100vh) rotate(360deg);
+    }
+}

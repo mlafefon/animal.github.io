@@ -1,20 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // This file will handle the logic for the participant's view.
 // It will communicate with the host's tab via Appwrite Realtime.
 
@@ -30,7 +13,8 @@ const screens = {
     teamSelect: document.getElementById('team-select-screen'),
     game: document.getElementById('participant-game-screen'),
     boxes: document.getElementById('participant-boxes-screen'),
-    betting: document.getElementById('participant-betting-screen')
+    betting: document.getElementById('participant-betting-screen'),
+    winner: document.getElementById('participant-winner-overlay') // Treated as a separate screen
 };
 const joinForm = document.getElementById('join-form');
 const gameCodeInput = document.getElementById('game-code-input');
@@ -68,7 +52,6 @@ const submitFinalAnswerBtn = document.getElementById('submit-final-answer-btn');
 const finalAnswerSentMsg = document.getElementById('final-answer-sent-msg');
 
 // Winner Elements
-const winnerOverlay = document.getElementById('participant-winner-overlay');
 const winnerCardsContainer = document.getElementById('winner-cards-container');
 const confettiContainer = document.getElementById('confetti-container');
 const winnerTitle = document.getElementById('winner-title');
@@ -96,17 +79,23 @@ let wasBetLocked = false;
 // --- Utility Functions ---
 
 function showScreen(screenName) {
-    Object.values(screens).forEach(screen => screen.classList.add('hidden'));
+    // Hide all screens
+    Object.values(screens).forEach(screen => {
+        if (screen) screen.classList.add('hidden');
+    });
+    
+    // Show target screen
     if (screens[screenName]) {
         screens[screenName].classList.remove('hidden');
     }
+    
     if (versionElement) {
         versionElement.classList.toggle('hidden', screenName !== 'join');
     }
-    // Reset winner overlay if switching screens (except for winnerAnnouncement)
-    if (winnerOverlay && screenName !== 'winnerAnnouncement') {
-        winnerOverlay.classList.add('hidden');
-        confettiContainer.innerHTML = ''; // Stop confetti
+    
+    // Stop confetti if not on winner screen
+    if (screenName !== 'winner') {
+        if (confettiContainer) confettiContainer.innerHTML = ''; 
     }
 }
 
@@ -134,7 +123,7 @@ function createConfetti() {
     }
 }
 
-function showWinnerScreen(winnerData) {
+function renderWinnerScreen(winnerData) {
     if (!winnerData || winnerData.length === 0) return;
     
     winnerCardsContainer.innerHTML = '';
@@ -156,9 +145,11 @@ function showWinnerScreen(winnerData) {
         winnerCardsContainer.appendChild(card);
     });
 
-    winnerOverlay.classList.remove('hidden');
-    playSound('winner');
-    createConfetti();
+    // Play sound and confetti only if not already playing (avoids restart on redundant updates)
+    if (confettiContainer.children.length === 0) {
+        playSound('winner');
+        createConfetti();
+    }
 }
 
 
@@ -637,8 +628,9 @@ function updateGameView(state) {
             break;
             
         case 'winnerAnnouncement':
-            // Show the special winner overlay
-            showWinnerScreen(state.winnerData);
+            // Show the special winner screen (not overlay)
+            showScreen('winner');
+            renderWinnerScreen(state.winnerData);
             break;
 
         case 'learningTime':
