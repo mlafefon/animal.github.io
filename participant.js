@@ -622,6 +622,11 @@ function updateGameView(state) {
             } else {
                 finalAnswerInputInteraction.classList.remove('hidden');
                 submitFinalAnswerBtn.disabled = false; // Ensure button is active
+                
+                // Reset auto-height if needed or ensure it's visible
+                if (finalAnswerInput) {
+                    finalAnswerInput.style.height = 'auto';
+                }
             }
             
             participantControls.classList.add('hidden');
@@ -858,6 +863,12 @@ function initializeGameScreen() {
     
     // Listener for Final Answer
     submitFinalAnswerBtn.addEventListener('click', handleFinalAnswerSubmission);
+
+    // Auto-resize for final answer input
+    finalAnswerInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
 }
 
 /**

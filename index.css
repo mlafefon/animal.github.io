@@ -3780,8 +3780,9 @@ body.participant-view .app-version {
     border: 0.125rem solid rgba(255, 255, 255, 0.3);
     border-radius: 0.75rem;
     color: #f0f8ff;
-    resize: vertical;
+    resize: none; /* Changed from vertical */
     transition: border-color 0.2s;
+    overflow: hidden; /* Added */
 }
 
 #final-answer-input:focus {
