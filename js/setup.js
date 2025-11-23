@@ -79,6 +79,7 @@ function showJoinHostScreen(options) {
 
     // Show the back button and hide the home button for this specific screen
     document.getElementById('back-to-setup-btn').classList.remove('hidden');
+    document.getElementById('back-to-selection-btn').classList.add('hidden');
     document.getElementById('global-home-btn').classList.add('hidden');
 
 
@@ -248,6 +249,8 @@ export async function showSetupScreenForGame(gameDoc) {
     
     refreshSetupScreenState();
     setupScreen.classList.remove('hidden');
+    document.getElementById('global-home-btn').classList.add('hidden');
+    document.getElementById('back-to-selection-btn').classList.remove('hidden');
     updateQuestionStats();
 }
 
@@ -431,9 +434,23 @@ export function initializeSetupScreen(onStart) {
             setupScreen.classList.remove('hidden');
             
             backToSetupBtn.classList.add('hidden');
-            document.getElementById('global-home-btn').classList.remove('hidden');
+            document.getElementById('back-to-selection-btn').classList.remove('hidden');
 
             startButton.focus();
+        });
+    }
+
+    // Back button from Setup Screen (Back to Selection)
+    const backToSelectionBtn = document.getElementById('back-to-selection-btn');
+    if (backToSelectionBtn) {
+        backToSelectionBtn.addEventListener('click', () => {
+            setupScreen.classList.add('hidden');
+            document.getElementById('edit-game-screen').classList.remove('hidden');
+            // Ensure global header is shown
+            document.getElementById('global-header').classList.remove('hidden');
+            
+            backToSelectionBtn.classList.add('hidden');
+            document.getElementById('global-home-btn').classList.remove('hidden');
         });
     }
 
